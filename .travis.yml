@@ -27,7 +27,7 @@ matrix:
       script:
         - make c
       after_success:
-        - coveralls-lcov /home/travis/build/Genomicsplc/variantkey/c/target/test/coverage/variantkey.info
+        - coveralls-lcov /home/travis/build/tecnickcom/variantkey/c/target/test/coverage/variantkey.info
     - language: go
       script:
         - make go
