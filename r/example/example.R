@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # Usage example for VariantKey R wrapper
-# https://github.com/genomicsplc/variantkey
+# https://github.com/tecnickcom/variantkey
 
 library(variantkey)
 

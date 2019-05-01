@@ -3,10 +3,10 @@ library(variantkey)
 
 # test-nrvk.R
 # @category   Libraries
-# @author     Nicola Asuni <nicola.asuni@genomicsplc.com>
-# @copyright  2017-2018 GENOMICS plc
+# @author     Nicola Asuni <info@tecnick.com>
+# @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
 # @license    MIT (see LICENSE)
-# @link       https://github.com/genomicsplc/variantkey
+# @link       https://github.com/tecnickcom/variantkey
 
 x <- rbind(
     list("0800c35093ace339",  "1", 100001, 0x00000004, 0x01, 0x01, "00000000100186a1", "00000000100186a2", "N", "A"),

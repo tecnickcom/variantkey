@@ -30,7 +30,7 @@ test:
     - variantkey
 
 about:
-  home: https://github.com/genomicsplc/variantkey
+  home: https://github.com/tecnickcom/variantkey
   license: MIT
   license_file: LICENSE
   summary: Genetic VariantKey Library

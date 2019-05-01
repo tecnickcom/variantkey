@@ -1,13 +1,13 @@
 package main
 
 // Usage example for VariantKey GO wrapper
-// https://github.com/genomicsplc/variantkey
+// https://github.com/tecnickcom/variantkey
 
 import (
 	"fmt"
 	"os"
 
-	vk "github.com/genomicsplc/variantkey/go/src"
+	vk "github.com/tecnickcom/variantkey/go/src"
 )
 
 func main() {

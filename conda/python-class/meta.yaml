@@ -36,7 +36,7 @@ test:
     - pyvariantkey
 
 about:
-  home: https://github.com/genomicsplc/variantkey
+  home: https://github.com/tecnickcom/variantkey
   license: MIT
   license_file: LICENSE
   summary: Python class wrapper for Genetic VariantKey Library

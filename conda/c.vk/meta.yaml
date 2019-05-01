@@ -1,6 +1,6 @@
 package:
   name: variantkey-vk
-  version: 5.4.1
+  version: 5.4.2
 
 source:
   path: ../..
@@ -9,7 +9,7 @@ build:
   number: 1
 
 about:
-  home: https://github.com/genomicsplc/variantkey
+  home: https://github.com/tecnickcom/variantkey
   license: MIT
   license_file: LICENSE
   summary: VariantKey fast encoder command line application

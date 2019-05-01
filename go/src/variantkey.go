@@ -2,10 +2,10 @@
 // 64 bit Encoding for Human Genetic Variants.
 //
 //  @category   Libraries
-//  @author     Nicola Asuni <nicola.asuni@genomicsplc.com>
-//  @copyright  2017-2018 GENOMICS plc
+//  @author     Nicola Asuni <info@tecnick.com>
+//  @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
 //  @license    MIT (see LICENSE)
-//  @link       https://github.com/genomicsplc/variantkey
+//  @link       https://github.com/tecnickcom/variantkey
 //
 // LICENSE
 //

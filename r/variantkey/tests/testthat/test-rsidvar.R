@@ -3,10 +3,10 @@ library(variantkey)
 
 # test-rsidvar.R
 # @category   Libraries
-# @author     Nicola Asuni <nicola.asuni@genomicsplc.com>
-# @copyright  2017-2018 GENOMICS plc
+# @author     Nicola Asuni <info@tecnick.com>
+# @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
 # @license    MIT (see LICENSE)
-# @link       https://github.com/genomicsplc/variantkey
+# @link       https://github.com/tecnickcom/variantkey
 
 x <- rbind(
     list(0, 0x01, 0x0004F44B, 0x00338000, 0x00000001, "08027a2580338000"),
