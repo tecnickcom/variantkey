@@ -2,8 +2,8 @@
 
 *Numerical Encoding for Human Genetic Variants*
 
-[![Master Build Status](https://secure.travis-ci.org/tecnickcom/variantkey.png?branch=master)](https://travis-ci.org/tecnickcom//variantkey?branch=master)
-[![Master Coverage Status](https://coveralls.io/repos/tecnickcom//variantkey/badge.svg?branch=master&service=github)](https://coveralls.io/github/tecnickcom//variantkey?branch=master)
+[![Master Build Status](https://secure.travis-ci.org/tecnickcom/variantkey.png?branch=master)](https://travis-ci.org/tecnickcom/variantkey?branch=master)
+[![Master Coverage Status](https://coveralls.io/repos/tecnickcom/variantkey/badge.svg?branch=master&service=github)](https://coveralls.io/github/tecnickcom/variantkey?branch=master)
 
 * **category**    Libraries
 * **author**      Nicola Asuni
