@@ -1,17 +1,14 @@
 # MAKEFILE
 #
-# @author      Nicola Asuni <nicola.asuni@genomicsplc.com>
-# @link        https://github.com/genomicsplc/variantkey
+# @author      Nicola Asuni <info@tecnick.com>
+# @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# List special make targets that are not associated with files
-.PHONY: help c go javascript python python-class r format clean pubdocs
-
 # CVS path (path to the parent dir containing the project)
-CVSPATH=github.com/genomicsplc
+CVSPATH=github.com/tecnickcom
 
 # Project vendor
-VENDOR=genomicsplc
+VENDOR=tecnickcom
 
 # Project name
 PROJECT=variantkey
@@ -19,6 +16,7 @@ PROJECT=variantkey
 # --- MAKE TARGETS ---
 
 # Display general help about this command
+.PHONY: help
 help:
 	@echo ""
 	@echo "VariantKey Makefile."
@@ -37,30 +35,37 @@ help:
 all: clean c go javascript python python-class r
 
 # Build and test the C version
+.PHONY: c
 c:
 	cd c && make all
 
 # Build and test the GO version
+.PHONY: go
 go:
 	cd go && make all
 
 # Build and test the Javascript version
+.PHONY: javascript
 javascript:
 	cd javascript && make all
 
 # Build and test the Python version
+.PHONY: python
 python:
 	cd python && make all
 
 # Build and test the Python wrapper class
+.PHONY: python-class
 python-class:
 	cd python-class && make all
 
 # Build and test the R version
+.PHONY: r
 r:
 	cd r && make all
 
 # Remove any build artifact
+.PHONY: clean
 clean:
 	rm -rf target
 	cd c && make clean
@@ -70,6 +75,7 @@ clean:
 	cd r && make clean
 
 # Build everything inside a Docker container
+.PHONY: dbuild
 dbuild:
 	@mkdir -p target
 	@rm -rf target/*
@@ -78,6 +84,7 @@ dbuild:
 	@exit `cat target/make.exit`
 
 # Publish Documentation in GitHub (requires writing permissions)
+.PHONY: pubdocs
 pubdocs:
 	rm -rf ./target/DOCS
 	rm -rf ./target/gh-pages
@@ -92,7 +99,7 @@ pubdocs:
 	mkdir -p ./target/DOCS/r
 	cp -r ./r/variantkey/docs/* ./target/DOCS/r/
 	cp ./resources/doc/index.html ./target/DOCS/
-	git clone git@github.com:Genomicsplc/variantkey.git ./target/gh-pages
+	git clone git@github.com:tecnickcom/variantkey.git ./target/gh-pages
 	cd target/gh-pages && git checkout gh-pages
 	mv -f ./target/gh-pages/.git ./target/DOCS/
 	rm -rf ./target/gh-pages

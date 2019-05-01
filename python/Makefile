@@ -1,11 +1,9 @@
 # MAKEFILE
 #
-# @author      Nicola Asuni <nicola.asuni@genomicsplc.com>
-# @link        https://github.com/genomicsplc/variantkey
+# @author      Nicola Asuni <info@tecnick.com>
+# @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# List special make targets that are not associated with files
-.PHONY: help version build wheel format clean
 
 # Project name
 PROJECT=variantkey
@@ -28,6 +26,7 @@ CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 # --- MAKE TARGETS ---
 
 # Display general help about this command
+.PHONY: help
 help:
 	@echo ""
 	@echo "${PROJECT} Python Makefile."
@@ -43,27 +42,32 @@ help:
 all: clean format build
 
 # Set the version from VERSION file
+.PHONY: version
 version:
 	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/python/meta.yaml
 	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/python/meta.yaml
 	sed -i "s/version=.*,$$/version='$(VERSION).$(RELEASE)',/" setup.py
 
 # Build a minified version of the library
+.PHONY: build
 build: version
 	../conda/setup-conda.sh
 	PROJECT_ROOT=${CURRENTDIR} ${CONDA_ENV}/bin/conda build --prefix-length 128 --no-anaconda-upload --override-channels $(ARTIFACTORY_CONDA_CHANNELS) ../conda/python
 
 # Build a Wheel package
+.PHONY: wheel
 wheel: clean version
 	python3 setup.py sdist bdist_wheel
 
 # Format the source code
+.PHONY: format
 format:
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.h'
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.c'
 	autopep8 --in-place --max-line-length=255 test/*.py
 
 # Remove any build artifact
+.PHONY: clean
 clean:
 	rm -rf htmlcov build dist .cache .benchmarks tests/*.so tests/__pycache__ variantkey/__pycache__ variantkey.egg-info
 	find . -type f -name '*.pyc' -exec rm -f {} \;

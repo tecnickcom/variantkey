@@ -1,23 +1,17 @@
 # MAKEFILE
 #
-# @author      Nicola Asuni <info@genomicsplc.com>
-# @link        https://github.com/genomicsplc/variantkey
+# @author      Nicola Asuni <info@tecnick.com>
+# @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
-
-# List special make targets that are not associated with files
-.PHONY: help all test format fmtcheck vet lint coverage cyclo ineffassign misspell structcheck varcheck errcheck gosimple astscan qa deps clean example
 
 # Use bash as shell (Note: Ubuntu now uses dash which doesn't support PIPESTATUS).
 SHELL=/bin/bash
 
 # CVS path (path to the parent dir containing the project)
-CVSPATH=github.com/genomicsplc
-
-# Project owner
-OWNER=GENOMICSplc
+CVSPATH=github.com/tecnickcom
 
 # Project vendor
-VENDOR=genomicsplc
+VENDOR=tecnickcom
 
 # Project name
 PROJECT=variantkey
@@ -53,6 +47,7 @@ export PATH := $(GOPATH)/bin:$(PATH)
 # --- MAKE TARGETS ---
 
 # Display general help about this command
+.PHONY: help
 help:
 	@echo ""
 	@echo "$(PROJECT) Makefile."
@@ -86,6 +81,7 @@ help:
 all: clean format deps qa
 
 # Run the unit tests
+.PHONY: test
 test:
 	@mkdir -p target/test
 	@mkdir -p target/report
@@ -104,72 +100,86 @@ test:
 	test $${PIPESTATUS[0]} -eq 0
 
 # Format the source code
+.PHONY: format
 format:
 	@find ./src -type f -name "*.go" -exec gofmt -s -w {} \;
 	@find ./example -type f -name "*.go" -exec gofmt -s -w {} \;
 
 # Check if the source code has been formatted
+.PHONY: fmtcheck
 fmtcheck:
 	@mkdir -p target
 	@find ./src -type f -name "*.go" -exec gofmt -s -d {} \; | tee target/format.diff
 	@test ! -s target/format.diff || { echo "ERROR: the source code has not been formatted - please use 'make format' or 'gofmt'"; exit 1; }
 
 # Check for syntax errors
+.PHONY: vet
 vet:
 	GOPATH=$(GOPATH) \
 	go vet ./src
 
 # Check for style errors
+.PHONY: lint
 lint:
 	GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./src
 
 # Generate the coverage report
+.PHONY: coverage
 coverage:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) \
 	go tool cover -html=target/report/coverage.out -o target/report/coverage.html
 
 # Report cyclomatic complexity
+.PHONY: cyclo
 cyclo:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) gocyclo -avg ./src | tee target/report/cyclo.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Detect ineffectual assignments
+.PHONY: ineffassign
 ineffassign:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) ineffassign ./src | tee target/report/ineffassign.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Detect commonly misspelled words in source files
+.PHONY: misspell
 misspell:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) misspell -error ./src  | tee target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
 
 # Find unused struct fields.
+.PHONY: structcheck
 structcheck:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) structcheck -a ./src  | tee target/report/structcheck.txt
 
 # Find unused global variables and constants.
+.PHONY: varcheck
 varcheck:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) varcheck -e ./src  | tee target/report/varcheck.txt
 
 # Check that error return values are used.
+.PHONY: errcheck
 errcheck:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) errcheck ./src  | tee target/report/errcheck.txt
 
 # Suggest code simplifications"
+.PHONY: gosimple
 gosimple:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) gosimple ./src  | tee target/report/gosimple.txt
 
 # AST scanner
+.PHONY: astscan
 astscan:
 	@mkdir -p target/report
 	GOPATH=$(GOPATH) gosec ./src/ | tee target/report/astscan.txt ; test $${PIPESTATUS[0]} -eq 0 || true
 
 # Generate source docs
+.PHONY: docs
 docs:
 	@mkdir -p target/docs
 	GOPATH=$(GOPATH) godoc -src -url "http://localhost:6060/pkg/github.com/${VENDOR}/${PROJECT}/go/src/" > target/docs/index.html
@@ -179,11 +189,13 @@ docs:
 	sed -i "s|\"/src/github.com/${VENDOR}/${PROJECT}/|https://github.com/${VENDOR}/${PROJECT}/blob/master/|g" target/docs/index.html
 
 # Alias to run targets: fmtcheck test vet lint coverage
+.PHONY: qa
 qa: fmtcheck test vet lint coverage cyclo ineffassign misspell structcheck varcheck errcheck gosimple astscan
 
 # --- INSTALL ---
 
 # Get the dependencies
+.PHONY: deps
 deps:
 	GOPATH=$(GOPATH) go get -tags ${STATIC_TAG} -v ./src
 	GOPATH=$(GOPATH) go get github.com/inconshreveable/mousetrap
@@ -200,11 +212,13 @@ deps:
 	GOPATH=$(GOPATH) go get github.com/securego/gosec/cmd/gosec/...
 
 # Remove any build artifact
+.PHONY: clean
 clean:
 	rm -rf ./target src.test
 	GOPATH=$(GOPATH) go clean -i ./...
 
 # build example
+.PHONY: example
 example:
 	GOPATH=$(GOPATH) go build -o ./target/example ./example \
 	&& ./target/example

@@ -1,15 +1,13 @@
 # MAKEFILE
 #
-# @author      Nicola Asuni <nicola.asuni@genomicsplc.com>
-# @link        https://github.com/genomicsplc/variantkey
+# @author      Nicola Asuni <info@tecnick.com>
+# @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
-
-# List special make targets that are not associated with files
-.PHONY: help test build format clean
 
 # --- MAKE TARGETS ---
 
 # Display general help about this command
+.PHONY: help
 help:
 	@echo ""
 	@echo "VariantKey Javascript Makefile."
@@ -25,12 +23,14 @@ help:
 all: clean format test build
 
 # Run the unit tests
+.PHONY: test
 test:
 	cd test && node test_variantkey.js '../src/variantkey.js'
 	cd test && node test_regionkey.js '../src/variantkey.js'
 	cd test && node test_esid.js '../src/variantkey.js'
 
 # Build a minified version of the library
+.PHONY: build
 build:
 	@mkdir -p target/build
 	uglifyjs --compress --keep-fnames --comments --output target/build/variantkey.js src/variantkey.js 
@@ -39,10 +39,12 @@ build:
 	cd test && node test_esid.js '../target/build/variantkey.js'
 
 # Format the source code
+.PHONY: format
 format:
 	js-beautify --replace src/variantkey.js
 	js-beautify --replace test/test_variantkey.js
 
 # Remove any build artifact
+.PHONY: clean
 clean:
 	rm -rf target
