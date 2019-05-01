@@ -1,7 +1,7 @@
 # MAKEFILE
 #
-# @author      Nicola Asuni <nicola.asuni@genomicsplc.com>
-# @link        https://github.com/genomicsplc/variantkey
+# @author      Nicola Asuni <info@tecnick.com>
+# @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
 # List special make targets that are not associated with files
@@ -11,13 +11,13 @@
 SHELL=/bin/bash
 
 # CVS path (path to the parent dir containing the project)
-CVSPATH=github.com/genomicsplc
+CVSPATH=github.com/tecnickcom
 
 # Project owner
-OWNER=GENOMICSplc
+OWNER=Tecnick.com
 
 # Project vendor
-VENDOR=genomicsplc
+VENDOR=tecnickcom
 
 # Project name
 PROJECT=variantkey
@@ -106,7 +106,7 @@ test: testcpp
 	lcov --capture --initial --directory . --output-file coverage/variantkey.cov && \
 	env CTEST_OUTPUT_ON_FAILURE=1 make test | tee test.log ; test $${PIPESTATUS[0]} -eq 0 && \
 	lcov --no-checksum --directory . --capture --output-file coverage/variantkey.info && \
-	lcov --remove coverage/variantkey.info "/test_*" --output-file coverage/variantkey.info && \
+	lcov --remove coverage/variantkey.info '*/test/*' '*/usr/include/x86_64-linux-gnu/bits*' --output-file coverage/variantkey.info && \
 	genhtml -o coverage -t "VariantKey Test Coverage" coverage/variantkey.info
 ifeq ($(VH_BUILD_DOXYGEN),ON)
 	cd target && \
