@@ -1,5 +1,5 @@
 // Usage example for VariantKey
-// https://github.com/genomicsplc/variantkey
+// https://github.com/tecnickcom/variantkey
 
 #include <inttypes.h>
 #include <stdio.h>
