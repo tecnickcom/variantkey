@@ -63,8 +63,7 @@ wheel: clean version
 # Format the source code
 .PHONY: format
 format:
-	autopep8 --in-place --max-line-length=255 pyvariantkey/*.py
-	autopep8 --in-place --max-line-length=255 test/*.py
+	black .
 
 # Remove any build artifact
 .PHONY: clean

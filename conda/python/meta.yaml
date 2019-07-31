@@ -24,7 +24,7 @@ test:
     - coverage
     - pytest
     - pytest-cov
-    - pytest-benchmark
+    - pytest-benchmark >=3.2.*
     - pycodestyle
   imports:
     - variantkey

@@ -64,7 +64,6 @@ wheel: clean version
 format:
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.h'
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.c'
-	autopep8 --in-place --max-line-length=255 test/*.py
 
 # Remove any build artifact
 .PHONY: clean

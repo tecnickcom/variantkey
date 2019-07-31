@@ -28,10 +28,11 @@ test:
     - coverage
     - pytest
     - pytest-cov
-    - pytest-benchmark
+    - pytest-benchmark >=3.2.*
     - pycodestyle
     - variantkey >=5.4.3
     - numpy >=1.15.0
+    - black
   imports:
     - pyvariantkey
 
