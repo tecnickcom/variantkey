@@ -46,7 +46,7 @@ all: clean format build
 version:
 	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/python/meta.yaml
 	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/python/meta.yaml
-	sed -i "s/version=.*,$$/version='$(VERSION).$(RELEASE)',/" setup.py
+	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
 
 # Build a minified version of the library
 .PHONY: build
@@ -64,6 +64,7 @@ wheel: clean version
 format:
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.h'
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.c'
+	black setup.py
 
 # Remove any build artifact
 .PHONY: clean

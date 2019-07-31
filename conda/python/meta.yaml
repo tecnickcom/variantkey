@@ -1,6 +1,6 @@
 package:
   name: variantkey
-  version: 5.4.3
+  version: 5.4.4
 
 source:
   path: ../..
@@ -26,6 +26,7 @@ test:
     - pytest-cov
     - pytest-benchmark >=3.2.*
     - pycodestyle
+    - black
   imports:
     - variantkey
 

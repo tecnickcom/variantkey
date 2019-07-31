@@ -46,8 +46,8 @@ version:
 	sed -i "s/variantkey >=.*$$/variantkey >=$(VERSION)/" ../conda/python-class/meta.yaml
 	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/python-class/meta.yaml
 	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/python-class/meta.yaml
-	sed -i "s/version=.*,$$/version='$(VERSION).$(RELEASE)',/" setup.py
-	sed -i "s/'variantkey>=.*',$$/'variantkey>=$(VERSION).$(RELEASE)',/" setup.py
+	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
+	sed -i "s/'variantkey>=.*',$$/\"variantkey>=$(VERSION).$(RELEASE)\",/" setup.py
 
 # Build a minified version of the library
 .PHONY: build
@@ -63,7 +63,7 @@ wheel: clean version
 # Format the source code
 .PHONY: format
 format:
-	black .
+	black setup.py pyvariantkey
 
 # Remove any build artifact
 .PHONY: clean
