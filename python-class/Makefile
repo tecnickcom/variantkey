@@ -38,7 +38,7 @@ help:
 	@echo "    make clean   : Remove any build artifact"
 	@echo ""
 
-all: clean format build
+all: clean build
 
 # Set the version from VERSION file
 .PHONY: version
