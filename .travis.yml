@@ -20,6 +20,7 @@ addons:
     - dh-golang
 install:
   - gem install coveralls-lcov
+  - pip install black
 
 matrix:
   include:
