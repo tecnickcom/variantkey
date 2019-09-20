@@ -160,10 +160,10 @@ static inline uint32_t encode_base(const uint8_t c)
 {
     /*
       Encode base:
-      A > 0
-      C > 1
-      G > 2
-      T > 3
+      A = 0
+      C = 1
+      G = 2
+      T = 3
     */
     static const uint32_t map[] =
     {

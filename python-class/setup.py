@@ -38,7 +38,7 @@ class RunTests(Command):
 
 setup(
     name="pyvariantkey",
-    version="5.4.4.1",
+    version="5.4.5.1",
     keywords=("variantkey variant key genetic genomics"),
     description="VariantKey Python wrapper class",
     long_description=read("../README.md"),
