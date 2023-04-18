@@ -4,14 +4,35 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# CVS path (path to the parent dir containing the project)
-CVSPATH=github.com/tecnickcom
+SHELL=/bin/bash
+.SHELLFLAGS=-o pipefail -c
+
+# Project owner
+OWNER=Tecnick.com
 
 # Project vendor
 VENDOR=tecnickcom
 
+# Lowercase VENDOR name for Docker
+LCVENDOR=$(shell echo "${VENDOR}" | tr '[:upper:]' '[:lower:]')
+
+# CVS path (path to the parent dir containing the project)
+CVSPATH=github.com/${VENDOR}
+
 # Project name
 PROJECT=variantkey
+
+# Project version
+VERSION=$(shell cat VERSION)
+
+# Project release number (packaging build number)
+RELEASE=$(shell cat RELEASE)
+
+# Current directory
+CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+
+# Target directory
+TARGETDIR=$(CURRENTDIR)target
 
 # --- MAKE TARGETS ---
 
@@ -30,6 +51,7 @@ help:
 	@echo "    make r            : Build and test the R version"
 	@echo "    make clean        : Remove any build artifact"
 	@echo "    make dbuild       : Build everything inside a Docker container"
+	@echo "    make tag          : Tag the Git repository"
 	@echo ""
 
 all: clean c go javascript python python-class r
@@ -72,7 +94,8 @@ clean:
 	cd go && make clean
 	cd javascript && make clean
 	cd python && make clean
-	cd r && make clean
+	cd python-class && make clean
+	# cd r && make clean
 
 # Build everything inside a Docker container
 .PHONY: dbuild
@@ -107,3 +130,9 @@ pubdocs:
 	git add . -A && \
 	git commit -m 'Update documentation' && \
 	git push origin gh-pages --force
+
+# Tag the Git repository
+.PHONY: tag
+tag:
+	git tag -a "v$(VERSION)" -m "Version $(VERSION)" && \
+	git push origin --tags

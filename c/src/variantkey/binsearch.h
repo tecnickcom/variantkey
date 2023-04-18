@@ -189,7 +189,7 @@
 #define order_le_uint64_t(x) (x) //!< Return LE uint64_t in the correct endianness order
 #endif
 
-#define MAXCOLS 256 //!< Maximum number of columns indexable
+#define MAXCOLS 256 //!< Maximum number of indexable columns
 
 /**
  * Returns the absolute file address position of the specified item (binary block).

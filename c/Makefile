@@ -4,9 +4,6 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# List special make targets that are not associated with files
-.PHONY: help testcpp test tidy build package_vk version doc format clean install uniinstall rpm deb
-
 # Use bash as shell (Note: Ubuntu now uses dash which doesn't support PIPESTATUS).
 SHELL=/bin/bash
 
@@ -27,12 +24,6 @@ VERSION=$(shell cat ../VERSION)
 
 # Project release number (packaging build number)
 RELEASE=$(shell cat ../RELEASE)
-
-# Include conda channels
-include ../conda/channels.mk
-
-# Conda environment
-CONDA_ENV=../../env-${PROJECT}
 
 # Current directory
 CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -61,6 +52,7 @@ PATHDEBPKG=$(CURRENTDIR)/target/DEB
 # --- MAKE TARGETS ---
 
 # Display general help about this command
+.PHONY: help
 help:
 	@echo ""
 	@echo "$(PROJECT) Makefile."
@@ -83,10 +75,12 @@ help:
 all: clean version format test tidy build rpm deb package_vk doc
 
 # Test C code compatibility with C++
+.PHONY: testcpp
 testcpp:
 	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++14 -x c++ -o /dev/null {} \;
 
 # Build and run the unit tests
+.PHONY: test
 test: testcpp
 	@mkdir -p target/test/test
 	@echo -e "\n\n*** BUILD TEST ***\n"
@@ -114,10 +108,12 @@ ifeq ($(VH_BUILD_DOXYGEN),ON)
 endif
 
 # use clang-tidy
+.PHONY: tidy
 tidy:
 	clang-tidy -checks='*,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-clang-analyzer-alpha.*' -header-filter=.* -p . src/variantkey/*.h vk/*.c test/*.c test/rsidvar_bench/*.c
 
 # Build the library
+.PHONY: build
 build:
 	@mkdir -p target/build
 	@echo -e "\n\n*** BUILD RELEASE ***\n"
@@ -136,36 +132,35 @@ build:
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ && \
 	env CTEST_OUTPUT_ON_FAILURE=1 make test | tee build.log ; test $${PIPESTATUS[0]} -eq 0
 
+.PHONY: package_vk
 package_vk: version
 	cd target/build/vk && make -j package
-	../conda/setup-conda.sh
-	PROJECT_ROOT=${CURRENTDIR} ${CONDA_ENV}/bin/conda build --prefix-length 128 --no-anaconda-upload --override-channels $(ARTIFACTORY_CONDA_CHANNELS) ../conda/c.src
-	PROJECT_ROOT=${CURRENTDIR} ${CONDA_ENV}/bin/conda build --prefix-length 128 --no-anaconda-upload --override-channels $(ARTIFACTORY_CONDA_CHANNELS) ../conda/c.vk
 
 # Set the version from VERSION file
+.PHONY: version
 version:
-	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/c.src/meta.yaml
-	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/c.src/meta.yaml
-	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/c.vk/meta.yaml
-	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/c.vk/meta.yaml
 	sed -i "s/PROJECT_NUMBER.*=.*$$/PROJECT_NUMBER = $(VERSION)/" doc/Doxyfile
 
 # Generate source code documentation
+.PHONY: doc
 doc:
 	cd target/build && \
 	make doc | tee doc.log ; test $${PIPESTATUS[0]} -eq 0
 
 # Format the source code
+.PHONY: format
 format:
 	astyle --style=allman --recursive --suffix=none 'src/variantkey/*.h'
 	astyle --style=allman --recursive --suffix=none 'test/*.c'
 	astyle --style=allman --recursive --suffix=none 'vk/*.c'
 
 # Remove any build artifact
+.PHONY: clean
 clean:
 	rm -rf target
 
 # Install this application
+.PHONY: install
 install: uninstall
 	mkdir -p $(PATHINSTLIB)
 	cp src/variantkey/*.h $(PATHINSTLIB)
@@ -178,11 +173,13 @@ install: uninstall
 	chmod -R 644 $(PATHINSTDOC)*
 
 # Remove all installed files (excluding configuration files)
+.PHONY: uninstall
 uninstall:
 	rm -rf $(PATHINSTLIB)
 	rm -rf $(PATHINSTDOC)
 
 # Build the RPM package for RedHat-like Linux distributions
+.PHONY: rpm
 rpm:
 	rm -rf $(PATHRPMPKG)
 	rpmbuild \
@@ -199,6 +196,7 @@ rpm:
 	-bb resources/rpm/rpm.spec
 
 # Build the DEB package for Debian-like Linux distributions
+.PHONY: deb
 deb:
 	rm -rf $(PATHDEBPKG)
 	make install DESTDIR=$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)

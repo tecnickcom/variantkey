@@ -4,14 +4,20 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# Use bash as shell (Note: Ubuntu now uses dash which doesn't support PIPESTATUS).
 SHELL=/bin/bash
+.SHELLFLAGS=-o pipefail -c
 
-# CVS path (path to the parent dir containing the project)
-CVSPATH=github.com/tecnickcom
+# Project owner
+OWNER=tecnickcom
 
 # Project vendor
-VENDOR=tecnickcom
+VENDOR=${OWNER}
+
+# Lowercase VENDOR name for Docker
+LCVENDOR=$(shell echo "${VENDOR}" | tr '[:upper:]' '[:lower:]')
+
+# CVS path (path to the parent dir containing the project)
+CVSPATH=github.com/${VENDOR}
 
 # Project name
 PROJECT=variantkey
@@ -23,18 +29,18 @@ VERSION=$(shell cat ../VERSION)
 RELEASE=$(shell cat ../RELEASE)
 
 # Name of RPM or DEB package
-PKGNAME=${VENDOR}-${PROJECT}
+PKGNAME=${LCVENDOR}-${PROJECT}
 
 # Current directory
 CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
+# Target directory
+TARGETDIR=$(CURRENTDIR)target
+
+# Directory where to store binary utility tools
+BINUTIL=$(TARGETDIR)/binutil
+
 # GO lang path
-ifneq ($(GOPATH),)
-	ifeq ($(findstring $(GOPATH),$(CURRENTDIR)),)
-		# the defined GOPATH is not valid
-		GOPATH=
-	endif
-endif
 ifeq ($(GOPATH),)
 	# extract the GOPATH
 	GOPATH=$(firstword $(subst /src/, ,$(CURRENTDIR)))
@@ -43,6 +49,21 @@ endif
 # Add the GO binary dir in the PATH
 export PATH := $(GOPATH)/bin:$(PATH)
 
+# Common commands
+GO=GOPATH=$(GOPATH) GOPRIVATE=$(CVSPATH) go
+GOFMT=GOPATH=$(GOPATH) gofmt
+GOTEST=GOPATH=$(GOPATH) gotest
+GODOC=GOPATH=$(GOPATH) godoc
+
+# Directory containing the source code
+SRCDIR=./src
+
+# Enable junit report when not in LOCAL mode
+ifeq ($(strip $(DEVMODE)),LOCAL)
+	TESTEXTRACMD=&& $(GO) tool cover -func=$(TARGETDIR)/report/coverage.out
+else
+	TESTEXTRACMD=2>&1 | tee >(PATH=$(GOPATH)/bin:$(PATH) go-junit-report > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
+endif
 
 # --- MAKE TARGETS ---
 
@@ -54,171 +75,93 @@ help:
 	@echo "GOPATH=$(GOPATH)"
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "    make qa          : Run all the tests and static analysis reports"
-	@echo "    make test        : Run the unit tests"
+	@echo "    make clean    : Remove any build artifact"
+	@echo "    make coverage : Generate the coverage report"
+	@echo "    make deps     : Get dependencies"
+	@echo "    make docs     : Generate static documentation"
+	@echo "    make format   : Format the source code"
+	@echo "    make linter   : Check code against multiple linters"
+	@echo "    make mod      : Download dependencies"
+	@echo "    make qa       : Run all tests and static analysis tools"
+	@echo "    make test     : Run unit tests"
 	@echo ""
-	@echo "    make format      : Format the source code"
-	@echo "    make fmtcheck    : Check if the source code has been formatted"
-	@echo "    make vet         : Check for suspicious constructs"
-	@echo "    make lint        : Check for style errors"
-	@echo "    make coverage    : Generate the coverage report"
-	@echo "    make cyclo       : Generate the cyclomatic complexity report"
-	@echo "    make ineffassign : Detect ineffectual assignments"
-	@echo "    make misspell    : Detect commonly misspelled words in source files"
-	@echo "    make structcheck : Find unused struct fields"
-	@echo "    make varcheck    : Find unused global variables and constants"
-	@echo "    make errcheck    : Check that error return values are used"
-	@echo "    make staticcheck : Suggest code simplifications"
-	@echo "    make astscan     : GO AST scanner"
-	@echo ""
-	@echo "    make docs        : Generate source code documentation"
-	@echo ""
-	@echo "    make deps        : Get the dependencies"
-	@echo "    make clean       : Remove any build artifact"
+	@echo "Use DEVMODE=LOCAL for human friendly output."
+	@echo "To test and build everything from scratch:"
+	@echo "DEVMODE=LOCAL make format clean mod deps qa"
 	@echo ""
 
 # Alias for help target
-all: clean format deps qa
-
-# Run the unit tests
-.PHONY: test
-test:
-	@mkdir -p target/test
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) \
-	go test \
-	-tags ${STATIC_TAG} \
-	-covermode=atomic \
-	-race \
-	-bench=. \
-	-cpuprofile=target/report/cpu.out \
-	-memprofile=target/report/mem.out \
-	-mutexprofile=target/report/mutex.out \
-	-coverprofile=target/report/coverage.out \
-	./src | \
-	tee >(PATH=$(GOPATH)/bin:$(PATH) go-junit-report > target/test/report.xml); \
-	test $${PIPESTATUS[0]} -eq 0
-
-# Format the source code
-.PHONY: format
-format:
-	@find ./src -type f -name "*.go" -exec gofmt -s -w {} \;
-	@find ./example -type f -name "*.go" -exec gofmt -s -w {} \;
-
-# Check if the source code has been formatted
-.PHONY: fmtcheck
-fmtcheck:
-	@mkdir -p target
-	@find ./src -type f -name "*.go" -exec gofmt -s -d {} \; | tee target/format.diff
-	@test ! -s target/format.diff || { echo "ERROR: the source code has not been formatted - please use 'make format' or 'gofmt'"; exit 1; }
-
-# Check for syntax errors
-.PHONY: vet
-vet:
-	GOPATH=$(GOPATH) \
-	go vet ./src
-
-# Check for style errors
-.PHONY: lint
-lint:
-	GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(PATH) golint ./src
-
-# Generate the coverage report
-.PHONY: coverage
-coverage:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) \
-	go tool cover -html=target/report/coverage.out -o target/report/coverage.html
-
-# Report cyclomatic complexity
-.PHONY: cyclo
-cyclo:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) gocyclo -avg ./src | tee target/report/cyclo.txt ; test $${PIPESTATUS[0]} -eq 0
-
-# Detect ineffectual assignments
-.PHONY: ineffassign
-ineffassign:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) ineffassign ./src | tee target/report/ineffassign.txt ; test $${PIPESTATUS[0]} -eq 0
-
-# Detect commonly misspelled words in source files
-.PHONY: misspell
-misspell:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) misspell -error ./src  | tee target/report/misspell.txt ; test $${PIPESTATUS[0]} -eq 0
-
-# Find unused struct fields.
-.PHONY: structcheck
-structcheck:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) structcheck -a ./src  | tee target/report/structcheck.txt
-
-# Find unused global variables and constants.
-.PHONY: varcheck
-varcheck:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) varcheck -e ./src  | tee target/report/varcheck.txt
-
-# Check that error return values are used.
-.PHONY: errcheck
-errcheck:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) errcheck ./src  | tee target/report/errcheck.txt
-
-# Suggest code simplifications"
-.PHONY: staticcheck
-staticcheck:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) staticcheck ./src  | tee target/report/staticcheck.txt
-
-# AST scanner
-.PHONY: astscan
-astscan:
-	@mkdir -p target/report
-	GOPATH=$(GOPATH) gosec ./src/... | tee target/report/astscan.txt ; test $${PIPESTATUS[0]} -eq 0 || true
-
-# Generate source docs
-.PHONY: docs
-docs:
-	@mkdir -p target/docs
-	GOPATH=$(GOPATH) godoc -url "http://localhost:6060/pkg/github.com/${VENDOR}/${PROJECT}/go/src/" > target/docs/index.html
-	sed -i 's|="/lib/godoc/|="|g' target/docs/index.html
-	cp $(GOPATH)/src/golang.org/x/tools/godoc/static/*.js target/docs/
-	cp $(GOPATH)/src/golang.org/x/tools/godoc/static/*.css target/docs/
-	sed -i "s|\"/src/github.com/${VENDOR}/${PROJECT}/|https://github.com/${VENDOR}/${PROJECT}/blob/master/|g" target/docs/index.html
-
-# Alias to run targets: fmtcheck test vet lint coverage
-.PHONY: qa
-qa: fmtcheck test vet lint coverage cyclo ineffassign misspell structcheck varcheck errcheck staticcheck astscan
-
-# --- INSTALL ---
-
-# Get the dependencies
-.PHONY: deps
-deps:
-	GOPATH=$(GOPATH) go get -tags ${STATIC_TAG} -v ./src
-	GOPATH=$(GOPATH) go get github.com/inconshreveable/mousetrap
-	GOPATH=$(GOPATH) go get golang.org/x/lint/golint
-	GOPATH=$(GOPATH) go get github.com/jstemmer/go-junit-report
-	GOPATH=$(GOPATH) go get github.com/axw/gocov/gocov
-	GOPATH=$(GOPATH) go get github.com/fzipp/gocyclo
-	GOPATH=$(GOPATH) go get github.com/gordonklaus/ineffassign
-	GOPATH=$(GOPATH) go get github.com/client9/misspell/cmd/misspell
-	GOPATH=$(GOPATH) go get github.com/opennota/check/cmd/structcheck
-	GOPATH=$(GOPATH) go get github.com/opennota/check/cmd/varcheck
-	GOPATH=$(GOPATH) go get github.com/kisielk/errcheck
-	GOPATH=$(GOPATH) go get honnef.co/go/tools/cmd/staticcheck
-	GOPATH=$(GOPATH) go get github.com/securego/gosec/cmd/gosec/...
+all: format clean mod deps qa
 
 # Remove any build artifact
 .PHONY: clean
 clean:
-	rm -rf ./target src.test
-	GOPATH=$(GOPATH) go clean -i ./...
+	rm -rf $(TARGETDIR)
+
+# Generate the coverage report
+.PHONY: coverage
+coverage: ensuretarget
+	$(GO) tool cover -html=$(TARGETDIR)/report/coverage.out -o $(TARGETDIR)/report/coverage.html
+
+# Get the test dependencies
+.PHONY: deps
+deps: ensuretarget
+	curl --silent --show-error --fail --location https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINUTIL) v1.52.2
+	$(GO) install github.com/rakyll/gotest
+	$(GO) install github.com/jstemmer/go-junit-report
+
+# Generate source docs
+.PHONY: docs
+docs: ensuretarget
+	$(GODOC) -url "http://localhost:6060/pkg/${CVSPATH}/${PROJECT}/cgo/src/" > $(TARGETDIR)/docs/index.html
+	sed -i 's|="/lib/godoc/|="|g' $(TARGETDIR)/docs/index.html
+	cp $(GOPATH)/src/golang.org/x/tools/godoc/static/*.js $(TARGETDIR)/docs/
+	cp $(GOPATH)/src/golang.org/x/tools/godoc/static/*.css $(TARGETDIR)/docs/
+	sed -i "s|\"/src/${CVSPATH}/${PROJECT}/|https://${CVSPATH}/${PROJECT}/blob/master/|g" $(TARGETDIR)/docs/index.html
+
+# Create the trget directories if missing
+.PHONY: ensuretarget
+ensuretarget:
+	@mkdir -p $(TARGETDIR)/test
+	@mkdir -p $(TARGETDIR)/report
+	@mkdir -p $(TARGETDIR)/binutil
+	@mkdir -p $(TARGETDIR)/docs
 
 # build example
 .PHONY: example
 example:
-	GOPATH=$(GOPATH) go build -o ./target/example ./example \
-	&& ./target/example
+	$(GO) build -o $(TARGETDIR)/example $(CURRENTDIR)/example \
+	&& $(TARGETDIR)/example
+
+# Format the source code
+.PHONY: format
+format:
+	@find $(SRCDIR) -type f -name "*.go" -exec bash -c "$(GOFMT) -s -w {}" \;
+
+# Execute multiple linter tools
+.PHONY: linter
+linter:
+	$(BINUTIL)/golangci-lint run $(SRCDIR)/...
+
+.PHONY: mod
+mod:
+	$(GO) mod download all
+
+# Run all tests and static analysis tools
+.PHONY: qa
+qa: linter test coverage
+
+# Run the unit tests
+.PHONY: test
+test: ensuretarget
+	@echo -e "\n\n>>> START: Unit Tests <<<\n\n"
+	$(GOTEST) \
+	-shuffle=on \
+	-tags=unit \
+	-covermode=atomic \
+	-bench=. \
+	-race \
+	-failfast \
+	-coverprofile=target/report/coverage.out \
+	-v $(SRCDIR) $(TESTEXTRACMD)
+	@echo -e "\n\n>>> END: Unit Tests <<<\n\n"

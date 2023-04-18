@@ -1,54 +1,54 @@
 package variantkey
 
-// genoref_test.go
-// @category   Libraries
-// @author     Nicola Asuni <info@tecnick.com>
-// @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
-// @license    MIT (see LICENSE)
-// @link       https://github.com/tecnickcom/variantkey
+import (
+	"testing"
 
-import "testing"
+	"github.com/stretchr/testify/require"
+)
 
 func TestGenorefIndex(t *testing.T) {
+	t.Parallel()
+
 	exp := []uint64{248, 248, 274, 299, 323, 346, 368, 389, 409, 428, 446, 463, 479, 494, 508, 521, 533, 544, 554, 563, 571, 578, 584, 589, 593, 596, 598}
-	if len(gref.Index) != len(exp) {
-		t.Errorf("Expected size %d, got %d", len(exp), len(gref.Index))
-	}
+	require.Equal(t, len(exp), len(gref.Index), "Expected size %d, got %d", len(exp), len(gref.Index))
+
 	for k, v := range exp {
-		if v != gref.Index[k] {
-			t.Errorf("(%d) Expected value %d, got %d", k, v, gref.Index[k])
-		}
+		require.Equal(t, gref.Index[k], v, "(%d) Expected value %d, got %d", k, v, gref.Index[k])
 	}
 }
 
 func TestGetGenorefSeq(t *testing.T) {
-	var chrom uint8
-	var ref, exp byte
+	t.Parallel()
+
+	var (
+		chrom    uint8
+		ref, exp byte
+	)
+
 	for chrom = 1; chrom <= 25; chrom++ {
 		ref = gref.GetGenorefSeq(chrom, 0) // first
-		if ref != 'A' {
-			t.Errorf("%d (first): Expected reference 'A', got '%c'", chrom, ref)
-		}
+		require.Equal(t, uint8('A'), ref, "%d (first): Expected reference 'A', got '%c'", chrom, ref)
+
 		ref = gref.GetGenorefSeq(chrom, (26 - uint32(chrom))) // last
-		exp = byte('Z' + 1 - chrom)
-		if ref != exp {
-			t.Errorf("%d (last): Expected reference '%c', got '%c'", chrom, exp, ref)
-		}
+		exp = 'Z' + 1 - chrom
+		require.Equal(t, exp, ref, "%d (last): Expected reference '%c', got '%c'", chrom, exp, ref)
+
 		ref = gref.GetGenorefSeq(chrom, (27 - uint32(chrom))) // invalid
-		if ref != 0 {
-			t.Errorf("%d (invalid): Expected reference 0, got '%c'", chrom, ref)
-		}
+		require.Equal(t, uint8(0), ref, "%d (invalid): Expected reference 0, got '%c'", chrom, ref)
 	}
 }
 
 func BenchmarkGetGenorefSeq(b *testing.B) {
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		gref.GetGenorefSeq(13, 1)
 	}
 }
 
 func TestCheckReference(t *testing.T) {
+	t.Parallel()
+
 	type TCheckRefData struct {
 		exp     int
 		chrom   uint8
@@ -56,7 +56,8 @@ func TestCheckReference(t *testing.T) {
 		sizeref uint8
 		ref     string
 	}
-	var tdata = []TCheckRefData{
+
+	tdata := []TCheckRefData{
 		{0, 1, 0, 1, "A"},
 		{0, 1, 25, 1, "Z"},
 		{0, 25, 0, 1, "A"},
@@ -100,28 +101,32 @@ func TestCheckReference(t *testing.T) {
 		{1, 1, 24, 1, "C"},
 		{1, 1, 24, 1, "T"},
 	}
+
 	for _, v := range tdata {
 		v := v
+
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
+
 			h := gref.CheckReference(v.chrom, v.pos, v.ref)
-			if h != v.exp {
-				t.Errorf("The return code is different, got: %#v expected %#v", h, v.exp)
-			}
+			require.Equal(t, v.exp, h, "The return code is different, got: %#v expected %#v", h, v.exp)
 		})
 	}
 }
 
 func TestFlipAlllele(t *testing.T) {
+	t.Parallel()
+
 	allele := "ATCGMKRYBVDHWSNatcgmkrybvdhwsn"
 	expected := "TAGCKMYRVBHDWSNTAGCKMYRVBHDWSN"
 	res := FlipAllele(allele)
-	if res != expected {
-		t.Errorf("The returned value is incorrect, got: %#v expected %#v", res, expected)
-	}
+
+	require.Equal(t, expected, res, "The returned value is incorrect, got: %#v expected %#v", res, expected)
 }
 
 func TestNormalizeVariant(t *testing.T) {
+	t.Parallel()
+
 	type TNormData struct {
 		ecode    int
 		chrom    uint8
@@ -136,7 +141,8 @@ func TestNormalizeVariant(t *testing.T) {
 		ref      string
 		alt      string
 	}
-	var ndata = []TNormData{
+
+	ndata := []TNormData{
 		{-2, 1, 26, 26, 1, 1, 1, 1, "A", "C", "A", "C"},         // invalid position
 		{-1, 1, 0, 0, 1, 1, 1, 1, "J", "C", "J", "C"},           // invalid reference
 		{4, 1, 0, 0, 1, 1, 1, 1, "A", "C", "T", "G"},            // flip
@@ -150,34 +156,27 @@ func TestNormalizeVariant(t *testing.T) {
 		{2, 1, 0, 0, 1, 1, 1, 1, "A", "G", "G", "A"},            // swap
 		{6, 1, 0, 0, 1, 1, 1, 1, "A", "C", "G", "T"},            // swap + flip
 	}
+
 	for _, v := range ndata {
 		v := v
+
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
+
 			code, npos, nref, nalt, nsizeref, nsizealt := gref.NormalizeVariant(v.chrom, v.pos, v.ref, v.alt)
-			if code != v.ecode {
-				t.Errorf("The return code is different, got: %#v expected %#v", code, v.ecode)
-			}
-			if npos != v.epos {
-				t.Errorf("The POS value is different, got: %#v expected %#v", npos, v.epos)
-			}
-			if nsizeref != v.esizeref {
-				t.Errorf("The REF size is different, got: %#v expected %#v", nsizeref, v.esizeref)
-			}
-			if nsizealt != v.esizealt {
-				t.Errorf("The ALT size is different, got: %#v expected %#v", nsizealt, v.esizealt)
-			}
-			if nref != v.eref {
-				t.Errorf("The REF is different, got: %#v expected %#v", nref, v.eref)
-			}
-			if nalt != v.ealt {
-				t.Errorf("The ALT is different, got: %#v expected %#v", nalt, v.ealt)
-			}
+			require.Equal(t, v.ecode, code, "The return code is different, got: %#v expected %#v", code, v.ecode)
+			require.Equal(t, v.epos, npos, "The POS value is different, got: %#v expected %#v", npos, v.epos)
+			require.Equal(t, v.esizeref, nsizeref, "The REF size is different, got: %#v expected %#v", nsizeref, v.esizeref)
+			require.Equal(t, v.esizealt, nsizealt, "The ALT size is different, got: %#v expected %#v", nsizealt, v.esizealt)
+			require.Equal(t, v.eref, nref, "The REF is different, got: %#v expected %#v", nref, v.eref)
+			require.Equal(t, v.ealt, nalt, "The ALT is different, got: %#v expected %#v", nalt, v.ealt)
 		})
 	}
 }
 
 func TestNormalizedVariantKey(t *testing.T) {
+	t.Parallel()
+
 	type TNormData struct {
 		code     int
 		chrom    string
@@ -194,7 +193,8 @@ func TestNormalizedVariantKey(t *testing.T) {
 		ref      string
 		alt      string
 	}
-	var ndata = []TNormData{
+
+	ndata := []TNormData{
 		{-2, "1", 0, 26, 26, 1, 1, 1, 1, 0x0800000d08880000, "A", "C", "A", "C"},         // invalid position
 		{-1, "1", 1, 1, 0, 1, 1, 1, 1, 0x08000000736a947f, "J", "C", "J", "C"},           // invalid reference
 		{4, "1", 0, 0, 0, 1, 1, 1, 1, 0x0800000008880000, "A", "C", "T", "G"},            // flip
@@ -208,17 +208,16 @@ func TestNormalizedVariantKey(t *testing.T) {
 		{2, "1", 0, 0, 0, 1, 1, 1, 1, 0x0800000008900000, "A", "G", "G", "A"},            // swap
 		{6, "1", 1, 1, 0, 1, 1, 1, 1, 0x0800000008880000, "A", "C", "G", "T"},            // swap + flip
 	}
+
 	for _, v := range ndata {
 		v := v
+
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
+
 			vk, code := gref.NormalizedVariantKey(v.chrom, v.pos, v.posindex, v.ref, v.alt)
-			if vk != v.vk {
-				t.Errorf("The VK is different, got: %#v expected %#v", vk, v.vk)
-			}
-			if code != v.code {
-				t.Errorf("The return code is different, got: %#v expected %#v", code, v.code)
-			}
+			require.Equal(t, v.vk, vk, "The VK is different, got: %#v expected %#v", vk, v.vk)
+			require.Equal(t, v.code, code, "The return code is different, got: %#v expected %#v", code, v.code)
 		})
 	}
 }

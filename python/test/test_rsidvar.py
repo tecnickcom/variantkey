@@ -145,7 +145,11 @@ class TestBenchmark(object):
 
     def setup():
         global rvmf, rvmc, rvnrows
-        bs.munmap_binfile(rvmf)
+        try:
+            rvmf
+            bs.munmap_binfile(rvmf)
+        except NameError:
+            pass
         inputfile = os.path.realpath(
             os.path.dirname(
                 os.path.realpath(__file__)) +
@@ -154,7 +158,11 @@ class TestBenchmark(object):
         if rvnrows <= 0:
             assert False, "Unable to open the rsvk.10.bin file"
         global vrmf, vrmc, vrnrows
-        bs.munmap_binfile(vrmf)
+        try:
+            vrmf
+            bs.munmap_binfile(vrmf)
+        except NameError:
+            pass
         inputfile = os.path.realpath(
             os.path.dirname(
                 os.path.realpath(__file__)) +

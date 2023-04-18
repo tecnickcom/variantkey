@@ -1,20 +1,19 @@
 package variantkey
 
-// main_test.go
-// @category   Libraries
-// @author     Nicola Asuni <info@tecnick.com>
-// @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
-// @license    MIT (see LICENSE)
-// @link       https://github.com/tecnickcom/variantkey
+import (
+	"os"
+	"testing"
 
-import "testing"
-import "os"
+	"github.com/stretchr/testify/require"
+)
 
-var gref, rvmf, rvmmf, vrmf, nrvkmf TMMFile
-var rv, rvm, vr RSIDVARCols
-var nrvk NRVKCols
-
-var retCode int
+//nolint:gochecknoglobals
+var (
+	gref, rvmf, rvmmf, vrmf, nrvkmf TMMFile
+	rv, rvm, vr                     RSIDVARCols
+	nrvk                            NRVKCols
+	retCode                         int
+)
 
 func closeTMMFile(mmf TMMFile) {
 	err := mmf.Close()
@@ -30,82 +29,91 @@ func TestMain(m *testing.M) {
 
 	rvmf, rv, err = MmapRSVKFile("../../c/test/data/rsvk.10.bin", []uint8{})
 	if err != nil {
-		os.Exit(2)
+		defer func() { os.Exit(1) }()
+		return
 	}
+
 	defer closeTMMFile(rvmf)
 
 	rvmmf, rvm, err = MmapRSVKFile("../../c/test/data/rsvk.m.10.bin", []uint8{})
 	if err != nil {
-		os.Exit(2)
+		defer func() { os.Exit(2) }()
+		return
 	}
+
 	defer closeTMMFile(rvmmf)
 
 	vrmf, vr, err = MmapVKRSFile("../../c/test/data/vkrs.10.bin", []uint8{})
 	if err != nil {
-		os.Exit(3)
+		defer func() { os.Exit(3) }()
+		return
 	}
+
 	defer closeTMMFile(vrmf)
 
 	nrvkmf, nrvk, err = MmapNRVKFile("../../c/test/data/nrvk.10.bin")
 	if err != nil {
-		os.Exit(4)
+		defer func() { os.Exit(4) }()
+		return
 	}
+
 	defer closeTMMFile(nrvkmf)
 
 	gref, err = MmapGenorefFile("../../c/test/data/genoref.bin")
 	if err != nil {
-		os.Exit(5)
+		defer func() { os.Exit(5) }()
+		return
 	}
+
 	defer closeTMMFile(gref)
 
 	retCode += m.Run()
 
-	os.Exit(retCode)
+	defer func() { os.Exit(retCode) }()
 }
 
 func TestClose(t *testing.T) {
+	t.Parallel()
+
 	lmf, err := MmapGenorefFile("../../c/test/data/test_data.bin")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	require.NoError(t, err)
+
 	err = lmf.Close()
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 }
 
 func TestCloseError(t *testing.T) {
+	t.Parallel()
+
 	lmf := TMMFile{}
 	err := lmf.Close()
-	if err == nil {
-		t.Errorf("An error was expected")
-	}
+	require.Error(t, err)
 }
 
 func TestMmapRSVKFileError(t *testing.T) {
+	t.Parallel()
+
 	_, _, err := MmapRSVKFile("error", []uint8{1})
-	if err == nil {
-		t.Errorf("An error was expected")
-	}
+	require.Error(t, err)
 }
 
 func TestMmapVKRSFileError(t *testing.T) {
+	t.Parallel()
+
 	_, _, err := MmapVKRSFile("error", []uint8{1})
-	if err == nil {
-		t.Errorf("An error was expected")
-	}
+	require.Error(t, err)
 }
 
 func TestMmapNRVKFileError(t *testing.T) {
+	t.Parallel()
+
 	_, _, err := MmapNRVKFile("error")
-	if err == nil {
-		t.Errorf("An error was expected")
-	}
+	require.Error(t, err)
 }
 
 func TestMmapGenorefFileError(t *testing.T) {
+	t.Parallel()
+
 	_, err := MmapGenorefFile("error")
-	if err == nil {
-		t.Errorf("An error was expected")
-	}
+	require.Error(t, err)
 }

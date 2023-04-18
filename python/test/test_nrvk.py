@@ -106,7 +106,11 @@ class TestBenchmark(object):
 
     def setup():
         global mf, mc, nrows
-        bs.munmap_binfile(mf)
+        try:
+            mf
+            bs.munmap_binfile(mf)
+        except NameError:
+            pass
         inputfile = os.path.realpath(
             os.path.dirname(
                 os.path.realpath(__file__)) +
