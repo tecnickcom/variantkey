@@ -7,6 +7,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	// RSIDVAR
+	// Lookup table for rsID to VariantKey.
+	// The input binary file can be generated using the resources/tools/rsvk.sh script.
+	// This example uses the "c/test/data/rsvk.10.bin".
+	rvFile = "../../c/test/data/rsvk.10.bin"
+
+	// RSIDVAR
+	// Lookup table for rsID to VariantKey.
+	// The input binary file can be generated using the resources/tools/rsvk.sh script.
+	// This example uses the "c/test/data/rsvk.m.10.bin".
+	rvmFile = "../../c/test/data/rsvk.m.10.bin"
+
+	// RSIDVAR
+	// Lookup table for VariantKey ro rsID
+	// The input binary file can be generated using the resources/tools/vkrs.sh script.
+	// This example uses the "c/test/data/vkrs.10.bin".
+	vkrsFile = "../../c/test/data/vkrs.10.bin"
+
+	// NRVK
+	// Lookup table for non-reversible variantkeys.
+	// The input binary files can be generated from a normalized VCF file using the resources/tools/nrvk.sh script.
+	// The VCF file can be normalized using the `resources/tools/vcfnorm.sh` script.
+	// This example uses the "c/test/data/nrvk.10.bin".
+	nrvkFile = "../../c/test/data/nrvk.10.bin"
+
+	// GENOREF
+	// Reference genome binary file.
+	// The input reference binary files can be generated from a FASTA file using the resources/tools/fastabin.sh script.
+	genorefFile = "../../c/test/data/genoref.bin"
+)
+
 //nolint:gochecknoglobals
 var (
 	gref, rvmf, rvmmf, vrmf, nrvkmf TMMFile
@@ -25,9 +57,12 @@ func closeTMMFile(mmf TMMFile) {
 func TestMain(m *testing.M) {
 	var err error
 
-	// memory map the input files
+	// memory map the input files.
 
-	rvmf, rv, err = MmapRSVKFile("../../c/test/data/rsvk.10.bin", []uint8{})
+	// RSIDVAR
+	// Load the lookup table for rsID to VariantKey.
+	// The input binary file can be generated using the resources/tools/rsvk.sh script.
+	rvmf, rv, err = MmapRSVKFile(rvFile, []uint8{})
 	if err != nil {
 		defer func() { os.Exit(1) }()
 		return
@@ -35,7 +70,10 @@ func TestMain(m *testing.M) {
 
 	defer closeTMMFile(rvmf)
 
-	rvmmf, rvm, err = MmapRSVKFile("../../c/test/data/rsvk.m.10.bin", []uint8{})
+	// RSIDVAR
+	// Load the lookup table for rsID to VariantKey.
+	// The input binary file can be generated using the resources/tools/rsvk.sh script.
+	rvmmf, rvm, err = MmapRSVKFile(rvmFile, []uint8{})
 	if err != nil {
 		defer func() { os.Exit(2) }()
 		return
@@ -43,7 +81,10 @@ func TestMain(m *testing.M) {
 
 	defer closeTMMFile(rvmmf)
 
-	vrmf, vr, err = MmapVKRSFile("../../c/test/data/vkrs.10.bin", []uint8{})
+	// RSIDVAR
+	// Load the lookup table for VariantKey ro rsID
+	// The input binary file can be generated using the resources/tools/vkrs.sh script.
+	vrmf, vr, err = MmapVKRSFile(vkrsFile, []uint8{})
 	if err != nil {
 		defer func() { os.Exit(3) }()
 		return
@@ -51,7 +92,11 @@ func TestMain(m *testing.M) {
 
 	defer closeTMMFile(vrmf)
 
-	nrvkmf, nrvk, err = MmapNRVKFile("../../c/test/data/nrvk.10.bin")
+	// NRVK
+	// Load the lookup table for non-reversible variantkeys.
+	// The input binary files can be generated from a normalized VCF file using the resources/tools/nrvk.sh script.
+	// The VCF file can be normalized using the `resources/tools/vcfnorm.sh` script.
+	nrvkmf, nrvk, err = MmapNRVKFile(nrvkFile)
 	if err != nil {
 		defer func() { os.Exit(4) }()
 		return
@@ -59,7 +104,10 @@ func TestMain(m *testing.M) {
 
 	defer closeTMMFile(nrvkmf)
 
-	gref, err = MmapGenorefFile("../../c/test/data/genoref.bin")
+	// GENOREF
+	// Load the reference genome binary file.
+	// The input reference binary files can be generated from a FASTA file using the resources/tools/fastabin.sh script.
+	gref, err = MmapGenorefFile(genorefFile)
 	if err != nil {
 		defer func() { os.Exit(5) }()
 		return
