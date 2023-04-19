@@ -78,7 +78,6 @@ help:
 	@echo "    make clean    : Remove any build artifact"
 	@echo "    make coverage : Generate the coverage report"
 	@echo "    make deps     : Get dependencies"
-	@echo "    make docs     : Generate static documentation"
 	@echo "    make format   : Format the source code"
 	@echo "    make linter   : Check code against multiple linters"
 	@echo "    make mod      : Download dependencies"
@@ -109,15 +108,7 @@ deps: ensuretarget
 	curl --silent --show-error --fail --location https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINUTIL) v1.52.2
 	$(GO) install github.com/rakyll/gotest
 	$(GO) install github.com/jstemmer/go-junit-report
-
-# Generate source docs
-.PHONY: docs
-docs: ensuretarget
-	$(GODOC) -url "http://localhost:6060/pkg/${CVSPATH}/${PROJECT}/cgo/src/" > $(TARGETDIR)/docs/index.html
-	sed -i 's|="/lib/godoc/|="|g' $(TARGETDIR)/docs/index.html
-	cp $(GOPATH)/src/golang.org/x/tools/godoc/static/*.js $(TARGETDIR)/docs/
-	cp $(GOPATH)/src/golang.org/x/tools/godoc/static/*.css $(TARGETDIR)/docs/
-	sed -i "s|\"/src/${CVSPATH}/${PROJECT}/|https://${CVSPATH}/${PROJECT}/blob/master/|g" $(TARGETDIR)/docs/index.html
+	$(GO) install golang.org/x/tools/cmd/godoc
 
 # Create the trget directories if missing
 .PHONY: ensuretarget

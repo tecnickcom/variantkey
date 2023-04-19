@@ -30,7 +30,7 @@ help:
 	@echo ""
 	@echo "    make build   : Build and test the library"
 	@echo "    make clean   : Remove any build artifact"
-	@echo "    make doc     : Generate documentation"
+	@echo "    make docs    : Generate documentation"
 	@echo "    make format  : Format the source code"
 	@echo "    make version : Set the version from VERSION file"
 	@echo "    make vbuild  : Build and test the library inside a virtualenv"
@@ -50,9 +50,9 @@ clean:
 	find . -type f -name '*.pyc' -exec rm -f {} \;
 
 # Generate source code documentation
-.PHONY: doc
-doc:
-	pydoc -p 1234 $(PROJECT)
+.PHONY: docs
+docs:
+	pydoc3 -p 1234 $(PROJECT)
 
 # Format the source code
 .PHONY: format

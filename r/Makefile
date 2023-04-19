@@ -33,10 +33,10 @@ help:
 	@echo "    make test    : Test the library"
 	@echo "    make format  : Format the source code"
 	@echo "    make clean   : Remove any build artifact"
-	@echo "    make devdoc  : Execute devtools::document()"
+	@echo "    make devdoc  : Generate documentation"
 	@echo ""
 
-all: clean format build test devdoc
+all: clean format build test
 
 # Set the version from VERSION file
 .PHONY: version
