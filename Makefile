@@ -34,6 +34,12 @@ CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 # Target directory
 TARGETDIR=$(CURRENTDIR)target
 
+# Docker command
+ifeq ($(DOCKER),)
+	DOCKER=docker
+endif
+
+
 # --- MAKE TARGETS ---
 
 # Display general help about this command
@@ -54,7 +60,7 @@ help:
 	@echo "    make tag          : Tag the Git repository"
 	@echo ""
 
-all: clean c go javascript python python-class r
+all: c go javascript python python-class r
 
 # Build and test the C version
 .PHONY: c
@@ -99,12 +105,17 @@ clean:
 
 # Build everything inside a Docker container
 .PHONY: dbuild
-dbuild:
-	@mkdir -p target
-	@rm -rf target/*
-	@echo 0 > target/make.exit
-	CVSPATH=$(CVSPATH) VENDOR=$(VENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' ./dockerbuild.sh
-	@exit `cat target/make.exit`
+dbuild: dockerdev
+	@mkdir -p $(TARGETDIR)
+	@rm -rf $(TARGETDIR)/*
+	@echo 0 > $(TARGETDIR)/make.exit
+	CVSPATH=$(CVSPATH) VENDOR=$(LCVENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' $(CURRENTDIR)dockerbuild.sh
+	@exit `cat $(TARGETDIR)/make.exit`
+
+# Build a base development Docker image
+.PHONY: dockerdev
+dockerdev:
+	$(DOCKER) build --pull --tag ${LCVENDOR}/dev_${PROJECT} --file ./resources/docker/Dockerfile.dev ./resources/docker/
 
 # Publish Documentation in GitHub (requires writing permissions)
 .PHONY: pubdocs

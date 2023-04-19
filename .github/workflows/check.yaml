@@ -49,9 +49,9 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v3
       - name: setup node build environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: '18'
       - name: install dependencies
         run: npm install --global uglify-js js-beautify
       - name: set RELEASE number
