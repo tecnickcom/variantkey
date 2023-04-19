@@ -1,2 +1,2 @@
-^.*\.Rproj$
-^\.Rproj\.user$
+^renv$
+^renv\.lock$

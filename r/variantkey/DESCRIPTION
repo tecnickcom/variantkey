@@ -14,4 +14,4 @@ Encoding: UTF-8
 LazyData: true
 NeedsCompilation: yes
 Suggests: testthat
-RoxygenNote: 6.1.0
+RoxygenNote: 7.2.3

@@ -4,7 +4,7 @@
 \alias{as.uint64.NULL}
 \title{Coerce from NULL to uint64.}
 \usage{
-\method{as.uint64}{NULL}(x, ...)
+\method{as.uint64}{`NULL`}(x, ...)
 }
 \arguments{
 \item{x}{NULL vector}

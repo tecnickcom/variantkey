@@ -5,8 +5,14 @@
 \title{Check if two regions are overlapping.
 Return 1 if the regions overlap, 0 otherwise.}
 \usage{
-AreOverlappingRegions(a_chrom, a_startpos, a_endpos, b_chrom, b_startpos,
-  b_endpos)
+AreOverlappingRegions(
+  a_chrom,
+  a_startpos,
+  a_endpos,
+  b_chrom,
+  b_startpos,
+  b_endpos
+)
 }
 \arguments{
 \item{a_chrom}{Region A chromosome code.}

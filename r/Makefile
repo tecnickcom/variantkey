@@ -4,6 +4,10 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
+# Install R in Ubuntu/Debian:
+# sudo apt install r-base libfontconfig1-dev libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+# sudo Rscript -e "install.packages(c('Rcpp', 'base', 'devtools', 'inline', 'pryr', 'renv', 'ragg', 'roxygen2', 'testthat', 'pkgdown', 'libgfortran-ng'), repos = 'http://cran.us.r-project.org')"
+
 # Project name
 PROJECT=variantkey
 
@@ -12,12 +16,6 @@ VERSION=$(shell cat ../VERSION)
 
 # Project release number (packaging build number)
 RELEASE=$(shell cat ../RELEASE)
-
-# Include conda channels
-include ../conda/channels.mk
-
-# Conda environment
-CONDA_ENV=../../env-${PROJECT}
 
 # Current directory
 CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -38,20 +36,24 @@ help:
 	@echo "    make devdoc  : Execute devtools::document()"
 	@echo ""
 
-all: clean format build
+all: clean format build test devdoc
 
 # Set the version from VERSION file
 .PHONY: version
 version:
-	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/r/meta.yaml
-	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/r/meta.yaml
 	sed -i "s/Version:.*$$/Version: $(VERSION).$(RELEASE)/" variantkey/DESCRIPTION
 
 # Build the library
 .PHONY: build
 build: version
-	../conda/setup-conda.sh
-	PROJECT_ROOT=${CURRENTDIR} ${CONDA_ENV}/bin/conda build --prefix-length 128 --no-anaconda-upload --override-channels $(ARTIFACTORY_CONDA_CHANNELS) ../conda/r
+	cd variantkey \
+	&& cp ../LICENSE . \
+	&& R -e 'renv::init();'
+	R -e 'renv::restore();setwd("./variantkey");library(devtools);library(roxygen2);pkgbuild::build();'
+
+.PHONY: test
+test:
+	R -e 'renv::restore();setwd("./variantkey");library(devtools);devtools::document();library(testthat);testthat::test_dir("tests")'
 
 # Format the source code
 .PHONY: format
@@ -66,8 +68,8 @@ format:
 .PHONY: clean
 clean:
 	rm -f variantkey.Rcheck variantkey/src/variantkey.o variantkey/src/variantkey.so
+	rm -rf renv variantkey/renv variantkey/.Rbuildignore variantkey/.Rprofile .Rprofile
 
 .PHONY: devdoc
 devdoc:
-	cd variantkey &&\
-	R -e "devtools::document()"
+	R -e 'renv::restore();library(devtools);setwd("./variantkey");devtools::document();'

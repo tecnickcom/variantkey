@@ -5,8 +5,12 @@
 \title{Get the next rsID for the specified VariantKey in the VR file, or 0 if not found
 This function can be called in a loop to get all rsIDs that are associated with the same VariantKey (if any).}
 \usage{
-GetNextVrRsidByVariantKey(vk, pos, last = vk.env$vkrs_$NROWS,
-  mc = vk.env$vkrs_$MC)
+GetNextVrRsidByVariantKey(
+  vk,
+  pos,
+  last = vk.env$vkrs_$NROWS,
+  mc = vk.env$vkrs_$MC
+)
 }
 \arguments{
 \item{vk}{VariantKey to search.}

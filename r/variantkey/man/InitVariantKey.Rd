@@ -5,8 +5,12 @@
 \title{Load the VariantKey support files.
 This should be the first function called in order to load the support files.}
 \usage{
-InitVariantKey(genoref_file = "", nrvk_file = "", rsvk_file = "",
-  vkrs_file = "")
+InitVariantKey(
+  genoref_file = "",
+  nrvk_file = "",
+  rsvk_file = "",
+  vkrs_file = ""
+)
 }
 \arguments{
 \item{genoref_file}{Name and path of the binary file containing the genome reference (fasta.bin). This file can be generated from a FASTA file using the resources/tools/fastabin.sh script.}

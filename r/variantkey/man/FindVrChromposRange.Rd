@@ -4,8 +4,14 @@
 \alias{FindVrChromposRange}
 \title{Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.}
 \usage{
-FindVrChromposRange(chrom, pos_min, pos_max, first = 0,
-  last = vk.env$vkrs_$NROWS, mc = vk.env$vkrs_$MC)
+FindVrChromposRange(
+  chrom,
+  pos_min,
+  pos_max,
+  first = 0,
+  last = vk.env$vkrs_$NROWS,
+  mc = vk.env$vkrs_$MC
+)
 }
 \arguments{
 \item{chrom}{Chromosome encoded number.}

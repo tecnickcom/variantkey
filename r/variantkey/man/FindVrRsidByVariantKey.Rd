@@ -4,8 +4,12 @@
 \alias{FindVrRsidByVariantKey}
 \title{Search for the specified VariantKey and returns the first occurrence of rsID in the VR file, or 0 if not found.}
 \usage{
-FindVrRsidByVariantKey(vk, first = 0, last = vk.env$vkrs_$NROWS,
-  mc = vk.env$vkrs_$MC)
+FindVrRsidByVariantKey(
+  vk,
+  first = 0,
+  last = vk.env$vkrs_$NROWS,
+  mc = vk.env$vkrs_$MC
+)
 }
 \arguments{
 \item{vk}{VariantKey.}
