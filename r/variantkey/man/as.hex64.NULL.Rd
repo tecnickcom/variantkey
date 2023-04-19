@@ -4,7 +4,7 @@
 \alias{as.hex64.NULL}
 \title{Coerce from NULL to hex64.}
 \usage{
-\method{as.hex64}{NULL}(x, ...)
+\method{as.hex64}{`NULL`}(x, ...)
 }
 \arguments{
 \item{x}{NULL vector}

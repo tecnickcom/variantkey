@@ -5,8 +5,13 @@
 \title{Search for the specified VariantKey and returns all the associated rsIDs in the VR file.
 NOTE: the output is limited to maximum 10 results.}
 \usage{
-FindAllVrRsidByVariantKey(vk, max = 10, first = 0,
-  last = vk.env$vkrs_$NROWS, mc = vk.env$vkrs_$MC)
+FindAllVrRsidByVariantKey(
+  vk,
+  max = 10,
+  first = 0,
+  last = vk.env$vkrs_$NROWS,
+  mc = vk.env$vkrs_$MC
+)
 }
 \arguments{
 \item{vk}{VariantKey to search.}

@@ -1,9 +1,13 @@
 **/*.o
 **/*.so
-**/.Rproj.user
-**/.Rhistory
 **/.RData
+**/.Rbuildignore
+**/.Rhistory
+**/.Rprofile
+**/.Rproj.user
+**/renv
+docs
 variantkey.Rcheck
 variantkey/LICENSE
 variantkey/libs
-docs
+variantkey_*.tar.gz

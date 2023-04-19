@@ -2,15 +2,13 @@
 
 *Numerical Encoding for Human Genetic Variants*
 
-[![Master Build Status](https://secure.travis-ci.org/tecnickcom/variantkey.png?branch=master)](https://travis-ci.org/tecnickcom/variantkey?branch=master)
+[![check](https://github.com/tecnickcom/variantkey/actions/workflows/check.yaml/badge.svg)](https://github.com/tecnickcom/variantkey/actions/workflows/check.yaml)
 [![Master Coverage Status](https://coveralls.io/repos/tecnickcom/variantkey/badge.svg?branch=master&service=github)](https://coveralls.io/github/tecnickcom/variantkey?branch=master)
 
 * **category**    Libraries
 * **author**      Nicola Asuni
-* **copyright**   2017-2019 [GENOMICS plc](https://www.genomicsplc.com/) - Nicola Asuni info@tecnick.com
 * **license**     MIT (see LICENSE)
 * **link**        https://github.com/tecnickcom/variantkey
-* **forked from** https://github.com/genomicsplc/variantkey
 
 -----------------------------------------------------------------
 

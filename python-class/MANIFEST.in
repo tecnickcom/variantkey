@@ -12,13 +12,3 @@ prune dist
 prune htmlcov
 recursive-exclude *.egg-info *
 recursive-include test *
-
-
-
-
-
-
-
-
-
-

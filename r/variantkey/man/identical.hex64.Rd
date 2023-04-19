@@ -4,8 +4,14 @@
 \alias{identical.hex64}
 \title{Identity function for class hex64.}
 \usage{
-identical.hex64(x, y, num.eq = FALSE, single.NA = FALSE,
-  attrib.as.set = TRUE, ignore.bytecode = TRUE)
+identical.hex64(
+  x,
+  y,
+  num.eq = FALSE,
+  single.NA = FALSE,
+  attrib.as.set = TRUE,
+  ignore.bytecode = TRUE
+)
 }
 \description{
 Identity function for class hex64.

@@ -4,8 +4,14 @@
 \alias{identical.uint64}
 \title{Identity function for class uint64.}
 \usage{
-identical.uint64(x, y, num.eq = FALSE, single.NA = FALSE,
-  attrib.as.set = TRUE, ignore.bytecode = TRUE)
+identical.uint64(
+  x,
+  y,
+  num.eq = FALSE,
+  single.NA = FALSE,
+  attrib.as.set = TRUE,
+  ignore.bytecode = TRUE
+)
 }
 \description{
 Identity function for class uint64.

@@ -4,8 +4,7 @@
 \alias{NormalizedVariantKey}
 \title{Create a normalized variantkey.}
 \usage{
-NormalizedVariantKey(chrom, pos, posindex, ref, alt,
-  mf = vk.env$genoref_$MF)
+NormalizedVariantKey(chrom, pos, posindex, ref, alt, mf = vk.env$genoref_$MF)
 }
 \arguments{
 \item{chrom}{Chromosome encoded number.}

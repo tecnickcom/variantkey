@@ -4,14 +4,35 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# CVS path (path to the parent dir containing the project)
-CVSPATH=github.com/tecnickcom
+SHELL=/bin/bash
+.SHELLFLAGS=-o pipefail -c
+
+# Project owner
+OWNER=Tecnick.com
 
 # Project vendor
 VENDOR=tecnickcom
 
+# Lowercase VENDOR name for Docker
+LCVENDOR=$(shell echo "${VENDOR}" | tr '[:upper:]' '[:lower:]')
+
+# CVS path (path to the parent dir containing the project)
+CVSPATH=github.com/${VENDOR}
+
 # Project name
 PROJECT=variantkey
+
+# Project version
+VERSION=$(shell cat VERSION)
+
+# Project release number (packaging build number)
+RELEASE=$(shell cat RELEASE)
+
+# Current directory
+CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+
+# Target directory
+TARGETDIR=$(CURRENTDIR)target
 
 # --- MAKE TARGETS ---
 
@@ -30,6 +51,7 @@ help:
 	@echo "    make r            : Build and test the R version"
 	@echo "    make clean        : Remove any build artifact"
 	@echo "    make dbuild       : Build everything inside a Docker container"
+	@echo "    make tag          : Tag the Git repository"
 	@echo ""
 
 all: clean c go javascript python python-class r
@@ -72,6 +94,7 @@ clean:
 	cd go && make clean
 	cd javascript && make clean
 	cd python && make clean
+	cd python-class && make clean
 	cd r && make clean
 
 # Build everything inside a Docker container
@@ -90,15 +113,15 @@ pubdocs:
 	rm -rf ./target/gh-pages
 	mkdir -p ./target/DOCS/c
 	cp -r ./c/target/build/doc/html/* ./target/DOCS/c/
-	mkdir -p ./target/DOCS/go
-	cp -r ./go/target/docs/* ./target/DOCS/go/
-	mkdir -p ./target/DOCS/python
-	cp -r ./python/target/doc/variantkey.html ./target/DOCS/python/
-	mkdir -p ./target/DOCS/python-class
-	cp -r ./python-class/target/doc/*.html ./target/DOCS/python-class/
-	mkdir -p ./target/DOCS/r
-	cp -r ./r/variantkey/docs/* ./target/DOCS/r/
-	cp ./resources/doc/index.html ./target/DOCS/
+	# mkdir -p ./target/DOCS/go
+	# cp -r ./go/target/docs/* ./target/DOCS/go/
+	# mkdir -p ./target/DOCS/python
+	# cp -r ./python/target/doc/variantkey.html ./target/DOCS/python/
+	# mkdir -p ./target/DOCS/python-class
+	# cp -r ./python-class/target/doc/*.html ./target/DOCS/python-class/
+	# mkdir -p ./target/DOCS/r
+	# cp -r ./r/variantkey/docs/* ./target/DOCS/r/
+	# cp ./resources/doc/index.html ./target/DOCS/
 	git clone git@github.com:tecnickcom/variantkey.git ./target/gh-pages
 	cd target/gh-pages && git checkout gh-pages
 	mv -f ./target/gh-pages/.git ./target/DOCS/
@@ -107,3 +130,9 @@ pubdocs:
 	git add . -A && \
 	git commit -m 'Update documentation' && \
 	git push origin gh-pages --force
+
+# Tag the Git repository
+.PHONY: tag
+tag:
+	git tag -a "v$(VERSION)" -m "Version $(VERSION)" && \
+	git push origin --tags

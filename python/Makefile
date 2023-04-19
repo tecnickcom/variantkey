@@ -4,6 +4,8 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
+SHELL=/bin/bash
+.SHELLFLAGS=-o pipefail -c
 
 # Project name
 PROJECT=variantkey
@@ -13,12 +15,6 @@ VERSION=$(shell cat ../VERSION)
 
 # Project release number (packaging build number)
 RELEASE=$(shell cat ../RELEASE)
-
-# Include conda channels
-include ../conda/channels.mk
-
-# Conda environment
-CONDA_ENV=../../env-${PROJECT}
 
 # Current directory
 CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -32,32 +28,31 @@ help:
 	@echo "${PROJECT} Python Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "    make test    : Run the unit tests against source code"
-	@echo "    make build   : Build and test a minified version of the library"
-	@echo "    make wheel   : Build a Wheel package"
-	@echo "    make format  : Format the source code"
+	@echo "    make build   : Build and test the library"
 	@echo "    make clean   : Remove any build artifact"
+	@echo "    make docs    : Generate documentation"
+	@echo "    make format  : Format the source code"
+	@echo "    make version : Set the version from VERSION file"
+	@echo "    make vbuild  : Build and test the library inside a virtualenv"
 	@echo ""
 
-all: clean build
+all: clean vbuild
 
-# Set the version from VERSION file
-.PHONY: version
-version:
-	sed -i "s/version:.*$$/version: $(VERSION)/" ../conda/python/meta.yaml
-	sed -i "s/number:.*$$/number: $(RELEASE)/" ../conda/python/meta.yaml
-	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
-
-# Build a minified version of the library
+# Build and test the package
 .PHONY: build
-build: version
-	../conda/setup-conda.sh
-	PROJECT_ROOT=${CURRENTDIR} ${CONDA_ENV}/bin/conda build --prefix-length 128 --no-anaconda-upload --override-channels $(ARTIFACTORY_CONDA_CHANNELS) ../conda/python
+build: clean version
+	pip install -e .[test] && python setup.py sdist bdist_wheel install test
 
-# Build a Wheel package
-.PHONY: wheel
-wheel: clean version
-	python3 setup.py sdist bdist_wheel
+# Remove any build artifact
+.PHONY: clean
+clean:
+	rm -rf venv target c Dockerfile htmlcov build dist .pytest_cache .cache .benchmarks ./test/*.so ./test/__pycache__ ./variantkey/__pycache__ ./variantkey.egg-info
+	find . -type f -name '*.pyc' -exec rm -f {} \;
+
+# Generate source code documentation
+.PHONY: docs
+docs:
+	pydoc3 -p 1234 $(PROJECT)
 
 # Format the source code
 .PHONY: format
@@ -66,8 +61,18 @@ format:
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.c'
 	black setup.py
 
-# Remove any build artifact
-.PHONY: clean
-clean:
-	rm -rf htmlcov build dist .cache .benchmarks tests/*.so tests/__pycache__ variantkey/__pycache__ variantkey.egg-info
-	find . -type f -name '*.pyc' -exec rm -f {} \;
+# Set the version from VERSION file
+.PHONY: version
+version:
+	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
+
+# Build and test the package
+.PHONY: vbuild
+vbuild: clean version
+	rm -rf venv
+	virtualenv -p /usr/bin/python3 venv
+	source venv/bin/activate \
+	&& python --version \
+	&& pip install --pre black \
+	&& pip install -e .[test] \
+	&& python setup.py sdist bdist_wheel install test
