@@ -54,7 +54,7 @@ setup(
         "Intended Audience :: Developers",
         "Programming Language :: Python",
     ],
-    install_requires=["numpy>=1.15.0", "variantkey>=5.5.0.0"],
+    install_requires=["numpy>=1.24.2", "variantkey>=5.5.0.0"],
     extras_require={
         "test": [
             "coverage",
