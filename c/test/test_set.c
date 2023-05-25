@@ -93,30 +93,30 @@ int test_order_uint64_t()
     int errors = 0;
     uint64_t tmp[10], arr[10] =
     {
-        0xfffffffffffffff0,
-        0xffffffff00000000,
-        0xffffffffffffffff,
-        0xffffffffff000000,
-        0xfffffffff0000000,
-        0xffffffffffffff00,
-        0xfffffffffff00000,
-        0x0000000000000000,
-        0xffffffffffff0000,
-        0xfffffffffffff000,
+        0xfffffffffffffff0, // 0
+        0xffffffff00000000, // 1
+        0xffffffffffffffff, // 2
+        0xffffffffff000000, // 3
+        0xfffffffff0000000, // 4
+        0xffffffffffffff00, // 5
+        0xfffffffffff00000, // 6
+        0x0000000000000000, // 7
+        0xffffffffffff0000, // 8
+        0xfffffffffffff000, // 9
     };
     uint32_t tdx[10], idx[10];
     uint64_t exp[10] =
     {
-        0x0000000000000000,
-        0xffffffff00000000,
-        0xfffffffff0000000,
-        0xffffffffff000000,
-        0xfffffffffff00000,
-        0xffffffffffff0000,
-        0xfffffffffffff000,
-        0xffffffffffffff00,
-        0xfffffffffffffff0,
-        0xffffffffffffffff,
+        0x0000000000000000, // 7
+        0xffffffff00000000, // 1
+        0xfffffffff0000000, // 4
+        0xffffffffff000000, // 3
+        0xfffffffffff00000, // 6
+        0xffffffffffff0000, // 8
+        0xfffffffffffff000, // 9
+        0xffffffffffffff00, // 5
+        0xfffffffffffffff0, // 0
+        0xffffffffffffffff, // 2
     };
     order_uint64_t(arr, tmp, idx, tdx, 10);
     uint32_t i;
@@ -128,7 +128,7 @@ int test_order_uint64_t()
             ++errors;
         }
     }
-    uint32_t edx[10] = {8,1,9,3,2,7,4,0,5,6};
+    uint32_t edx[10] = {7,1,4,3,6,8,9,5,0,2};
     for(i = 0; i < 10; i++)
     {
         if (idx[i] != edx[i])
