@@ -5,7 +5,7 @@ library(variantkey)
 # @category   Libraries
 # @author     Nicola Asuni <info@tecnick.com>
 # @link       https://github.com/tecnickcom/variantkey
-# @license    MIT (see LICENSE file)
+# @license    MIT [LICENSE](https://raw.githubusercontent.com/tecnickcom/variantkey/main/LICENSE)
 
 InitVariantKey(genoref_file = "../../../../c/test/data/genoref.bin")
 

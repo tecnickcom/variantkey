@@ -5,7 +5,7 @@ library(variantkey)
 # @category   Libraries
 # @author     Nicola Asuni <info@tecnick.com>
 # @link       https://github.com/tecnickcom/variantkey
-# @license    MIT (see LICENSE file)
+# @license    MIT [LICENSE](https://raw.githubusercontent.com/tecnickcom/variantkey/main/LICENSE)
 
 x <- rbind(
     list("0800c35093ace339",  "1", 100001, 0x00000004, 0x01, 0x01, "00000000100186a1", "00000000100186a2", "N", "A"),

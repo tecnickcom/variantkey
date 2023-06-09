@@ -47,7 +47,7 @@ version:
 .PHONY: build
 build: version
 	cd variantkey \
-	&& cp ../LICENSE . \
+	&& cp ../../LICENSE . \
 	&& R -e 'renv::init();'
 	R -e 'renv::restore();setwd("./variantkey");library(devtools);library(roxygen2);pkgbuild::build();'
 

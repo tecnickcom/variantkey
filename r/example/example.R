@@ -3,7 +3,7 @@
 # @category   Example
 # @author     Nicola Asuni <info@tecnick.com>
 # @link       https://github.com/tecnickcom/variantkey
-# @license    MIT (see LICENSE file)
+# @license    MIT [LICENSE](https://raw.githubusercontent.com/tecnickcom/variantkey/main/LICENSE)
 
 # Usage example for VariantKey R wrapper
 # https://github.com/tecnickcom/variantkey

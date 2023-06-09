@@ -5,7 +5,7 @@
 // @category   Libraries
 // @author     Nicola Asuni <info@tecnick.com>
 // @link       https://github.com/tecnickcom/variantkey
-// @license    MIT (see LICENSE file)
+// @license    MIT [LICENSE](https://raw.githubusercontent.com/tecnickcom/variantkey/main/LICENSE)
 
 #define MODULE_NAME "variantkey"
 #define PY_SSIZE_T_CLEAN  //!< Make "s#" use Py_ssize_t rather than int.
