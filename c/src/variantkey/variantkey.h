@@ -53,16 +53,54 @@ typedef struct vkrange_t
     uint64_t max; //!< Maximum VariantKey value for any given REF+ALT encoding
 } vkrange_t;
 
-/** @brief Returns chromosome numerical encoding.
+/** @brief Returns the encoding for a numerical chromosome input.
  *
  * @param chrom  Chromosome. An identifier from the reference genome, no white-space permitted.
  * @param size   Length of the chrom string, excluding the terminating null byte.
  *
  * @return CHROM code
  */
+static inline uint8_t encode_numeric_chrom(const char *chrom, size_t size)
+{
+    size_t i;
+    uint8_t v = (chrom[0] - '0');
+    for (i = 1; i < size; i++)
+    {
+        if ((chrom[i] > '9') || (chrom[i] < '0'))
+        {
+            return 0; // NA: a character that is not a numebr was found.
+        }
+        v = ((v * 10) + (chrom[i] - '0'));
+    }
+    return v;
+}
+
+
+/** @brief Returns a true value (1) if the input chrom has 'chr' prefix (case insensitive).
+ *
+ * @param chrom  Chromosome. An identifier from the reference genome, no white-space permitted.
+ * @param size   Length of the chrom string, excluding the terminating null byte.
+ *
+ * @return True (1) if the chr prefix is present.
+ */
+static inline int has_chrom_chr_prefix(const char *chrom, size_t size)
+{
+    return ((size > 3)
+            && ((chrom[0] == 'c') || (chrom[0] == 'C'))
+            && ((chrom[1] == 'h') || (chrom[1] == 'H'))
+            && ((chrom[2] == 'r') || (chrom[2] == 'R')));
+}
+
+/** @brief Returns chromosome numerical encoding.
+ *
+ * @param chrom  Chromosome. An identifier from the reference genome, no white-space permitted.
+ * @param size   Length of the chrom string, excluding the terminating null byte.
+ *
+ * @return CHROM code or 0 in case of invalid input.
+ */
 static inline uint8_t encode_chrom(const char *chrom, size_t size)
 {
-    // X > 23 ; Y > 24 ; M > 25
+    // X = 23; Y = 24; M = 25; any other letter is mapped to 0:
     static const uint8_t onecharmap[] =
     {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -76,12 +114,9 @@ static inline uint8_t encode_chrom(const char *chrom, size_t size)
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     };
-    // remove "chr" prefix
-    if ((size > 3)
-            && ((chrom[0] == 'c') || (chrom[0] == 'C'))
-            && ((chrom[1] == 'h') || (chrom[1] == 'H'))
-            && ((chrom[2] == 'r') || (chrom[2] == 'R')))
+    if (has_chrom_chr_prefix(chrom, size))
     {
+        // remove "chr" prefix
         chrom += 3;
         size -= 3;
     }
@@ -89,19 +124,9 @@ static inline uint8_t encode_chrom(const char *chrom, size_t size)
     {
         return 0;
     }
-    if ((chrom[0] <= '9') && (chrom[0] >= '0')) // Number
+    if ((chrom[0] <= '9') && (chrom[0] >= '0'))
     {
-        size_t i;
-        uint8_t v = (chrom[0] - '0');
-        for (i = 1; i < size; i++)
-        {
-            if ((chrom[i] > '9') || (chrom[i] < '0'))
-            {
-                return 0; // NA
-            }
-            v = ((v * 10) + (chrom[i] - '0'));
-        }
-        return v;
+        return encode_numeric_chrom(chrom, size);
     }
     if ((size == 1) || ((size == 2) && ((chrom[1] == 'T') || (chrom[1] == 't'))))
     {
