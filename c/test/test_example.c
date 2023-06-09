@@ -1,3 +1,12 @@
+// VariantKey
+//
+// test_example.c
+//
+// @category   Test
+// @author     Nicola Asuni <info@tecnick.com>
+// @link       https://github.com/tecnickcom/variantkey
+// @license    MIT (see LICENSE file)
+
 // Usage example for VariantKey
 // https://github.com/tecnickcom/variantkey
 

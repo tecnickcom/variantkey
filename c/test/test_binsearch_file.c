@@ -1,4 +1,11 @@
-// Nicola Asuni
+// binsearch
+//
+// test_binsearch_file.c
+//
+// @category   Test
+// @author     Nicola Asuni <info@tecnick.com>
+// @link       https://github.com/tecnickcom/binsearch
+// @license    MIT (see LICENSE file)
 
 #if __STDC_VERSION__ >= 199901L
 #define _XOPEN_SOURCE 600

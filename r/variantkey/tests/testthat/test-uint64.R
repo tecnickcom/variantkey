@@ -4,9 +4,8 @@ library(variantkey)
 # test-uint64.R
 # @category   Libraries
 # @author     Nicola Asuni <info@tecnick.com>
-# @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
-# @license    MIT (see LICENSE)
 # @link       https://github.com/tecnickcom/variantkey
+# @license    MIT (see LICENSE file)
 
 test_that("uint64Class", {
     res <- uint64(1)

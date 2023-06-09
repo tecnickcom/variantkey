@@ -4,9 +4,8 @@ library(variantkey)
 # test-esid.R
 # @category   Libraries
 # @author     Nicola Asuni <info@tecnick.com>
-# @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
-# @license    MIT (see LICENSE)
 # @link       https://github.com/tecnickcom/variantkey
+# @license    MIT (see LICENSE file)
 
 x <- rbind(
     list(36,  0, 10, "a411493515597619", "b3a5fdb8808cb7dc", "0123456789", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"),

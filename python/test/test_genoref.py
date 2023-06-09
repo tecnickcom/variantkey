@@ -1,11 +1,10 @@
 """Tests for variantkey genoref module."""
 
 # test_genoref.py
-# @category   Libraries
+# @category   Test
 # @author     Nicola Asuni <info@tecnick.com>
-# @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
-# @license    MIT (see LICENSE)
 # @link       https://github.com/tecnickcom/variantkey
+# @license    MIT (see LICENSE file)
 
 import variantkey as bs
 import os

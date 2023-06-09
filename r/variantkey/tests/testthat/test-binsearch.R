@@ -4,9 +4,8 @@ library(variantkey)
 # test-binsearch.R
 # @category   Libraries
 # @author     Nicola Asuni <info@tecnick.com>
-# @copyright  2017-2018 Nicola Asuni - Tecnick.com
-# @license    MIT (see LICENSE)
-# @link       https://github.com/tecnickcom/binsearch
+# @link       https://github.com/tecnickcom/variantkey
+# @license    MIT (see LICENSE file)
 
 test_that("MmapGenorefFile", {
     gref <<- MmapGenorefFile("../../../../c/test/data/genoref.bin")

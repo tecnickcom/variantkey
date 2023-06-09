@@ -4,9 +4,8 @@ library(variantkey)
 # test-regionkey.R
 # @category   Libraries
 # @author     Nicola Asuni <info@tecnick.com>
-# @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
-# @license    MIT (see LICENSE)
 # @link       https://github.com/tecnickcom/variantkey
+# @license    MIT (see LICENSE file)
 
 x <- rbind(
     list("1", 1000, 1100,  0,  1, 0,  "080001f400002260", "00000000100003e8", "000000001000044c"),

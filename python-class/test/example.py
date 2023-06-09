@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# @category   Example
+# @author     Nicola Asuni <info@tecnick.com>
+# @link       https://github.com/tecnickcom/variantkey
+# @license    MIT (see LICENSE file)
+
 # Usage example for VariantKey Python wrapper
 # https://github.com/tecnickcom/variantkey
 
