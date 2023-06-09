@@ -1,20 +1,25 @@
 # VariantKey
 
-*Numerical Encoding for Human Genetic Variants*
+This software library provides:
+
+* ***VariantKey***: a reversible numerical encoding schema for human genetic variants.
+* ***RegionKey***: a reversible numerical encoding schema for human genomic regions.
+* ***ESID***: a reversible numerical encoding schema for genetic string identifiers.
+* ***normalize_variant***: a function to normalize human genetic variants for a given genome reference.
 
 [![check](https://github.com/tecnickcom/variantkey/actions/workflows/check.yaml/badge.svg)](https://github.com/tecnickcom/variantkey/actions/workflows/check.yaml)
 [![Master Coverage Status](https://coveralls.io/repos/tecnickcom/variantkey/badge.svg?branch=master&service=github)](https://coveralls.io/github/tecnickcom/variantkey?branch=master)
 
 * **category**    Libraries
 * **author**      Nicola Asuni
-* **license**     MIT (see LICENSE)
+* **license**     [MIT](https://github.com/tecnickcom/variantkey/blob/main/LICENSE)
 * **link**        https://github.com/tecnickcom/variantkey
 
 -----------------------------------------------------------------
 
 **How to cite**
 
-Nicola Asuni. [VariantKey - A Reversible Numerical Representation of Human Genetic Variants](https://www.biorxiv.org/content/early/2018/11/19/473744.1)., bioRxiv 473744; doi: https://doi.org/10.1101/473744
+Nicola Asuni, Steven Wilder [VariantKey - A Reversible Numerical Representation of Human Genetic Variants](https://www.biorxiv.org/content/10.1101/473744v3), bioRxiv 473744; doi: [https://doi.org/10.1101/473744](https://doi.org/10.1101/473744).
 
 
 -----------------------------------------------------------------
@@ -47,15 +52,21 @@ Nicola Asuni. [VariantKey - A Reversible Numerical Representation of Human Genet
 <a name="description"></a>
 ## Description
 
+This software library provides:
+
+* ***VariantKey***: a reversible numerical encoding schema for human genetic variants.
+* ***RegionKey***: a reversible numerical encoding schema for human genomic regions.
+* ***ESID***: a reversible numerical encoding schema for genetic string identifiers.
+
 Human genetic variants are usually represented by four values with variable length: chromosome, position, reference and alternate alleles. There is no guarantee that these components are represented in a consistent way across different data sources, and processing variant-based data can be inefficient because four different comparison operations are needed for each variant, three of which are string comparisons. Working with strings, in contrast to numbers, poses extra challenges on computer memory allocation and data-representation. Existing variant identifiers do not typically  represent every possible variant we may be interested in, nor they are directly reversible.
 
 **VariantKey**, a novel reversible numerical encoding schema for human genetic variants, overcomes these limitations by allowing to process variants as a single 64 bit numeric entities while preserving the ability to be searched and sorted per chromosome and position.
 
 The individual components of short variants (up to 11 bases between `REF` and `ALT` alleles) can be directly read back from the VariantKey, while long variants requires a lookup table to retrieve the reference and alternate allele strings.
 
-The [VariantKey Format](#vkformat) doesn't represent universal codes, it only encodes `CHROM`, `POS`, `REF` and `ALT`, so each code is unique for a given reference genome. The direct comparisons of two VariantKeys makes sense only if they both refer to the same genome reference.
+The [VariantKey Format](#vkformat) doesn't represent universal codes, it only encodes normalized `CHROM`, `POS`, `REF` and `ALT`, so each code is unique for a given reference genome. The direct comparisons of two VariantKeys makes sense only if they both refer to the same genome reference.
 
-This software library can be used to generate and reverse [VariantKey](#vkformat)s and [RegionKey](#regionkey)s.
+This software library also provides other genetic variant-related tools.
 
 ----------
 
