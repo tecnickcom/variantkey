@@ -27,6 +27,11 @@ jobs:
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
         run: cd c && make version test build
+      - name: coverage report
+        uses: coverallsapp/github-action@v2
+        with:
+          format: lcov
+          file: c/target/test/coverage/variantkey.info
 
   go:
     runs-on: ubuntu-latest
