@@ -4,7 +4,7 @@ Upstream-Contact: Tecnick.com <info@tecnick.com>
 Source: https://github.com/tecnickcom/variantkey
 
 Files: *
-Copyright: Copyright 2017-2018 GENOMICS plc <support@genomicsplc.com> - 2017-2019 Nicola Asuni (binsearch)
+Copyright: Copyright 2017-2018 GENOMICS plc <support@genomicsplc.com> - 2018-2023 Nicola Asuni - Tecnick.com - 2017-2019 Nicola Asuni (binsearch.h)
 License: MIT
 
 License: MIT
