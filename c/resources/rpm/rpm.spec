@@ -10,7 +10,7 @@ Version:   %{_version}
 Release:   %{_release}%{?dist}
 Summary:   Numerical Encoding for Human Genetic Variants.
 
-Group:     Applications/Services
+Group:     Development/Libraries
 License:   %{_docpath}/LICENSE
 URL:       https://%{gh_cvspath}/%{gh_project}
 
