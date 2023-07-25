@@ -6,6 +6,7 @@
 **/.Rprofile
 **/.Rproj.user
 **/renv
+**/renv.lock
 docs
 variantkey.Rcheck
 variantkey/LICENSE
