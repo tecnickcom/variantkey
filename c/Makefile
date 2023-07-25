@@ -77,7 +77,7 @@ all: clean version format test tidy build rpm deb package_vk doc
 # Test C code compatibility with C++
 .PHONY: testcpp
 testcpp:
-	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++14 -x c++ -o /dev/null {} \;
+	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++17 -x c++ -o /dev/null {} \;
 
 # Build and run the unit tests
 .PHONY: test
