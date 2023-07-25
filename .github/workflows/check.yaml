@@ -114,7 +114,6 @@ jobs:
           cache-version: 2
           extra-packages: |
             any::Rcpp
-            any::base
             any::devtools
             any::inline
             any::pryr
