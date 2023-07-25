@@ -49,11 +49,11 @@ build: version
 	cd variantkey \
 	&& cp ../../LICENSE . \
 	&& R -e 'renv::settings$$snapshot.type("implicit");renv::init();renv::snapshot();'
-	R -e 'renv::restore();setwd("./variantkey");library(devtools);library(roxygen2);pkgbuild::build();'
+	R -e 'setwd("./variantkey");renv::restore();library(devtools);library(roxygen2);pkgbuild::build();'
 
 .PHONY: test
 test:
-	R -e 'renv::restore();setwd("./variantkey");library(devtools);devtools::document();library(testthat);testthat::test_dir("tests")'
+	R -e 'setwd("./variantkey");renv::restore();library(devtools);devtools::document();library(testthat);testthat::test_dir("tests")'
 
 # Format the source code
 .PHONY: format
@@ -67,9 +67,9 @@ format:
 # Remove any build artifact
 .PHONY: clean
 clean:
-	rm -f variantkey.Rcheck variantkey/src/variantkey.o variantkey/src/variantkey.so
+	rm -f variantkey.Rcheck variantkey/src/variantkey.o variantkey/src/variantkey.so variantkey/renv.lock
 	rm -rf renv variantkey/renv variantkey/.Rbuildignore variantkey/.Rprofile .Rprofile
 
 .PHONY: devdoc
 devdoc:
-	R -e 'renv::restore();library(devtools);setwd("./variantkey");devtools::document();'
+	R -e 'setwd("./variantkey");renv::restore();library(devtools);devtools::document();'
