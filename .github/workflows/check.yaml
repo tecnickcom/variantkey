@@ -9,7 +9,7 @@ on:
       - 'main'
 
 env:
-  NODE_VERSION: 14
+  NODE_VERSION: 18
   PYTHON_VERSION: 3.x
 
 permissions:
@@ -107,6 +107,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Install dependencies
         run: |
+          sudo apt update
           sudo apt install r-base libfontconfig1-dev libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
           sudo Rscript -e "install.packages(c('Rcpp', 'base', 'devtools', 'inline', 'pryr', 'renv', 'ragg', 'roxygen2', 'testthat', 'pkgdown', 'libgfortran-ng'), repos = 'http://cran.us.r-project.org')"
       - name: set RELEASE number
