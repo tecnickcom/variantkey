@@ -110,6 +110,7 @@ jobs:
       - name: Install dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          working-directory: './r/variantkey/'
           cache-version: 2
           extra-packages: |
             any::Rcpp
