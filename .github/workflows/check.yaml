@@ -118,11 +118,9 @@ jobs:
             any::inline
             any::pryr
             any::renv
-            any::ragg
             any::roxygen2
             any::testthat
             any::pkgdown
-            any::libgfortran-ng
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
