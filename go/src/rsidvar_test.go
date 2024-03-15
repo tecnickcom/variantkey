@@ -81,7 +81,7 @@ func TestFindAllRVVariantKeyByRsid(t *testing.T) {
 	t.Parallel()
 
 	vks := rvm.FindAllRVVariantKeyByRsid(0, rvm.NRows, 0x00000003)
-	require.Equal(t, 3, len(vks), "Expected len 3, got %d", len(vks))
+	require.Len(t, vks, 3)
 	require.Equal(t, uint64(0x80010274003A0000), vks[0], "Expected VariantKey 0x80010274003A0000, got %x", vks[0])
 	require.Equal(t, uint64(0x8001028D00138000), vks[1], "Expected VariantKey 0x8001028D00138000, got %x", vks[1])
 	require.Equal(t, uint64(0x80010299007A0000), vks[2], "Expected VariantKey 0x80010299007A0000, got %x", vks[2])
@@ -91,7 +91,7 @@ func TestFindAllRVVariantKeyByRsidNotFound(t *testing.T) {
 	t.Parallel()
 
 	vks := rvm.FindAllRVVariantKeyByRsid(0, rvm.NRows, 0x12345678)
-	require.Equal(t, 0, len(vks), "Expected len 0, got %d", len(vks))
+	require.Empty(t, vks)
 }
 
 func TestFindVRRsidByVariantKey(t *testing.T) {
@@ -147,7 +147,7 @@ func TestFindAllVRRsidByVariantKey(t *testing.T) {
 	t.Parallel()
 
 	rsid := vr.FindAllVRRsidByVariantKey(0, vr.NRows, 0x80010274003A0000)
-	require.Equal(t, 1, len(rsid), "Expected len 1, got %d", len(rsid))
+	require.Len(t, rsid, 1)
 	require.Equal(t, uint32(97), rsid[0], "Expected rsID 97, got %d", rsid[0])
 }
 
