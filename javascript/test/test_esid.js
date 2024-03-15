@@ -14,10 +14,10 @@ const {
     decodeStringID,
 } = require(process.argv[2]);
 
-var k_test_size = 36;
+const k_test_size = 36;
 // 0     1      2      3     4     5     6
 // size, start, esize, esid, hsid, estr, str
-var test_data = [
+const test_data = [
     [36,  0, 10, {"hi": 0xa4114935, "lo": 0x15597619}, {"hi": 0xb3a5fdb8, "lo": 0x808cb7dc}, "0123456789", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
     [36,  1, 10, {"hi": 0xa4524d45, "lo": 0x565d8661}, {"hi": 0xb3a5fdb8, "lo": 0x808cb7dc}, "123456789A", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
     [36, 10, 10, {"hi": 0xa8628e49, "lo": 0x669e8a6a}, {"hi": 0xd93e3820, "lo": 0x10f46f32}, "ABCDEFGHIJ", "0223456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
@@ -56,10 +56,10 @@ var test_data = [
     [ 0,  0,  0, {"hi": 0x00000000, "lo": 0x00000000}, {"hi": 0x80000000, "lo": 0x00000000}, "",           ""                                    ],
 ];
 
-var k_test_num_size = 60;
+const k_test_num_size = 60;
 // 0     1      2     3     4
 // size, esize, esid, estr, str
-var test_num_data = [
+const test_num_data = [
     [ 1,  1, {"hi": 0x16800000, "lo": 0x00000000}, ":",                     ":"],
     [ 1,  1, {"hi": 0x18400000, "lo": 0x00000000}, "A",                     "A"],
     [ 2,  2, {"hi": 0x285a0000, "lo": 0x00000000}, "A:",                    "A:"],

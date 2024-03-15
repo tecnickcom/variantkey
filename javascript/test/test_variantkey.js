@@ -28,9 +28,9 @@ const {
     reverseVariantKey,
 } = require(process.argv[2]);
 
-var k_test_size = 566;
+const k_test_size = 566;
 
-var test_data = [
+const test_data = [
     ["chr1", 268435455, "C", "T", {
         "hi": 0x0fffffff,
         "lo": 0x88b80000
@@ -2300,7 +2300,7 @@ var test_data = [
 function test_encodeChrom() {
     var errors = 0;
     var i, j, chrom;
-    chrom_data = [
+    const chrom_data = [
         ["", "NA", "XY", "1X", "1Y", "1M", "1MT", "chr", " 1", "1 "],
         ["1", "01", "001", "0001", "chr1", "CHR1", "chr01", "CHR01", "chr001", "CHR001"],
         ["2", "02", "002", "0002", "chr2", "CHR2", "chr02", "CHR02", "chr002", "CHR002"],
@@ -2344,7 +2344,7 @@ function test_decodeChrom() {
     var errors = 0;
     var i;
     var chrom;
-    chrom_data = [
+    const chrom_data = [
         "NA", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
         "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
         "21", "22", "X", "Y", "MT"
@@ -2368,8 +2368,8 @@ function test_encodeRefAlt() {
     var errors = 0;
     var i, j;
     var h;
-    input_data = ["A", "C", "N", "GT", "ACG", "ACGTa", "ACGTac", "ACGTacg", "ACGTacgt", "ACGTACGTAC", "ACGTacgtACGT"];
-    expected_data = [
+    const input_data = ["A", "C", "N", "GT", "ACG", "ACGTa", "ACGTac", "ACGTacg", "ACGTacgt", "ACGTACGTAC", "ACGTacgtACGT"];
+    const expected_data = [
         0x08800000, 0x08800000, 0x08880000, 0x08a00000, 0x2b524725,
         0x13ace339, 0x09160000, 0x10d80000, 0x09830000, 0x188c0000,
         0x0a836000, 0x288d8000, 0x0b036200, 0x308d8800, 0x0b836300,
@@ -2584,7 +2584,7 @@ function test_variantKeyRange() {
     var errors = 0;
     var i;
     var r;
-    var test_range_data = [
+    const test_range_data = [
         [1, 0, 268435455, {
             "hi": 0x08000000,
             "lo": 0x00000000
@@ -2779,7 +2779,7 @@ function test_compareVariantKeyChrom() {
     var errors = 0;
     var i;
     var r;
-    var test_cmp_data = [
+    const test_cmp_data = [
         [{
             "hi": 0x08027a3c,
             "lo": 0x08e80000
@@ -2816,7 +2816,7 @@ function test_compareVariantKeyChromPos() {
     var errors = 0;
     var i;
     var r;
-    var test_cmp_data = [
+    const test_cmp_data = [
         [{
             "hi": 0x08027a3c,
             "lo": 0x08e80000

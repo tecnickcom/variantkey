@@ -10,12 +10,12 @@
 
 function encodeChrom(chrom) {
     chrom = chrom.replace(/^chr/i, '');
-    var clen = chrom.length;
+    const clen = chrom.length;
     if (clen == 0) {
         return 0;
     }
     // X > 23 ; Y > 24 ; M > 25
-    var onecharmap = [
+    const onecharmap = [
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         /*                                     M                                 X   Y */
@@ -53,7 +53,7 @@ function decodeChrom(code) {
     if (code < 23) {
         return code.toString();
     }
-    var map = ['X', 'Y', 'MT'];
+    const map = ['X', 'Y', 'MT'];
     return map[(code - 23)];
 }
 
@@ -66,7 +66,7 @@ function encodeBase(c) {
       G > 2
       T > 3
     */
-    var map = [
+    const map = [
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
         4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
         /* A     C           G                                      T */
@@ -191,8 +191,8 @@ function encodeRefAltHash(ref, sizeref, alt, sizealt) {
 }
 
 function encodeRefAlt(ref, alt) {
-    var sizeref = ref.length >>> 0;
-    var sizealt = alt.length >>> 0;
+    const sizeref = ref.length >>> 0;
+    const sizealt = alt.length >>> 0;
     if ((sizeref + sizealt) <= 11) {
         var h = encodeRefAltRev(ref, sizeref, alt, sizealt);
         if (h != 0xffffffff) {
@@ -203,14 +203,14 @@ function encodeRefAlt(ref, alt) {
 }
 
 function decodeBase(code, bitpos) {
-    base = ['A', 'C', 'G', 'T'];
+    const base = ['A', 'C', 'G', 'T'];
     return base[((code >> bitpos) & 0x3)]; // 0x3 is the 2 bit mask [00000011]
 }
 
 function decodeRefAltRev(code) {
     code >>>= 0;
-    var sizeref = ((code & 0x78000000) >>> 27); // [01111000 00000000 00000000 00000000]
-    var sizealt = ((code & 0x07800000) >>> 23); // [00000111 10000000 00000000 00000000]
+    const sizeref = ((code & 0x78000000) >>> 27); // [01111000 00000000 00000000 00000000]
+    const sizealt = ((code & 0x07800000) >>> 23); // [00000111 10000000 00000000 00000000]
     var bitpos = 23;
     var ref = "";
     var alt = "";
@@ -381,7 +381,7 @@ function regionKey(chrom, startpos, endpos, strand) {
 }
 
 function extendRegionKey(rk, size) {
-    var drk = decodeRegionKey(rk);
+    const drk = decodeRegionKey(rk);
     drk.startpos = ((size >= drk.startpos) ? 0 : (drk.startpos - size));
     drk.endpos = (((0x0FFFFFFF - drk.endpos) <= size) ? 0x0FFFFFFF : (drk.endpos + size));
     return encodeRegionKey(drk.chrom, drk.startpos, drk.endpos, drk.strand);
@@ -556,10 +556,10 @@ function esdiDecodeStringID(size, esid) {
 }
 
 function decodeStringNumID(size, esid) {
-    var str = esdiDecodeStringID(size, esid);
-    var npad = (esid.lo >>> 27) & 7;
+    const str = esdiDecodeStringID(size, esid);
+    const npad = (esid.lo >>> 27) & 7;
+    const num = (esid.lo & 0x7FFFFFF);
     var numstr = '';
-    var num = (esid.lo & 0x7FFFFFF);
     if (num > 0) {
         numstr = num.toString();
     }
@@ -567,7 +567,7 @@ function decodeStringNumID(size, esid) {
 }
 
 function decodeStringID(esid) {
-    var size = (esid.hi >>> 28);
+    const size = (esid.hi >>> 28);
     if (size > 10) {
         return decodeStringNumID((size - 10), esid);
     }
