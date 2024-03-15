@@ -26,7 +26,7 @@ jobs:
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd c && make version test build
+        run: cd c && make version test
       - name: coverage report
         uses: coverallsapp/github-action@v2
         with:
