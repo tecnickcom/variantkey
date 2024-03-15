@@ -14,24 +14,28 @@ set -e -u +x
 # EXAMPLE USAGE:
 # CVSPATH=project VENDOR=vendorname PROJECT=projectname MAKETARGET=buildall ./dockerbuild.sh
 
-# Get vendor and project name
+# Variables (parameters).
 : ${CVSPATH:=project}
 : ${VENDOR:=vendor}
 : ${PROJECT:=project}
+: ${DOCKERTAG:=dev}
+: ${MAKETARGET:=all}
 : ${SSH_PRIVATE_KEY:=$(cat ~/.ssh/id_rsa || cat ~/.ssh/id_ed25519)}
 : ${SSH_PUBLIC_KEY:=$(cat ~/.ssh/id_rsa.pub || cat ~/.ssh/id_ed25519.pub)}
+: ${DOCKER:=$(which docker)}
+: ${DOCKERDEV:=${VENDOR}/dev_${PROJECT}:${DOCKERTAG}}
 
-# make target to execute
-: ${MAKETARGET:=all}
+# Build the base environment and keep it cached locally.
+${DOCKER} build --pull --tag ${DOCKERDEV} --file ./resources/docker/Dockerfile.dev ./resources/docker/
 
-# Define the project root path
+# Define the project root path.
 PRJPATH=/root/src/${CVSPATH}/${PROJECT}
 
 # Generate a temporary Dockerfile to build and test the project
 # NOTE: The exit status of the RUN command is stored to be returned later,
 #       so in case of error we can continue without interrupting this script.
 cat > Dockerfile.test <<- EOM
-FROM ${VENDOR}/dev_${PROJECT}
+FROM ${DOCKERDEV}
 ARG SSH_PRIVATE_KEY=""
 ARG SSH_PUBLIC_KEY=""
 RUN \\
@@ -50,25 +54,31 @@ mkdir -p /root/.ssh \\
 && echo "[url \"ssh://git@${CVSPATH}\"]" >> /root/.gitconfig \\
 && echo "	insteadOf = https://${CVSPATH}" >> /root/.gitconfig \\
 && mkdir -p ${PRJPATH}
-ADD ./ ${PRJPATH}
+COPY ./ ${PRJPATH}
 WORKDIR ${PRJPATH}
 RUN make ${MAKETARGET} || (echo \$? > target/make.exit)
+HEALTHCHECK CMD go version || exit 1
 EOM
 
-# Define the temporary Docker image name
-DOCKER_IMAGE_NAME=${VENDOR}/build_${PROJECT}
+# Define the temporary Docker image name.
+DOCKER_IMAGE_NAME=${VENDOR}/build_${PROJECT}:${DOCKERTAG}
 
-# Build the Docker image
-# BUILDKIT_PROGRESS=plain \
-docker build --build-arg SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}" --build-arg SSH_PUBLIC_KEY="${SSH_PUBLIC_KEY}" --no-cache --tag ${DOCKER_IMAGE_NAME} --file Dockerfile.test .
+# Build the Docker image.
+BUILDKIT_PROGRESS=plain \
+${DOCKER} build \
+--no-cache \
+--build-arg SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}" \
+--build-arg SSH_PUBLIC_KEY="${SSH_PUBLIC_KEY}" \
+--tag ${DOCKER_IMAGE_NAME} \
+--file Dockerfile.test .
 
-# Start a container using the newly created Docker image
+# Start a container using the newly created Docker image.
 CONTAINER_ID=$(docker run -d ${DOCKER_IMAGE_NAME})
 
-# Copy all build/test artifacts back to the host
-docker cp ${CONTAINER_ID}:"${PRJPATH}/target" ./
+# Copy all build/test artifacts back to the host.
+${DOCKER} cp ${CONTAINER_ID}:"${PRJPATH}/target" ./
 
-# Remove the temporary container and image
+# Remove the temporary container and image.
 rm -f Dockerfile.test
-docker rm -f ${CONTAINER_ID} || true
-docker rmi -f ${DOCKER_IMAGE_NAME} || true
+${DOCKER} rm -f ${CONTAINER_ID} || true
+${DOCKER} rmi -f ${DOCKER_IMAGE_NAME} || true
