@@ -1086,6 +1086,7 @@ func TestHex(t *testing.T) {
 
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
+
 			vs := Hex(v.vk)
 			require.Equal(t, v.vs, vs, "The variantkey string value is different, expected %#v got: %#v", v.vs, vs)
 		})

@@ -89,7 +89,7 @@ static inline int aztoupper(int c)
  *
  * @return void
  */
-static inline void prepend_char(const uint8_t pre, char *string, size_t *size)
+static inline void prepend_char(const char pre, char *string, size_t *size)
 {
     memmove(string + 1, string, (*size + 1));
     string[0] = pre;
@@ -112,7 +112,7 @@ static inline char get_genoref_seq(mmfile_t mf, uint8_t chrom, uint32_t pos)
     {
         return 0; // invalid position
     }
-    return *(mf.src + offset);
+    return  (char)*(mf.src + offset);
 }
 
 /**
@@ -137,13 +137,13 @@ static inline int check_reference(mmfile_t mf, uint8_t chrom, uint32_t pos, cons
     {
         return NORM_WRONGPOS;
     }
-    size_t i;
-    char uref, gref;
+    size_t i = 0;
+    char uref = 0, gref = 0;
     int ret = 0; // return value
     for (i = 0; i < sizeref; i++)
     {
-        uref = aztoupper(ref[i]);
-        gref = mf.src[(offset + i)];
+        uref = (char) aztoupper(ref[i]);
+        gref = (char) mf.src[(offset + i)];
         if (uref == gref)
         {
             continue;
@@ -241,7 +241,7 @@ static inline void flip_allele(char *allele, size_t size)
                               "00000000000000000000000000000000"
                               "00000000000000000000000000000000"
                               "00000000000000000000000000000000";
-    size_t i;
+    size_t i = 0;
     for (i = 0; i < size; i++)
     {
         allele[i] = map[((uint8_t)allele[i])];
@@ -258,7 +258,7 @@ static inline void swap_sizes(size_t *first, size_t *second)
 
 static inline void swap_alleles(char *first, size_t *sizefirst, char *second, size_t *sizesecond)
 {
-    char tmp[ALLELE_MAXSIZE];
+    char tmp[ALLELE_MAXSIZE] = "";
     strncpy(tmp, first, *sizefirst);
     strncpy(first, second, *sizesecond);
     strncpy(second, tmp, *sizefirst);
@@ -291,10 +291,10 @@ static inline void swap_alleles(char *first, size_t *sizefirst, char *second, si
  */
 static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, char *ref, size_t *sizeref, char *alt, size_t *sizealt)
 {
-    char left;
+    char left = 0;
     char fref[ALLELE_MAXSIZE];
     char falt[ALLELE_MAXSIZE];
-    int status;
+    int status = 0;
     status = check_reference(mf, chrom, *pos, ref, *sizeref);
     if (status == -2)
     {

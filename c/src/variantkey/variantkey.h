@@ -62,7 +62,7 @@ typedef struct vkrange_t
  */
 static inline uint8_t encode_numeric_chrom(const char *chrom, size_t size)
 {
-    size_t i;
+    size_t i = 0;
     uint8_t v = (chrom[0] - '0');
     for (i = 1; i < size; i++)
     {
@@ -185,7 +185,7 @@ static inline uint32_t encode_base(const uint8_t c)
 
 static inline int encode_allele(uint32_t *h, uint8_t *bitpos, const char *str, size_t size)
 {
-    uint32_t v;
+    uint32_t v = 0;
     while (size--)
     {
         v = encode_base(*str++);
@@ -258,6 +258,8 @@ static inline uint32_t pack_chars_tail(const char *str, size_t size)
     // fall through
     case 1:
         h ^= encode_packchar(*pos) << (1 + (5 * 5));
+    default:
+        break;
     }
     return h;
 }
@@ -527,7 +529,7 @@ static inline void variantkey_range(uint8_t chrom, uint32_t pos_min, uint32_t po
 
 static inline int8_t compare_uint64_t(uint64_t a, uint64_t b)
 {
-    return (a < b) ? -1 : (a > b);
+    return (a < b) ? -1 : (a > b); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
 }
 
 /** @brief Compares two VariantKeys by chromosome only.

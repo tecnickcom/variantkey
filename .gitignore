@@ -17,6 +17,7 @@
 .pytest_cache
 .tmp
 .venv
+.vscode
 /Dockerfile
 __pycache__
 build

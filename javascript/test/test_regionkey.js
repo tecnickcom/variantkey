@@ -29,10 +29,10 @@ const {
     variantKeyToRegionKey,
 } = require(process.argv[2]);
 
-var k_test_size = 10;
+const k_test_size = 10;
 // 0      1         2       3       4       5        6   7   8               9
 // chrom, startpos, endpos, strand, echrom, estrand, rk, rs, chrom_startpos, chrom_endpos
-var test_data = [
+const test_data = [
     [ "1", 1000, 1100,  0,  1, 0, {"hi": 0x080001f4, "lo": 0x00002260}, "080001f400002260", {"hi": 0x00000000, "lo": 0x100003e8}, {"hi": 0x00000000, "lo": 0x1000044c}],
     [ "2", 1001, 1201,  1,  2, 1, {"hi": 0x100001f4, "lo": 0x8000258a}, "100001f48000258a", {"hi": 0x00000000, "lo": 0x200003e9}, {"hi": 0x00000000, "lo": 0x200004b1}],
     [ "3", 1002, 1302, -1,  3, 2, {"hi": 0x180001f5, "lo": 0x000028b4}, "180001f5000028b4", {"hi": 0x00000000, "lo": 0x300003ea}, {"hi": 0x00000000, "lo": 0x30000516}],
@@ -45,10 +45,10 @@ var test_data = [
     ["MT", 1009, 2009,  0, 25, 0, {"hi": 0xc80001f8, "lo": 0x80003ec8}, "c80001f880003ec8", {"hi": 0x00000001, "lo": 0x900003f1}, {"hi": 0x00000001, "lo": 0x900007d9}],
 ];
 
-var k_test_overlap_size = 12;
+const k_test_overlap_size = 12;
 // 0        1           2         3     4     5        6           7         8     9
 // a_chrom, a_startpos, a_endpos, a_rk, a_vk, b_chrom, b_startpos, b_endpos, b_rk, res;
-test_overlap = [
+const test_overlap = [
     [ 1, 5,  7, {"hi": 0x08000002, "lo": 0x80000038}, {"hi": 0x08000002, "lo": 0x90920000},  2, 5, 7, {"hi": 0x10000002, "lo": 0x80000038}, false], // different chromosome
     [ 1, 0,  2, {"hi": 0x08000000, "lo": 0x00000010}, {"hi": 0x08000000, "lo": 0x10920000},  1, 3, 7, {"hi": 0x08000001, "lo": 0x80000038}, false], // -[-]|---|----
     [ 2, 1,  3, {"hi": 0x10000000, "lo": 0x80000018}, {"hi": 0x10000000, "lo": 0x90920000},  2, 3, 7, {"hi": 0x10000001, "lo": 0x80000038}, false], // --[-]---|----

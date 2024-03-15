@@ -13,9 +13,6 @@ OWNER=tecnickcom
 # Project vendor
 VENDOR=${OWNER}
 
-# Lowercase VENDOR name for Docker
-LCVENDOR=$(shell echo "${VENDOR}" | tr '[:upper:]' '[:lower:]')
-
 # CVS path (path to the parent dir containing the project)
 CVSPATH=github.com/${VENDOR}
 
@@ -27,9 +24,6 @@ VERSION=$(shell cat ../VERSION)
 
 # Project release number (packaging build number)
 RELEASE=$(shell cat ../RELEASE)
-
-# Name of RPM or DEB package
-PKGNAME=${LCVENDOR}-${PROJECT}
 
 # Current directory
 CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -50,10 +44,13 @@ endif
 export PATH := $(GOPATH)/bin:$(PATH)
 
 # Common commands
-GO=GOPATH=$(GOPATH) GOPRIVATE=$(CVSPATH) go
-GOFMT=GOPATH=$(GOPATH) gofmt
-GOTEST=GOPATH=$(GOPATH) gotest
-GODOC=GOPATH=$(GOPATH) godoc
+GO=GOPATH=$(GOPATH) GOPRIVATE=$(CVSPATH) $(shell which go)
+GOVERSION=${shell go version | grep -Po '(go[0-9]+.[0-9]+)'}
+GOFMT=$(shell which gofmt)
+GOTEST=GOPATH=$(GOPATH) $(shell which gotest)
+GODOC=GOPATH=$(GOPATH) $(shell which godoc)
+GOLANGCILINT=$(BINUTIL)/golangci-lint
+GOLANGCILINTVERSION=v1.56.2
 
 # Directory containing the source code
 SRCDIR=./src
@@ -85,12 +82,19 @@ help:
 	@echo "    make test     : Run unit tests"
 	@echo ""
 	@echo "Use DEVMODE=LOCAL for human friendly output."
+	@echo ""
 	@echo "To test and build everything from scratch:"
-	@echo "DEVMODE=LOCAL make format clean mod deps qa"
+	@echo "    DEVMODE=LOCAL make format clean mod deps qa"
+	@echo "or use the shortcut:"
+	@echo "    make x"
 	@echo ""
 
-# Alias for help target
-all: format clean mod deps qa
+all: x
+
+# Alias to test and build everything from scratch
+.PHONY: x
+x:
+	DEVMODE=LOCAL $(MAKE) format clean mod deps qa
 
 # Remove any build artifact
 .PHONY: clean
@@ -105,10 +109,9 @@ coverage: ensuretarget
 # Get the test dependencies
 .PHONY: deps
 deps: ensuretarget
-	curl --silent --show-error --fail --location https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINUTIL) v1.52.2
+	curl --silent --show-error --fail --location https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINUTIL) $(GOLANGCILINTVERSION)
 	$(GO) install github.com/rakyll/gotest
 	$(GO) install github.com/jstemmer/go-junit-report
-	$(GO) install golang.org/x/tools/cmd/godoc
 
 # Create the trget directories if missing
 .PHONY: ensuretarget
@@ -132,7 +135,7 @@ format:
 # Execute multiple linter tools
 .PHONY: linter
 linter:
-	$(BINUTIL)/golangci-lint run $(SRCDIR)/...
+	$(GOLANGCILINT) run $(SRCDIR)/...
 
 .PHONY: mod
 mod:

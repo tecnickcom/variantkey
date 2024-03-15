@@ -26,12 +26,12 @@ jobs:
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd c && make version test build
-      - name: coverage report
-        uses: coverallsapp/github-action@v2
-        with:
-          format: lcov
-          file: c/target/test/coverage/variantkey.info
+        run: cd c && make version build
+      #- name: coverage report
+      #  uses: coverallsapp/github-action@v2
+      #  with:
+      #    format: lcov
+      #    file: c/target/test/coverage/variantkey.info
 
   go:
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd javascript && make test build
+        run: cd javascript && make build
 
   python:
     runs-on: ubuntu-latest

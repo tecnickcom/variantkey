@@ -69,19 +69,19 @@
 #define RADIX_SORT_ITERATION_BLOCK(A, B, BYTE, SHIFT) \
     for (i = 0; i < nitems; i++) \
     { \
-        v = A[i]; \
-        B[c##BYTE[((v >> SHIFT) & 0xff)]++] = v; \
+        v = (A)[i]; \
+        (B)[c##BYTE[((v >> (SHIFT)) & 0xff)]++] = v; \
     }
 
 #define RADIX_SORT_ITERATION_INDEX_BLOCK(A, B, BYTE, SHIFT, ADX, BDX) \
     for (i = 0; i < nitems; i++) \
     { \
-        v = A[i]; \
-        t##BYTE = ((v >> SHIFT) & 0xff); \
+        v = (A)[i]; \
+        t##BYTE = ((v >> (SHIFT)) & 0xff); \
         j = c##BYTE[t##BYTE]; \
-        B[j] = v; \
+        (B)[j] = v; \
         c##BYTE[t##BYTE]++; \
-        ADX = BDX; \
+        (ADX) = (BDX); \
     }
 
 /**
@@ -115,7 +115,7 @@ static inline void sort_uint64_t(uint64_t *arr, uint64_t *tmp, uint32_t nitems)
  */
 static inline void order_uint64_t(uint64_t *arr, uint64_t *tmp, uint32_t *idx, uint32_t *tdx, uint32_t nitems)
 {
-    uint32_t j;
+    uint32_t j = 0;
     RADIX_SORT_COUNT_BLOCK
     RADIX_SORT_ITERATION_INDEX_BLOCK(arr, tmp, 7, 0, tdx[j], i)
     RADIX_SORT_ITERATION_INDEX_BLOCK(tmp, arr, 6, 8, idx[j], tdx[i])
@@ -136,7 +136,7 @@ static inline void order_uint64_t(uint64_t *arr, uint64_t *tmp, uint32_t *idx, u
 static inline void reverse_uint64_t(uint64_t *arr, uint64_t nitems)
 {
     uint64_t *last = (arr + nitems);
-    uint64_t tmp;
+    uint64_t tmp = 0;
     while ((arr != last) && (arr != --last))
     {
         tmp = *last;

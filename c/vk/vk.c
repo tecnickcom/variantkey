@@ -21,8 +21,8 @@ int main(int argc, char *argv[])
 {
     if (argc != 5)
     {
-        fprintf(stderr, "VariantKey Encoder %s\nUsage: vk CHROM POS REF ALT\n", VERSION);
+        (void) fprintf(stderr, "VariantKey Encoder %s\nUsage: vk CHROM POS REF ALT\n", VERSION);
         return 1;
     }
-    fprintf(stdout, "%016" PRIx64, variantkey(argv[1], strlen(argv[1]), strtoull(argv[2], NULL, 10), argv[3], strlen(argv[3]), argv[4], strlen(argv[4])));
+    (void) fprintf(stdout, "%016" PRIx64, variantkey(argv[1], strlen(argv[1]), strtoull(argv[2], NULL, 10), argv[3], strlen(argv[3]), argv[4], strlen(argv[4])));
 }
