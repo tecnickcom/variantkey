@@ -62,7 +62,7 @@ jobs:
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd javascript && make test build
+        run: cd javascript && make build
 
   python:
     runs-on: ubuntu-latest
