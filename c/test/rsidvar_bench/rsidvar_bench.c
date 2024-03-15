@@ -4,7 +4,6 @@
 //
 // @category   Tools
 // @author     Nicola Asuni <info@tecnick.com>
-// @copyright  2017-2018 GENOMICS plc <https://www.genomicsplc.com>
 // @license    MIT (see LICENSE)
 // @link       https://github.com/tecnickcom/variantkey
 //
@@ -34,12 +33,6 @@
 
 // NOTE: This test is slow because it generates the test files from scratch.
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,7 +47,7 @@
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
@@ -62,22 +55,22 @@ int benchmark_find_rv_variantkey_by_rsid()
 {
     const char *filename = "rsvk_test.bin";
 
-    uint32_t i;
+    uint32_t i = 0;
 
     FILE *f = fopen(filename, "we");
     if (f == NULL)
     {
-        fprintf(stderr, " * %s Unable to open %s file in writing mode.\n", __func__, filename);
+        (void) fprintf(stderr, " * %s Unable to open %s file in writing mode.\n", __func__, filename);
         return 1;
     }
-    uint8_t b0, b1, b2, b3, z = 0;
+    uint8_t b0 = 0, b1 = 0, b2 = 0, b3 = 0, z = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         b0 = i & 0xFF;
         b1 = (i >> 8) & 0xFF;
         b2 = (i >> 16) & 0xFF;
         b3 = (i >> 24) & 0xFF;
-        fprintf(f, "%c%c%c%c", b0, b1, b2, b3);
+        (void) fprintf(f, "%c%c%c%c", b0, b1, b2, b3);
     }
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
@@ -85,9 +78,9 @@ int benchmark_find_rv_variantkey_by_rsid()
         b1 = (i >> 8) & 0xFF;
         b2 = (i >> 16) & 0xFF;
         b3 = (i >> 24) & 0xFF;
-        fprintf(f, "%c%c%c%c%c%c%c%c", b0, b1, b2, b3, z, z, z, z);
+        (void) fprintf(f, "%c%c%c%c%c%c%c%c", b0, b1, b2, b3, z, z, z, z);
     }
-    fclose(f);
+    (void) fclose(f);
 
     mmfile_t rv = {0};
     rv.ncols = 2;
@@ -97,13 +90,13 @@ int benchmark_find_rv_variantkey_by_rsid()
     mmap_rsvk_file(filename, &rv, &crv);
     if (crv.nrows != TEST_DATA_SIZE)
     {
-        fprintf(stderr, " * %s Expecting rsvk_test.bin %" PRIu64 " items, got instead: %" PRIu64 "\n", __func__, TEST_DATA_SIZE, crv.nrows);
+        (void) fprintf(stderr, " * %s Expecting rsvk_test.bin %" PRIu64 " items, got instead: %" PRIu64 "\n", __func__, TEST_DATA_SIZE, crv.nrows);
         return 1;
     }
 
-    uint64_t tstart, tend, offset;
+    uint64_t tstart = 0, tend = 0, offset = 0;
     volatile uint64_t sum = 0;
-    uint64_t first;
+    uint64_t first = 0;
 
     tstart = get_time();
     for (i=0 ; i < TEST_DATA_SIZE; i++)
@@ -112,9 +105,9 @@ int benchmark_find_rv_variantkey_by_rsid()
     }
     tend = get_time();
     offset = (tend - tstart);
-    fprintf(stdout, " * %s sum: %" PRIu64 "\n", __func__, sum);
+    (void) fprintf(stdout, " * %s sum: %" PRIu64 "\n", __func__, sum);
 
-    int j;
+    int j =0;
     for (j=0 ; j < 3; j++)
     {
         sum = 0;
@@ -125,7 +118,7 @@ int benchmark_find_rv_variantkey_by_rsid()
             sum += find_rv_variantkey_by_rsid(crv, &first, crv.nrows, i);
         }
         tend = get_time();
-        fprintf(stdout, "   * %s %d. sum: %" PRIu64 " -- time: %" PRIu64 " ns -- %" PRIu64 " ns/op\n", __func__, j, sum, (tend - tstart - offset), (tend - tstart - offset)/TEST_DATA_SIZE);
+        (void) fprintf(stdout, "   * %s %d. sum: %" PRIu64 " -- time: %" PRIu64 " ns -- %" PRIu64 " ns/op\n", __func__, j, sum, (tend - tstart - offset), (tend - tstart - offset)/TEST_DATA_SIZE);
     }
     return 0;
 }
@@ -134,22 +127,22 @@ int benchmark_find_vr_rsid_by_variantkey()
 {
     const char *filename = "vkrs_test.bin";
 
-    uint64_t i;
+    uint64_t i = 0;
 
     FILE *f = fopen(filename, "we");
     if (f == NULL)
     {
-        fprintf(stderr, " * %s Unable to open %s file in writing mode.\n", __func__, filename);
+        (void) fprintf(stderr, " * %s Unable to open %s file in writing mode.\n", __func__, filename);
         return 1;
     }
-    uint8_t b0, b1, b2, b3, z = 0;
+    uint8_t b0 = 0, b1 = 0, b2 = 0, b3 = 0, z = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         b0 = i & 0xFF;
         b1 = (i >> 8) & 0xFF;
         b2 = (i >> 16) & 0xFF;
         b3 = (i >> 24) & 0xFF;
-        fprintf(f, "%c%c%c%c%c%c%c%c", b0, b1, b2, b3, z, z, z, z);
+        (void) fprintf(f, "%c%c%c%c%c%c%c%c", b0, b1, b2, b3, z, z, z, z);
     }
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
@@ -157,9 +150,9 @@ int benchmark_find_vr_rsid_by_variantkey()
         b1 = (i >> 8) & 0xFF;
         b2 = (i >> 16) & 0xFF;
         b3 = (i >> 24) & 0xFF;
-        fprintf(f, "%c%c%c%c", b0, b1, b2, b3);
+        (void) fprintf(f, "%c%c%c%c", b0, b1, b2, b3);
     }
-    fclose(f);
+    (void) fclose(f);
 
     mmfile_t vr = {0};
     vr.ncols = 2;
@@ -169,13 +162,13 @@ int benchmark_find_vr_rsid_by_variantkey()
     mmap_vkrs_file(filename, &vr, &cvr);
     if (cvr.nrows != TEST_DATA_SIZE)
     {
-        fprintf(stderr, " * %s Expecting vkrs_test_400M.bin %" PRIu64 " items, got instead: %" PRIu64 "\n", __func__, TEST_DATA_SIZE, cvr.nrows);
+        (void) fprintf(stderr, " * %s Expecting vkrs_test_400M.bin %" PRIu64 " items, got instead: %" PRIu64 "\n", __func__, TEST_DATA_SIZE, cvr.nrows);
         return 1;
     }
 
-    uint64_t tstart, tend, offset;
+    uint64_t tstart = 0, tend = 0, offset = 0;
     volatile uint64_t sum = 0;
-    uint64_t first;
+    uint64_t first = 0;
 
     tstart = get_time();
     for (i=0 ; i < TEST_DATA_SIZE; i++)
@@ -184,9 +177,9 @@ int benchmark_find_vr_rsid_by_variantkey()
     }
     tend = get_time();
     offset = (tend - tstart);
-    fprintf(stdout, " * %s sum: %" PRIu64 "\n", __func__, sum);
+    (void) fprintf(stdout, " * %s sum: %" PRIu64 "\n", __func__, sum);
 
-    int j;
+    int j = 0;
     for (j=0 ; j < 3; j++)
     {
         sum = 0;
@@ -197,7 +190,7 @@ int benchmark_find_vr_rsid_by_variantkey()
             sum += find_vr_rsid_by_variantkey(cvr, &first, cvr.nrows, i);
         }
         tend = get_time();
-        fprintf(stdout, "   * %s %d. sum: %" PRIu64 " -- time: %" PRIu64 " ns -- %" PRIu64 " ns/op\n", __func__, j, sum, (tend - tstart - offset), (tend - tstart - offset)/TEST_DATA_SIZE);
+        (void) fprintf(stdout, "   * %s %d. sum: %" PRIu64 " -- time: %" PRIu64 " ns -- %" PRIu64 " ns/op\n", __func__, j, sum, (tend - tstart - offset), (tend - tstart - offset)/TEST_DATA_SIZE);
     }
     return 0;
 }

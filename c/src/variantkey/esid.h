@@ -40,9 +40,9 @@ static inline uint64_t esid_encode_char(int c)
     return (uint64_t)(c - ESID_SHIFT);
 }
 
-static inline uint8_t esid_decode_char(uint64_t esid, size_t pos)
+static inline char esid_decode_char(uint64_t esid, size_t pos)
 {
-    return (uint8_t)(((esid >> pos) & 0x3f) + ESID_SHIFT); // 0x3f hex = 63 dec = 00111111 bin
+    return (char)(((esid >> pos) & 0x3f) + ESID_SHIFT); // 0x3f hex = 63 dec = 00111111 bin
 }
 
 /**
@@ -71,31 +71,33 @@ static inline uint64_t encode_string_id(const char *str, size_t size, size_t sta
         h |= esid_encode_char(*pos--);
     // fall through
     case 9:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 1);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 1);
     // fall through
     case 8:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 2);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 2);
     // fall through
     case 7:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 3);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 3);
     // fall through
     case 6:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 4);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 4);
     // fall through
     case 5:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 5);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 5);
     // fall through
     case 4:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 6);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 6);
     // fall through
     case 3:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 7);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 7);
     // fall through
     case 2:
-        h |= esid_encode_char(*pos--) << (ESID_CHARBIT * 8);
+        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 8);
     // fall through
     case 1:
-        h |= esid_encode_char(*pos) << (ESID_CHARBIT * 9);
+        h |= esid_encode_char(*pos) << (size_t)(ESID_CHARBIT * 9);
+    default:
+        break;
     }
     return h;
 }
@@ -122,8 +124,8 @@ static inline uint64_t encode_string_num_id(const char *str, size_t size, char s
     uint32_t num = 0;
     uint8_t nchr = 0, npad = 0;
     uint8_t bitpos = ESID_SHIFTPOS;
-    int c;
-    while ((c = *str++) && (size--))
+    int c = 0;
+    while ((c = (unsigned char) *str++) && (size--))
     {
         if (c == sep)
         {
@@ -137,7 +139,7 @@ static inline uint64_t encode_string_num_id(const char *str, size_t size, char s
         }
     }
     h |= ((uint64_t)(nchr + ESID_MAXLEN) << ESID_SHIFTPOS); // 4 bit for string length
-    while (((c = *str++) == '0') && (npad < ESID_MAXPAD) && (size--))
+    while (((c = (unsigned char) *str++) == '0') && (npad < ESID_MAXPAD) && (size--))
     {
         npad++;
     }
@@ -145,7 +147,7 @@ static inline uint64_t encode_string_num_id(const char *str, size_t size, char s
     while ((c >= '0') && (c <= '9') && (size--))
     {
         num = ((num * 10) + (c - '0'));
-        c = *str++;
+        c = (unsigned char) *str++;
     }
     h |= ((uint64_t)num & 0x7FFFFFF); // 27 bit for number
     return h;
@@ -156,34 +158,36 @@ static inline size_t esid_decode_string_id(size_t size, uint64_t esid, char *str
     switch (size)
     {
     case 10:
-        str[9] = esid_decode_char(esid, 0);
+        str[9] = esid_decode_char(esid, (size_t)0);
     // fall through
     case 9:
-        str[8] = esid_decode_char(esid, (ESID_CHARBIT * 1));
+        str[8] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 1));
     // fall through
     case 8:
-        str[7] = esid_decode_char(esid, (ESID_CHARBIT * 2));
+        str[7] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 2));
     // fall through
     case 7:
-        str[6] = esid_decode_char(esid, (ESID_CHARBIT * 3));
+        str[6] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 3));
     // fall through
     case 6:
-        str[5] = esid_decode_char(esid, (ESID_CHARBIT * 4));
+        str[5] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 4));
     // fall through
     case 5:
-        str[4] = esid_decode_char(esid, (ESID_CHARBIT * 5));
+        str[4] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 5));
     // fall through
     case 4:
-        str[3] = esid_decode_char(esid, (ESID_CHARBIT * 6));
+        str[3] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 6));
     // fall through
     case 3:
-        str[2] = esid_decode_char(esid, (ESID_CHARBIT * 7));
+        str[2] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 7));
     // fall through
     case 2:
-        str[1] = esid_decode_char(esid, (ESID_CHARBIT * 8));
+        str[1] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 8));
     // fall through
     case 1:
-        str[0] = esid_decode_char(esid, (ESID_CHARBIT * 9));
+        str[0] = esid_decode_char(esid, (size_t)(ESID_CHARBIT * 9));
+    default:
+        break;
     }
     str[size] = 0;
     return size;

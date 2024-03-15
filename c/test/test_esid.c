@@ -9,12 +9,6 @@
 
 // Test for esid
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -27,7 +21,7 @@
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
@@ -40,7 +34,7 @@ typedef struct esid_data_t
     uint64_t hsid;
     const char estr[11];
     const char str[37];
-} esid_data_t;
+} __attribute__((packed)) __attribute__((aligned(128))) esid_data_t;
 
 static const int k_esid_data_size = 36;
 
@@ -91,7 +85,7 @@ typedef struct esid_num_data_t
     uint64_t esid;
     const char estr[30];
     const char str[30];
-} esid_num_data_t;
+} __attribute__((packed)) __attribute__((aligned(128))) esid_num_data_t;
 
 static const int k_esid_num_data_size = 60;
 
@@ -161,15 +155,15 @@ static const esid_num_data_t esid_num_data[] =
 
 int test_encode_string_id()
 {
-    int i;
+    int i = 0;
     int errors = 0;
-    uint64_t esid;
+    uint64_t esid = 0;
     for (i=0 ; i < k_esid_data_size; i++)
     {
         esid = encode_string_id(esid_data[i].str, esid_data[i].size, esid_data[i].start);
         if (esid != esid_data[i].esid)
         {
-            fprintf(stderr, "%s (%d): Expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, esid_data[i].esid, esid);
+            (void) fprintf(stderr, "%s (%d): Expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, esid_data[i].esid, esid);
             ++errors;
         }
     }
@@ -178,9 +172,9 @@ int test_encode_string_id()
 
 void benchmark_encode_string_id()
 {
-    uint64_t esid;
-    uint64_t tstart, tend;
-    int i;
+    uint64_t esid = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -188,20 +182,20 @@ void benchmark_encode_string_id()
         esid = encode_string_id("ABC0123456", 10, 0);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
 }
 
 int test_encode_string_num_id()
 {
-    int i;
+    int i = 0;
     int errors = 0;
-    uint64_t esid;
+    uint64_t esid = 0;
     for (i=0 ; i < k_esid_num_data_size; i++)
     {
         esid = encode_string_num_id(esid_num_data[i].str, esid_num_data[i].size, ':');
         if (esid != esid_num_data[i].esid)
         {
-            fprintf(stderr, "%s (%d): Expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, esid_num_data[i].esid, esid);
+            (void) fprintf(stderr, "%s (%d): Expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, esid_num_data[i].esid, esid);
             ++errors;
         }
     }
@@ -210,9 +204,9 @@ int test_encode_string_num_id()
 
 void benchmark_encode_string_num_id()
 {
-    uint64_t esid;
-    uint64_t tstart, tend;
-    int i;
+    uint64_t esid = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -220,26 +214,26 @@ void benchmark_encode_string_num_id()
         esid = encode_string_num_id("AbCDE:000012345", 15, ':');
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
 }
 
 int test_decode_string_id()
 {
-    int i;
+    int i = 0;
     int errors = 0;
     char esid[11];
-    size_t size;
+    size_t size = 0;
     for (i=0 ; i < k_esid_data_size; i++)
     {
         size = decode_string_id(esid_data[i].esid, esid);
         if (strcmp(esid, esid_data[i].estr) != 0)
         {
-            fprintf(stderr, "%s (%d): Expected %s, got %s\n", __func__, i, esid_data[i].estr, esid);
+            (void) fprintf(stderr, "%s (%d): Expected %s, got %s\n", __func__, i, esid_data[i].estr, esid);
             ++errors;
         }
         if (size != esid_data[i].esize)
         {
-            fprintf(stderr, "%s (%d): Expected size %lu, got %lu\n", __func__, i, esid_data[i].esize, size);
+            (void) fprintf(stderr, "%s (%d): Expected size %lu, got %lu\n", __func__, i, esid_data[i].esize, size);
             ++errors;
         }
     }
@@ -249,9 +243,9 @@ int test_decode_string_id()
 void benchmark_decode_string_id()
 {
     char esid[11] = "";
-    size_t len;
-    uint64_t tstart, tend;
-    int i;
+    size_t len = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -259,26 +253,26 @@ void benchmark_decode_string_id()
         len = decode_string_id(0x08628e49669e8a6a, esid);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%lu)\n", __func__, (tend - tstart)/size, len);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%lu)\n", __func__, (tend - tstart)/size, len);
 }
 
 int test_decode_string_num_id()
 {
-    int i;
+    int i = 0;
     int errors = 0;
     char esid[30];
-    size_t size;
+    size_t size = 0;
     for (i=0 ; i < k_esid_num_data_size; i++)
     {
         size = decode_string_id(esid_num_data[i].esid, esid);
         if (strcmp(esid, esid_num_data[i].estr) != 0)
         {
-            fprintf(stderr, "%s (%d): Expected %s, got %s\n", __func__, i, esid_num_data[i].estr, esid);
+            (void) fprintf(stderr, "%s (%d): Expected %s, got %s\n", __func__, i, esid_num_data[i].estr, esid);
             ++errors;
         }
         if (size != esid_num_data[i].esize)
         {
-            fprintf(stderr, "%s (%d): Expected size %lu, got %lu\n", __func__, i, esid_num_data[i].esize, size);
+            (void) fprintf(stderr, "%s (%d): Expected size %lu, got %lu\n", __func__, i, esid_num_data[i].esize, size);
             ++errors;
         }
     }
@@ -288,9 +282,9 @@ int test_decode_string_num_id()
 void benchmark_decode_string_num_id()
 {
     char esid[30] = "";
-    size_t len;
-    uint64_t tstart, tend;
-    int i;
+    size_t len = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -298,20 +292,20 @@ void benchmark_decode_string_num_id()
         len = decode_string_id(0xf8628e4978bc614e, esid);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%lu)\n", __func__, (tend - tstart)/size, len);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%lu)\n", __func__, (tend - tstart)/size, len);
 }
 
 int test_hash_string_id()
 {
-    int i;
+    int i = 0;
     int errors = 0;
-    uint64_t hsid;
+    uint64_t hsid = 0;
     for (i=0 ; i < k_esid_data_size; i++)
     {
         hsid = hash_string_id(esid_data[i].str, esid_data[i].size);
         if (hsid != esid_data[i].hsid)
         {
-            fprintf(stderr, "%s (%d): Expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, esid_data[i].hsid, hsid);
+            (void) fprintf(stderr, "%s (%d): Expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, esid_data[i].hsid, hsid);
             ++errors;
         }
     }
@@ -320,9 +314,9 @@ int test_hash_string_id()
 
 void benchmark_hash_string_id()
 {
-    uint64_t hsid;
-    uint64_t tstart, tend;
-    int i;
+    uint64_t hsid = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -330,7 +324,7 @@ void benchmark_hash_string_id()
         hsid = hash_string_id("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 36);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, hsid);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, hsid);
 }
 
 int main()

@@ -9,12 +9,6 @@
 
 // Test for genoref
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,27 +21,27 @@
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
 int test_aztoupper()
 {
     int errors = 0;
-    int i, c;
+    int i = 0, c = 0;
     for (i=97 ; i <= 122; i++)
     {
         c = aztoupper(i);
         if (c != (i - 32))
         {
-            fprintf(stderr, "%s : Wrong uppercase value for %d - expecting %d, got %d\n", __func__, i, (i - 32), c);
+            (void) fprintf(stderr, "%s : Wrong uppercase value for %d - expecting %d, got %d\n", __func__, i, (i - 32), c);
             ++errors;
         }
     }
     c = aztoupper(96);
     if (c != 96)
     {
-        fprintf(stderr, "%s : Wrong uppercase value - expecting 96, got %d\n", __func__, c);
+        (void) fprintf(stderr, "%s : Wrong uppercase value - expecting 96, got %d\n", __func__, c);
         ++errors;
     }
     return errors;
@@ -55,9 +49,9 @@ int test_aztoupper()
 
 void benchmark_aztoupper()
 {
-    int c;
-    uint64_t tstart, tend;
-    int i, j;
+    int c = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0, j = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -68,7 +62,7 @@ void benchmark_aztoupper()
         }
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%d)\n", __func__, (tend - tstart)/(256*size), c);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%d)\n", __func__, (tend - tstart)/(uint64_t)(size*256), c);
 }
 
 int test_prepend_char()
@@ -80,12 +74,12 @@ int test_prepend_char()
     prepend_char('A', original, &size);
     if (size != 4)
     {
-        fprintf(stderr, "%s : Expected size 4, got %lu\n", __func__, size);
+        (void) fprintf(stderr, "%s : Expected size 4, got %lu\n", __func__, size);
         ++errors;
     }
     if (strcmp(original, expected) != 0)
     {
-        fprintf(stderr, "%s : Expected %s, got %s\n", __func__, expected, original);
+        (void) fprintf(stderr, "%s : Expected %s, got %s\n", __func__, expected, original);
         ++errors;
     }
     return errors;
@@ -95,8 +89,8 @@ void benchmark_prepend_char()
 {
     char original[1002] =   "B";
     size_t len = 1;
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -104,7 +98,7 @@ void benchmark_prepend_char()
         prepend_char('A', original, &len);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_swap_sizes()
@@ -115,7 +109,7 @@ int test_swap_sizes()
     swap_sizes(&first, &second);
     if ((first != 456) || (second != 123))
     {
-        fprintf(stderr, "%s : Error while swapping sizes\n", __func__);
+        (void) fprintf(stderr, "%s : Error while swapping sizes\n", __func__);
         ++errors;
     }
     return errors;
@@ -131,7 +125,7 @@ int test_swap_alleles()
     swap_alleles(first, &sizefirst, second, &sizesecond);
     if ((strcmp(first, "DEFGHI") != 0) || (strcmp(second, "ABC") != 0) || (sizefirst != 6) || (sizesecond != 3))
     {
-        fprintf(stderr, "%s : Error while swapping alleles: %s %s\n", __func__, first, second);
+        (void) fprintf(stderr, "%s : Error while swapping alleles: %s %s\n", __func__, first, second);
         ++errors;
     }
     return errors;
@@ -140,27 +134,27 @@ int test_swap_alleles()
 int test_get_genoref_seq(mmfile_t mf)
 {
     int errors = 0;
-    char ref, exp;
-    uint8_t chrom;
+    char ref = 0, exp = 0;
+    uint8_t chrom = 0;
     for (chrom = 1; chrom <= 25; chrom++)
     {
         ref = get_genoref_seq(mf, chrom, 0); // first
         if (ref != 'A')
         {
-            fprintf(stderr, "%s (%d) (first): Expected reference 'A', got '%c'\n", __func__, chrom, ref);
+            (void) fprintf(stderr, "%s (%d) (first): Expected reference 'A', got '%c'\n", __func__, chrom, ref);
             ++errors;
         }
         ref = get_genoref_seq(mf, chrom, (26 - chrom)); // last
-        exp = ('Z' + 1 - chrom);
+        exp = (char) ('Z' + 1 - chrom);
         if (ref != exp)
         {
-            fprintf(stderr, "%s (%d) (last): Expected reference '%c', got '%c'\n", __func__, chrom, exp, ref);
+            (void) fprintf(stderr, "%s (%d) (last): Expected reference '%c', got '%c'\n", __func__, chrom, exp, ref);
             ++errors;
         }
         ref = get_genoref_seq(mf, chrom, (27 - chrom)); // invalid
         if (ref != 0)
         {
-            fprintf(stderr, "%s (%d) (invalid): Expected reference 0, got '%c'\n", __func__, chrom, ref);
+            (void) fprintf(stderr, "%s (%d) (invalid): Expected reference 0, got '%c'\n", __func__, chrom, ref);
             ++errors;
         }
     }
@@ -169,9 +163,9 @@ int test_get_genoref_seq(mmfile_t mf)
 
 void benchmark_get_genoref_seq(mmfile_t mf)
 {
-    uint8_t chrom;
-    uint64_t tstart, tend;
-    int i;
+    uint8_t chrom = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -182,14 +176,14 @@ void benchmark_get_genoref_seq(mmfile_t mf)
         }
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/(size*25));
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/(uint64_t)(size*25));
 }
 
 int test_check_reference(mmfile_t mf)
 {
     int errors = 0;
-    int ret;
-    int i;
+    int ret = 0;
+    int i = 0;
     typedef struct test_ref_t
     {
         int        exp;
@@ -248,7 +242,7 @@ int test_check_reference(mmfile_t mf)
         ret = check_reference(mf, test_ref[i].chrom, test_ref[i].pos, test_ref[i].ref, test_ref[i].sizeref);
         if (ret != test_ref[i].exp)
         {
-            fprintf(stderr, "%s (%d): Expected %d, got %d\n", __func__, i, test_ref[i].exp, ret);
+            (void) fprintf(stderr, "%s (%d): Expected %d, got %d\n", __func__, i, test_ref[i].exp, ret);
             ++errors;
         }
     }
@@ -258,12 +252,12 @@ int test_check_reference(mmfile_t mf)
 int test_flip_allele()
 {
     int errors = 0;
-    char allele[] =   "ATCGMKRYBVDHWSNatcgmkrybvdhwsn";
+    char allele[] = "ATCGMKRYBVDHWSNatcgmkrybvdhwsn";
     const char expected[] = "TAGCKMYRVBHDWSNTAGCKMYRVBHDWSN";
     flip_allele(allele, 30);
     if (strcmp(allele, expected) != 0)
     {
-        fprintf(stderr, "%s : Expected %s, got %s\n", __func__, expected, allele);
+        (void) fprintf(stderr, "%s : Expected %s, got %s\n", __func__, expected, allele);
         ++errors;
     }
     return errors;
@@ -272,8 +266,8 @@ int test_flip_allele()
 void benchmark_flip_allele()
 {
     char allele[] =   "ATCGMKRYBVDHWSNatcgmkrybvdhwsn";
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -281,14 +275,14 @@ void benchmark_flip_allele()
         flip_allele(allele, 30);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/(size*25));
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/(uint64_t)(size*25));
 }
 
 int test_normalize_variant(mmfile_t mf)
 {
     int errors = 0;
-    int ret;
-    int i;
+    int ret = 0;
+    int i = 0;
     typedef struct test_norm_t
     {
         int        exp;
@@ -324,32 +318,32 @@ int test_normalize_variant(mmfile_t mf)
         ret = normalize_variant(mf, test_norm[i].chrom, &test_norm[i].pos, test_norm[i].ref, &test_norm[i].sizeref, test_norm[i].alt, &test_norm[i].sizealt);
         if (ret != test_norm[i].exp)
         {
-            fprintf(stderr, "%s (%d): Expected return value %d, got %d\n", __func__, i, test_norm[i].exp, ret);
+            (void) fprintf(stderr, "%s (%d): Expected return value %d, got %d\n", __func__, i, test_norm[i].exp, ret);
             ++errors;
         }
         if (test_norm[i].pos != test_norm[i].exp_pos)
         {
-            fprintf(stderr, "%s (%d): Expected POS %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_norm[i].exp_pos, test_norm[i].pos);
+            (void) fprintf(stderr, "%s (%d): Expected POS %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_norm[i].exp_pos, test_norm[i].pos);
             ++errors;
         }
         if (test_norm[i].sizeref != test_norm[i].exp_sizeref)
         {
-            fprintf(stderr, "%s (%d): Expected REF size %lu, got %lu\n", __func__, i, test_norm[i].exp_sizeref, test_norm[i].sizeref);
+            (void) fprintf(stderr, "%s (%d): Expected REF size %lu, got %lu\n", __func__, i, test_norm[i].exp_sizeref, test_norm[i].sizeref);
             ++errors;
         }
         if (test_norm[i].sizealt != test_norm[i].exp_sizealt)
         {
-            fprintf(stderr, "%s (%d): Expected ALT size %lu, got %lu\n", __func__, i, test_norm[i].exp_sizealt, test_norm[i].sizealt);
+            (void) fprintf(stderr, "%s (%d): Expected ALT size %lu, got %lu\n", __func__, i, test_norm[i].exp_sizealt, test_norm[i].sizealt);
             ++errors;
         }
         if (strcmp(test_norm[i].ref, test_norm[i].exp_ref) != 0)
         {
-            fprintf(stderr, "%s (%d): Expected REF %s, got %s\n", __func__, i, test_norm[i].exp_ref, test_norm[i].ref);
+            (void) fprintf(stderr, "%s (%d): Expected REF %s, got %s\n", __func__, i, test_norm[i].exp_ref, test_norm[i].ref);
             ++errors;
         }
         if (strcmp(test_norm[i].alt, test_norm[i].exp_alt) != 0)
         {
-            fprintf(stderr, "%s (%d): Expected ALT %s, got %s\n", __func__, i, test_norm[i].exp_alt, test_norm[i].alt);
+            (void) fprintf(stderr, "%s (%d): Expected ALT %s, got %s\n", __func__, i, test_norm[i].exp_alt, test_norm[i].alt);
             ++errors;
         }
     }
@@ -359,9 +353,9 @@ int test_normalize_variant(mmfile_t mf)
 int test_normalized_variantkey(mmfile_t mf)
 {
     int errors = 0;
-    int ret;
-    int i;
-    uint64_t vk;
+    int ret = 0;
+    int i = 0;
+    uint64_t vk = 0;
     typedef struct test_nvk_t
     {
         int        exp;
@@ -400,37 +394,37 @@ int test_normalized_variantkey(mmfile_t mf)
         vk = normalized_variantkey(mf, test_nvk[i].chrom, strlen(test_nvk[i].chrom), &test_nvk[i].pos, test_nvk[i].posindex, test_nvk[i].ref, &test_nvk[i].sizeref, test_nvk[i].alt, &test_nvk[i].sizealt, &ret);
         if (vk != test_nvk[i].vk)
         {
-            fprintf(stderr, "%s (%d): Expected return value %016" PRIx64 " , got  %016" PRIx64 "\n", __func__, i, test_nvk[i].vk, vk);
+            (void) fprintf(stderr, "%s (%d): Expected return value %016" PRIx64 " , got  %016" PRIx64 "\n", __func__, i, test_nvk[i].vk, vk);
             ++errors;
         }
         if (ret != test_nvk[i].exp)
         {
-            fprintf(stderr, "%s (%d): Expected return value %d, got %d\n", __func__, i, test_nvk[i].exp, ret);
+            (void) fprintf(stderr, "%s (%d): Expected return value %d, got %d\n", __func__, i, test_nvk[i].exp, ret);
             ++errors;
         }
         if (test_nvk[i].pos != test_nvk[i].exp_pos)
         {
-            fprintf(stderr, "%s (%d): Expected POS %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_nvk[i].exp_pos, test_nvk[i].pos);
+            (void) fprintf(stderr, "%s (%d): Expected POS %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_nvk[i].exp_pos, test_nvk[i].pos);
             ++errors;
         }
         if (test_nvk[i].sizeref != test_nvk[i].exp_sizeref)
         {
-            fprintf(stderr, "%s (%d): Expected REF size %lu, got %lu\n", __func__, i, test_nvk[i].exp_sizeref, test_nvk[i].sizeref);
+            (void) fprintf(stderr, "%s (%d): Expected REF size %lu, got %lu\n", __func__, i, test_nvk[i].exp_sizeref, test_nvk[i].sizeref);
             ++errors;
         }
         if (test_nvk[i].sizealt != test_nvk[i].exp_sizealt)
         {
-            fprintf(stderr, "%s (%d): Expected ALT size %lu, got %lu\n", __func__, i, test_nvk[i].exp_sizealt, test_nvk[i].sizealt);
+            (void) fprintf(stderr, "%s (%d): Expected ALT size %lu, got %lu\n", __func__, i, test_nvk[i].exp_sizealt, test_nvk[i].sizealt);
             ++errors;
         }
         if (strcmp(test_nvk[i].ref, test_nvk[i].exp_ref) != 0)
         {
-            fprintf(stderr, "%s (%d): Expected REF %s, got %s\n", __func__, i, test_nvk[i].exp_ref, test_nvk[i].ref);
+            (void) fprintf(stderr, "%s (%d): Expected REF %s, got %s\n", __func__, i, test_nvk[i].exp_ref, test_nvk[i].ref);
             ++errors;
         }
         if (strcmp(test_nvk[i].alt, test_nvk[i].exp_alt) != 0)
         {
-            fprintf(stderr, "%s (%d): Expected ALT %s, got %s\n", __func__, i, test_nvk[i].exp_alt, test_nvk[i].alt);
+            (void) fprintf(stderr, "%s (%d): Expected ALT %s, got %s\n", __func__, i, test_nvk[i].exp_alt, test_nvk[i].alt);
             ++errors;
         }
     }
@@ -440,7 +434,7 @@ int test_normalized_variantkey(mmfile_t mf)
 int main()
 {
     int errors = 0;
-    int err;
+    int err = 0;
 
     mmfile_t genoref = {0};
     mmap_genoref_file("genoref.bin", &genoref);
@@ -463,7 +457,7 @@ int main()
     err = munmap_binfile(genoref);
     if (err != 0)
     {
-        fprintf(stderr, "Got %d error while unmapping the genoref file\n", err);
+        (void) fprintf(stderr, "Got %d error while unmapping the genoref file\n", err);
         return 1;
     }
 

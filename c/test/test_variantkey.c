@@ -9,12 +9,6 @@
 
 // Test for variantkey
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -612,8 +606,8 @@ static const test_data_t test_data[] =
 // generate the test map
 void gentestmap()
 {
-    int i;
-    uint64_t vk;
+    int i = 0;
+    uint64_t vk = 0;
     char vs[17] = "";
     variantkey_t h = {0};
     for (i=0 ; i < k_test_size; i++)
@@ -622,7 +616,7 @@ void gentestmap()
         variantkey_hex(vk, vs);
         decode_variantkey(vk, &h);
         // chrom, vkchrom, pos, vkpos, vkrefalt, vk, vs, ref, alt
-        fprintf(stderr, "{\"%s\", %" PRIu8 ", %" PRIu32 ", 0x%08" PRIx32 ", 0x%08" PRIx32 ", 0x%016" PRIx64 ", \"%s\", \"%s\", \"%s\"},\n", test_data[i].chrom, h.chrom, test_data[i].pos, h.pos, h.refalt, vk, vs, test_data[i].ref, test_data[i].alt);
+        (void) fprintf(stderr, "{\"%s\", %" PRIu8 ", %" PRIu32 ", 0x%08" PRIx32 ", 0x%08" PRIx32 ", 0x%016" PRIx64 ", \"%s\", \"%s\", \"%s\"},\n", test_data[i].chrom, h.chrom, test_data[i].pos, h.pos, h.refalt, vk, vs, test_data[i].ref, test_data[i].alt);
         //fprintf(stderr, "(b\"%s\", %" PRIu8 ", %" PRIu32 ", 0x%08" PRIx32 ", 0x%08" PRIx32 ", 0x%016" PRIx64 ", b\"%s\", b\"%s\", b\"%s\"),\n", test_data[i].chrom, h.chrom, test_data[i].pos, h.pos, h.refalt, vk, vs, test_data[i].ref, test_data[i].alt);
     }
 }
@@ -631,14 +625,14 @@ void gentestmap()
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
 int test_encode_chrom()
 {
     int errors = 0;
-    uint8_t i, j, chrom;
+    uint8_t i = 0, j = 0, chrom = 0;
     static const char *chrom_data[26][10] =
     {
         {"", "NA", "XY", "1X", "1Y", "1M", "1MT", "chr", " 1", "1 "},
@@ -675,7 +669,7 @@ int test_encode_chrom()
             chrom = encode_chrom(chrom_data[i][j], strlen(chrom_data[i][j]));
             if (chrom != i)
             {
-                fprintf(stderr, "%s : '%s' expecting %u, got %u\n", __func__, chrom_data[i][j], i, chrom);
+                (void) fprintf(stderr, "%s : '%s' expecting %u, got %u\n", __func__, chrom_data[i][j], i, chrom);
                 ++errors;
             }
         }
@@ -692,9 +686,9 @@ void benchmark_encode_chrom()
         "21", "22", "X", "Y", "MT",
     };
     static const size_t clen[26] = {2, 1, 1, 1, 1, 1, 1, 1, 1, 4, 5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 2};
-    int idx;
-    uint64_t tstart, tend;
-    int i;
+    int idx = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -703,15 +697,15 @@ void benchmark_encode_chrom()
         encode_chrom(cdata[idx], clen[idx]);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_decode_chrom()
 {
     int errors = 0;
-    uint8_t i;
+    uint8_t i = 0;
     char chrom[3];
-    size_t clen;
+    size_t clen = 0;
     static const char *chrom_data[26] =
     {
         "NA", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
@@ -724,12 +718,12 @@ int test_decode_chrom()
         clen = decode_chrom(i, chrom);
         if (strcmp(chrom, chrom_data[i]) != 0)
         {
-            fprintf(stderr, "%s : expecting %s, got %s\n", __func__, chrom_data[i], chrom);
+            (void) fprintf(stderr, "%s : expecting %s, got %s\n", __func__, chrom_data[i], chrom);
             ++errors;
         }
         if (clen <= 0)
         {
-            fprintf(stderr, "%s : expecting string lenght greater than 0\n", __func__);
+            (void) fprintf(stderr, "%s : expecting string lenght greater than 0\n", __func__);
             ++errors;
         }
     }
@@ -737,7 +731,7 @@ int test_decode_chrom()
     decode_chrom(73, chrom);
     if (strcmp(chrom, "NA") != 0)
     {
-        fprintf(stderr, "%s : (NA) expecting NA, got %s\n", __func__, chrom);
+        (void) fprintf(stderr, "%s : (NA) expecting NA, got %s\n", __func__, chrom);
         ++errors;
     }
     return errors;
@@ -746,8 +740,8 @@ int test_decode_chrom()
 void benchmark_decode_chrom()
 {
     char chrom[3];
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -755,16 +749,16 @@ void benchmark_decode_chrom()
         decode_chrom((i % 26), chrom);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_encode_refalt()
 {
     int errors = 0;
-    int i, j;
-    uint32_t h;
+    int i = 0, j = 0;
+    uint32_t h = 0;
     char ref[15], alt[15];
-    size_t len, lenref, lenalt, sizeref, sizealt;
+    size_t len = 0, lenref = 0, lenalt = 0, sizeref = 0, sizealt = 0;
     static const int tlen = 11;
     static const char *input_data[] =
     {"A", "C", "N", "GT", "ACG", "ACGTa", "ACGTac", "ACGTacg", "ACGTacgt", "ACGTACGTAC", "ACGTacgtACGT"};
@@ -800,7 +794,7 @@ int test_encode_refalt()
     };
     int k = 0;
     int numrev = 0;
-    int r, ri, rj, tmp;
+    int r = 0, ri = 0, rj = 0, tmp = 0;
     for (i=0 ; i < tlen; i++)
     {
         for (j=i ; j < tlen; j++)
@@ -815,7 +809,7 @@ int test_encode_refalt()
                 //fprintf(stderr, "0x%08" PRIx32 ",", h);
                 if (h != expected_data[k])
                 {
-                    fprintf(stderr, "%s : expecting %x, got %x - REF=%s - ALT=%s\n", __func__, expected_data[k], h, input_data[ri], input_data[rj]);
+                    (void) fprintf(stderr, "%s : expecting %x, got %x - REF=%s - ALT=%s\n", __func__, expected_data[k], h, input_data[ri], input_data[rj]);
                     ++errors;
                 }
                 ref[0] = '\0';
@@ -828,22 +822,22 @@ int test_encode_refalt()
                     numrev++;
                     if (sizeref != lenref)
                     {
-                        fprintf(stderr, "%s : expecting ref size %lu, got %lu\n", __func__, lenref, sizeref);
+                        (void) fprintf(stderr, "%s : expecting ref size %lu, got %lu\n", __func__, lenref, sizeref);
                         ++errors;
                     }
                     if (sizealt != lenalt)
                     {
-                        fprintf(stderr, "%s : expecting alt size %lu, got %lu\n", __func__, lenalt, sizealt);
+                        (void) fprintf(stderr, "%s : expecting alt size %lu, got %lu\n", __func__, lenalt, sizealt);
                         ++errors;
                     }
                     if (strcasecmp(input_data[ri], ref) != 0)
                     {
-                        fprintf(stderr, "%s : REF expecting %s, got %s\n", __func__, input_data[ri], ref);
+                        (void) fprintf(stderr, "%s : REF expecting %s, got %s\n", __func__, input_data[ri], ref);
                         ++errors;
                     }
                     if (strcasecmp(input_data[rj], alt) != 0)
                     {
-                        fprintf(stderr, "%s : ALT expecting %s, got %s\n", __func__, input_data[rj], alt);
+                        (void) fprintf(stderr, "%s : ALT expecting %s, got %s\n", __func__, input_data[rj], alt);
                         ++errors;
                     }
                 }
@@ -856,34 +850,34 @@ int test_encode_refalt()
     }
     if (numrev != 60)
     {
-        fprintf(stderr, "%s : expecting 60 reversible REF+ALT, got instead: %d\n", __func__, numrev);
+        (void) fprintf(stderr, "%s : expecting 60 reversible REF+ALT, got instead: %d\n", __func__, numrev);
         ++errors;
     }
     uint32_t ha = encode_refalt("AAAAAAAAAAAAAAAA", 16, "AAAAAAAAAAAAAAAA", 16);
     uint32_t hb = encode_refalt("AAAAAAAAAAAAAAAA", 16, "AAAAAAAAAAAAAAAB", 16);
     if (ha == hb)
     {
-        fprintf(stderr, "%s : (last) expecting different hashes: %08" PRIx32 " %08" PRIx32 "\n", __func__, ha, hb);
+        (void) fprintf(stderr, "%s : (last) expecting different hashes: %08" PRIx32 " %08" PRIx32 "\n", __func__, ha, hb);
         ++errors;
     }
     ha = encode_refalt("AAAAAAAAAAAAAAAA", 16, "AAAAAAAAAAAAAAAA", 16);
     hb = encode_refalt("BAAAAAAAAAAAAAAA", 16, "AAAAAAAAAAAAAAAA", 16);
     if (ha == hb)
     {
-        fprintf(stderr, "%s : (first) expecting different hashes: %08" PRIx32 " %08" PRIx32 "\n", __func__, ha, hb);
+        (void) fprintf(stderr, "%s : (first) expecting different hashes: %08" PRIx32 " %08" PRIx32 "\n", __func__, ha, hb);
         ++errors;
     }
     ha = encode_refalt("AAAAAAAAAAAAAAA", 15, "BAAAAAAAAAAAAAAA", 17);
     hb = encode_refalt("AAAAAAAAAAAAAAAAB", 17, "AAAAAAAAAAAAAAA", 15);
     if (ha == hb)
     {
-        fprintf(stderr, "%s : (separator) expecting different hashes: %08" PRIx32 " %08" PRIx32 "\n", __func__, ha, hb);
+        (void) fprintf(stderr, "%s : (separator) expecting different hashes: %08" PRIx32 " %08" PRIx32 "\n", __func__, ha, hb);
         ++errors;
     }
     h = encode_refalt("", 0, "", 0);
     if (h != 0)
     {
-        fprintf(stderr, "%s : (empty) expecting different hash: %08" PRIx32 "\n", __func__, h);
+        (void) fprintf(stderr, "%s : (empty) expecting different hash: %08" PRIx32 "\n", __func__, h);
         ++errors;
     }
     return errors;
@@ -891,11 +885,11 @@ int test_encode_refalt()
 
 void benchmark_encode_refalt_rev()
 {
-    int idx;
+    int idx = 0;
     static const char *cdata[5] = {"A", "t", "az", "ACG", "GT"};
     static const size_t clen[5] = {1, 1, 2, 3, 2};
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -904,15 +898,15 @@ void benchmark_encode_refalt_rev()
         encode_refalt(cdata[idx], clen[idx], cdata[idx+1], clen[idx+1]);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 void benchmark_encode_refalt_hash()
 {
     const char *allele = "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT";
-    uint32_t hash;
-    uint64_t tstart, tend;
-    int i;
+    uint32_t hash = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -920,15 +914,15 @@ void benchmark_encode_refalt_hash()
         hash = encode_refalt_hash(allele, 92, allele, 92);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%" PRIx32 ")\n", __func__, (tend - tstart)/size, hash);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx32 ")\n", __func__, (tend - tstart)/size, hash);
 }
 
 void benchmark_decode_refalt()
 {
     char ref[11], alt[11];
-    size_t sizeref, sizealt;
-    uint64_t tstart, tend;
-    int i;
+    size_t sizeref = 0, sizealt = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -936,20 +930,20 @@ void benchmark_decode_refalt()
         decode_refalt(0x0d436362, ref, &sizeref, alt, &sizealt);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%s - %s)\n", __func__, (tend - tstart)/size, ref, alt);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%s - %s)\n", __func__, (tend - tstart)/size, ref, alt);
 }
 
 int test_encode_variantkey()
 {
     int errors = 0;
-    int i;
-    uint64_t vk;
+    int i = 0;
+    uint64_t vk = 0;
     for (i=0 ; i < k_test_size; i++)
     {
         vk = encode_variantkey(test_data[i].vkchrom, test_data[i].vkpos, test_data[i].vkrefalt);
         if (vk != test_data[i].vk)
         {
-            fprintf(stderr, "%s (%d): Unexpected variantkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].vk, vk);
+            (void) fprintf(stderr, "%s (%d): Unexpected variantkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].vk, vk);
             ++errors;
         }
     }
@@ -958,8 +952,8 @@ int test_encode_variantkey()
 
 void benchmark_encode_variantkey()
 {
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -967,20 +961,20 @@ void benchmark_encode_variantkey()
         encode_variantkey(19, i, 0x08900000);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_extract_variantkey_chrom()
 {
     int errors = 0;
-    int i;
-    uint8_t chrom;
+    int i = 0;
+    uint8_t chrom = 0;
     for (i=0 ; i < k_test_size; i++)
     {
         chrom = extract_variantkey_chrom(test_data[i].vk);
         if (chrom != test_data[i].vkchrom)
         {
-            fprintf(stderr, "%s (%d): Unexpected chrom code: expected 0x%02" PRIx8 ", got 0x%02" PRIx8 "\n", __func__, i, test_data[i].vkchrom, chrom);
+            (void) fprintf(stderr, "%s (%d): Unexpected chrom code: expected 0x%02" PRIx8 ", got 0x%02" PRIx8 "\n", __func__, i, test_data[i].vkchrom, chrom);
             ++errors;
         }
     }
@@ -990,14 +984,14 @@ int test_extract_variantkey_chrom()
 int test_extract_variantkey_pos()
 {
     int errors = 0;
-    int i;
-    uint32_t pos;
+    int i = 0;
+    uint32_t pos = 0;
     for (i=0 ; i < k_test_size; i++)
     {
         pos = extract_variantkey_pos(test_data[i].vk);
         if (pos != test_data[i].vkpos)
         {
-            fprintf(stderr, "%s (%d): Unexpected pos code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkpos, pos);
+            (void) fprintf(stderr, "%s (%d): Unexpected pos code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkpos, pos);
             ++errors;
         }
     }
@@ -1007,14 +1001,14 @@ int test_extract_variantkey_pos()
 int test_extract_variantkey_refalt()
 {
     int errors = 0;
-    int i;
-    uint32_t refalt;
+    int i = 0;
+    uint32_t refalt = 0;
     for (i=0 ; i < k_test_size; i++)
     {
         refalt = extract_variantkey_refalt(test_data[i].vk);
         if (refalt != test_data[i].vkrefalt)
         {
-            fprintf(stderr, "%s (%d): Unexpected ref+alt code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkrefalt, refalt);
+            (void) fprintf(stderr, "%s (%d): Unexpected ref+alt code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkrefalt, refalt);
             ++errors;
         }
     }
@@ -1024,24 +1018,24 @@ int test_extract_variantkey_refalt()
 int test_decode_variantkey()
 {
     int errors = 0;
-    int i;
+    int i = 0;
     variantkey_t h = {0};
     for (i=0 ; i < k_test_size; i++)
     {
         decode_variantkey(test_data[i].vk, &h);
         if (h.chrom != test_data[i].vkchrom)
         {
-            fprintf(stderr, "%s (%d): Unexpected chrom code: expected 0x%02" PRIx8 ", got 0x%02" PRIx8 "\n", __func__, i, test_data[i].vkchrom, h.chrom);
+            (void) fprintf(stderr, "%s (%d): Unexpected chrom code: expected 0x%02" PRIx8 ", got 0x%02" PRIx8 "\n", __func__, i, test_data[i].vkchrom, h.chrom);
             ++errors;
         }
         if (h.pos != test_data[i].vkpos)
         {
-            fprintf(stderr, "%s (%d): Unexpected pos code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkpos, h.pos);
+            (void) fprintf(stderr, "%s (%d): Unexpected pos code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkpos, h.pos);
             ++errors;
         }
         if (h.refalt != test_data[i].vkrefalt)
         {
-            fprintf(stderr, "%s (%d): Unexpected ref+alt code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkrefalt, h.refalt);
+            (void) fprintf(stderr, "%s (%d): Unexpected ref+alt code: expected 0x%08" PRIx32 ", got 0x%08" PRIx32 "\n", __func__, i, test_data[i].vkrefalt, h.refalt);
             ++errors;
         }
     }
@@ -1051,8 +1045,8 @@ int test_decode_variantkey()
 void benchmark_decode_variantkey()
 {
     variantkey_t h = {0};
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -1060,20 +1054,20 @@ void benchmark_decode_variantkey()
         decode_variantkey(0xa852662880400000, &h);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_variantkey()
 {
     int errors = 0;
-    int i;
-    uint64_t vk;
+    int i = 0;
+    uint64_t vk = 0;
     for (i=0 ; i < k_test_size; i++)
     {
         vk = variantkey(test_data[i].chrom, strlen(test_data[i].chrom), test_data[i].pos, test_data[i].ref, strlen(test_data[i].ref), test_data[i].alt, strlen(test_data[i].alt));
         if (vk != test_data[i].vk)
         {
-            fprintf(stderr, "%s (%d): Unexpected variantkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].vk, vk);
+            (void) fprintf(stderr, "%s (%d): Unexpected variantkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].vk, vk);
             ++errors;
         }
     }
@@ -1082,8 +1076,8 @@ int test_variantkey()
 
 void benchmark_variantkey()
 {
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -1091,7 +1085,7 @@ void benchmark_variantkey()
         variantkey("Y", 1, 445974, "A", 1, "G", 1);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_variantkey_range()
@@ -1133,19 +1127,19 @@ int test_variantkey_range()
         {24, 21003549, 21243717, 0xc0a03e8e80000000, 0xc0a213a2ffffffff},
         {25, 22003718, 268435455, 0xc8a7e00300000000, 0xcfffffffffffffff},
     };
-    vkrange_t r;
-    int i;
+    vkrange_t r = {0};
+    int i = 0;
     for (i=0 ; i < 25; i++)
     {
         variantkey_range(test_range_data[i].chrom, test_range_data[i].pos_min, test_range_data[i].pos_max, &r);
         if (r.min != test_range_data[i].vk_min)
         {
-            fprintf(stderr, "%s : Unexpected min value: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, test_range_data[i].vk_min, r.min);
+            (void) fprintf(stderr, "%s : Unexpected min value: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, test_range_data[i].vk_min, r.min);
             ++errors;
         }
         if (r.max != test_range_data[i].vk_max)
         {
-            fprintf(stderr, "%s : Unexpected max value: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, test_range_data[i].vk_max, r.max);
+            (void) fprintf(stderr, "%s : Unexpected max value: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, test_range_data[i].vk_max, r.max);
             ++errors;
         }
     }
@@ -1154,9 +1148,9 @@ int test_variantkey_range()
 
 void benchmark_variantkey_range()
 {
-    vkrange_t r;
-    uint64_t tstart, tend;
-    int i;
+    vkrange_t r = {0};
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -1164,7 +1158,7 @@ void benchmark_variantkey_range()
         variantkey_range(15, 12002028, 12152133, &r);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_compare_variantkey_chrom()
@@ -1182,13 +1176,13 @@ int test_compare_variantkey_chrom()
         {0x100036cc08900000, 0x08027a3c08e80000, 1},
     };
     int errors = 0;
-    int i;
+    int i = 0;
     for (i=0 ; i < 3; i++)
     {
-        int cmp = compare_variantkey_chrom(test_compare_data[i].vka, test_compare_data[i].vkb);
+        int cmp = (int) compare_variantkey_chrom(test_compare_data[i].vka, test_compare_data[i].vkb);
         if (cmp != test_compare_data[i].cmp)
         {
-            fprintf(stderr, "%s (%d): Unexpected variantkey CHROM comparison: expected %d, got %d\n", __func__, i, test_compare_data[i].cmp, cmp);
+            (void) fprintf(stderr, "%s (%d): Unexpected variantkey CHROM comparison: expected %d, got %d\n", __func__, i, test_compare_data[i].cmp, cmp);
             ++errors;
         }
     }
@@ -1212,13 +1206,13 @@ int test_compare_variantkey_chrom_pos()
         {0x0fffffff88b80000, 0x08027a2588b00000, 1},
     };
     int errors = 0;
-    int i;
+    int i = 0;
     for (i=0 ; i < 5; i++)
     {
-        int cmp = compare_variantkey_chrom_pos(test_compare_data[i].vka, test_compare_data[i].vkb);
+        int cmp = (int) compare_variantkey_chrom_pos(test_compare_data[i].vka, test_compare_data[i].vkb);
         if (cmp != test_compare_data[i].cmp)
         {
-            fprintf(stderr, "%s (%d): Unexpected variantkey CHROM+POS comparison: expected %d, got %d\n", __func__, i, test_compare_data[i].cmp, cmp);
+            (void) fprintf(stderr, "%s (%d): Unexpected variantkey CHROM+POS comparison: expected %d, got %d\n", __func__, i, test_compare_data[i].cmp, cmp);
             ++errors;
         }
     }
@@ -1228,14 +1222,14 @@ int test_compare_variantkey_chrom_pos()
 int test_variantkey_hex()
 {
     int errors = 0;
-    int i;
+    int i = 0;
     char vs[17] = "";
     for (i=0 ; i < k_test_size; i++)
     {
         variantkey_hex(test_data[i].vk, vs);
         if (strcmp(vs, test_data[i].vs) != 0)
         {
-            fprintf(stderr, "%s (%d): Unexpected variantkey: expected %s, got %s\n", __func__, i, test_data[i].vs, vs);
+            (void) fprintf(stderr, "%s (%d): Unexpected variantkey: expected %s, got %s\n", __func__, i, test_data[i].vs, vs);
             ++errors;
         }
     }
@@ -1244,8 +1238,8 @@ int test_variantkey_hex()
 
 void benchmark_variantkey_hex()
 {
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     char vs[17] = "";
     tstart = get_time();
@@ -1254,18 +1248,18 @@ void benchmark_variantkey_hex()
         variantkey_hex(0xa852662880400000, vs);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_parse_variantkey_hex()
 {
     int errors = 0;
-    int i;
-    uint64_t vk;
+    int i = 0;
+    uint64_t vk = 0;
     vk = parse_variantkey_hex("1234567890AbCdEf");
     if (vk != 0x1234567890abcdef)
     {
-        fprintf(stderr, "%s : Unexpected variantkey: expected 0x1234567890abcdef, got 0x%016" PRIx64 "\n", __func__, vk);
+        (void) fprintf(stderr, "%s : Unexpected variantkey: expected 0x1234567890abcdef, got 0x%016" PRIx64 "\n", __func__, vk);
         ++errors;
     }
     for (i=0 ; i < k_test_size; i++)
@@ -1273,7 +1267,7 @@ int test_parse_variantkey_hex()
         vk = parse_variantkey_hex(test_data[i].vs);
         if (vk != test_data[i].vk)
         {
-            fprintf(stderr, "%s (%d): Unexpected variantkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].vk, vk);
+            (void) fprintf(stderr, "%s (%d): Unexpected variantkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].vk, vk);
             ++errors;
         }
     }
@@ -1282,8 +1276,8 @@ int test_parse_variantkey_hex()
 
 void benchmark_parse_variantkey_hex()
 {
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -1291,7 +1285,7 @@ void benchmark_parse_variantkey_hex()
         parse_variantkey_hex("a852662880400000");
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int main()

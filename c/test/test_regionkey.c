@@ -9,12 +9,6 @@
 
 // Test for regionkey
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,7 +32,7 @@ typedef struct test_data_t
     const char* rs;
     uint64_t    chrom_startpos;
     uint64_t    chrom_endpos;
-} test_data_t;
+} __attribute__((packed)) __attribute__((aligned(128))) test_data_t;
 
 static const test_data_t test_data[TEST_DATA_SIZE] =
 {
@@ -66,7 +60,7 @@ typedef struct test_overlap_t
     uint64_t a_rk;
     uint64_t a_vk;
     uint64_t b_rk;
-} test_overlap_t;
+} __attribute__((packed)) __attribute__((aligned(128))) test_overlap_t;
 
 static const test_overlap_t test_overlap[TEST_OVERLAP_SIZE] =
 {
@@ -88,21 +82,21 @@ static const test_overlap_t test_overlap[TEST_OVERLAP_SIZE] =
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
 int test_encode_region_strand()
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = encode_region_strand(test_data[i].strand);
         if (res != test_data[i].estrand)
         {
-            fprintf(stderr, "%s (%d) Expecting encoded STRAND %d, got %d\n", __func__, i, test_data[i].estrand, res);
+            (void) fprintf(stderr, "%s (%d) Expecting encoded STRAND %d, got %d\n", __func__, i, test_data[i].estrand, res);
             ++errors;
         }
     }
@@ -112,14 +106,14 @@ int test_encode_region_strand()
 int test_decode_region_strand()
 {
     int errors = 0;
-    int i;
-    int8_t res;
+    int i = 0;
+    int8_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = decode_region_strand(test_data[i].estrand);
         if (res != test_data[i].strand)
         {
-            fprintf(stderr, "%s (%d) Expecting STRAND %d, got %d\n", __func__, i, test_data[i].strand, res);
+            (void) fprintf(stderr, "%s (%d) Expecting STRAND %d, got %d\n", __func__, i, test_data[i].strand, res);
             ++errors;
         }
     }
@@ -129,14 +123,14 @@ int test_decode_region_strand()
 int test_encode_regionkey()
 {
     int errors = 0;
-    int i;
-    uint64_t res;
+    int i = 0;
+    uint64_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = encode_regionkey(test_data[i].echrom, test_data[i].startpos, test_data[i].endpos, test_data[i].estrand);
         if (res != test_data[i].rk)
         {
-            fprintf(stderr, "%s (%d) Expecting RegionKey %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].rk, res);
+            (void) fprintf(stderr, "%s (%d) Expecting RegionKey %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].rk, res);
             ++errors;
         }
     }
@@ -146,14 +140,14 @@ int test_encode_regionkey()
 int test_extract_regionkey_chrom()
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = extract_regionkey_chrom(test_data[i].rk);
         if (res != test_data[i].echrom)
         {
-            fprintf(stderr, "%s (%d) Expecting CHROM %d, got %d\n", __func__, i, test_data[i].echrom, res);
+            (void) fprintf(stderr, "%s (%d) Expecting CHROM %d, got %d\n", __func__, i, test_data[i].echrom, res);
             ++errors;
         }
     }
@@ -163,14 +157,14 @@ int test_extract_regionkey_chrom()
 int test_extract_regionkey_startpos()
 {
     int errors = 0;
-    int i;
-    uint32_t res;
+    int i = 0;
+    uint32_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = extract_regionkey_startpos(test_data[i].rk);
         if (res != test_data[i].startpos)
         {
-            fprintf(stderr, "%s (%d) Expecting CHROM %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].startpos, res);
+            (void) fprintf(stderr, "%s (%d) Expecting CHROM %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].startpos, res);
             ++errors;
         }
     }
@@ -180,14 +174,14 @@ int test_extract_regionkey_startpos()
 int test_extract_regionkey_endpos()
 {
     int errors = 0;
-    int i;
-    uint32_t res;
+    int i = 0;
+    uint32_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = extract_regionkey_endpos(test_data[i].rk);
         if (res != test_data[i].endpos)
         {
-            fprintf(stderr, "%s (%d) Expecting CHROM %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].endpos, res);
+            (void) fprintf(stderr, "%s (%d) Expecting CHROM %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].endpos, res);
             ++errors;
         }
     }
@@ -197,14 +191,14 @@ int test_extract_regionkey_endpos()
 int test_extract_regionkey_strand()
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = extract_regionkey_strand(test_data[i].rk);
         if (res != test_data[i].estrand)
         {
-            fprintf(stderr, "%s (%d) Expecting CHROM %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].estrand, res);
+            (void) fprintf(stderr, "%s (%d) Expecting CHROM %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].estrand, res);
             ++errors;
         }
     }
@@ -214,29 +208,29 @@ int test_extract_regionkey_strand()
 int test_decode_regionkey()
 {
     int errors = 0;
-    int i;
+    int i = 0;
     regionkey_t h = {0};
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         decode_regionkey(test_data[i].rk, &h);
         if (h.chrom != test_data[i].echrom)
         {
-            fprintf(stderr, "%s (%d): Unexpected CHROM code: expected %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_data[i].echrom, h.chrom);
+            (void) fprintf(stderr, "%s (%d): Unexpected CHROM code: expected %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_data[i].echrom, h.chrom);
             ++errors;
         }
         if (h.startpos != test_data[i].startpos)
         {
-            fprintf(stderr, "%s (%d): Unexpected START POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].startpos, h.startpos);
+            (void) fprintf(stderr, "%s (%d): Unexpected START POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].startpos, h.startpos);
             ++errors;
         }
         if (h.endpos != test_data[i].endpos)
         {
-            fprintf(stderr, "%s (%d): Unexpected END POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].endpos, h.endpos);
+            (void) fprintf(stderr, "%s (%d): Unexpected END POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].endpos, h.endpos);
             ++errors;
         }
         if (h.strand != test_data[i].estrand)
         {
-            fprintf(stderr, "%s (%d): Unexpected CHROM code: expected %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_data[i].estrand, h.strand);
+            (void) fprintf(stderr, "%s (%d): Unexpected CHROM code: expected %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_data[i].estrand, h.strand);
             ++errors;
         }
     }
@@ -246,8 +240,8 @@ int test_decode_regionkey()
 void benchmark_decode_regionkey()
 {
     regionkey_t h = {0};
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -255,35 +249,35 @@ void benchmark_decode_regionkey()
         decode_regionkey(0x080001f400002260 + i, &h);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_reverse_regionkey()
 {
     int errors = 0;
-    int i;
+    int i = 0;
     regionkey_rev_t h = {0};
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         reverse_regionkey(test_data[i].rk, &h);
         if (strcasecmp(test_data[i].chrom, h.chrom) != 0)
         {
-            fprintf(stderr, "%s (%d): Unexpected CHROM: expected %s, got %s\n", __func__, i, test_data[i].chrom, h.chrom);
+            (void) fprintf(stderr, "%s (%d): Unexpected CHROM: expected %s, got %s\n", __func__, i, test_data[i].chrom, h.chrom);
             ++errors;
         }
         if (h.startpos != test_data[i].startpos)
         {
-            fprintf(stderr, "%s (%d): Unexpected START POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].startpos, h.startpos);
+            (void) fprintf(stderr, "%s (%d): Unexpected START POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].startpos, h.startpos);
             ++errors;
         }
         if (h.endpos != test_data[i].endpos)
         {
-            fprintf(stderr, "%s (%d): Unexpected END POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].endpos, h.endpos);
+            (void) fprintf(stderr, "%s (%d): Unexpected END POS: expected %" PRIu32 ", got %" PRIu32 "\n", __func__, i, test_data[i].endpos, h.endpos);
             ++errors;
         }
         if (h.strand != test_data[i].strand)
         {
-            fprintf(stderr, "%s (%d): Unexpected CHROM code: expected %d, got %d\n", __func__, i, test_data[i].strand, h.strand);
+            (void) fprintf(stderr, "%s (%d): Unexpected CHROM code: expected %d, got %d\n", __func__, i, test_data[i].strand, h.strand);
             ++errors;
         }
     }
@@ -293,8 +287,8 @@ int test_reverse_regionkey()
 void benchmark_reverse_regionkey()
 {
     regionkey_rev_t h = {0};
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -302,20 +296,20 @@ void benchmark_reverse_regionkey()
         reverse_regionkey(0x080001f400002260 + i, &h);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_regionkey()
 {
     int errors = 0;
-    int i;
-    uint64_t res;
+    int i = 0;
+    uint64_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = regionkey(test_data[i].chrom, strlen(test_data[i].chrom), test_data[i].startpos, test_data[i].endpos, test_data[i].strand);
         if (res != test_data[i].rk)
         {
-            fprintf(stderr, "%s (%d) Expecting RegionKey %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].rk, res);
+            (void) fprintf(stderr, "%s (%d) Expecting RegionKey %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].rk, res);
             ++errors;
         }
     }
@@ -324,9 +318,9 @@ int test_regionkey()
 
 void benchmark_regionkey()
 {
-    uint64_t res;
-    uint64_t tstart, tend;
-    int i;
+    uint64_t res = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 100000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -334,7 +328,7 @@ void benchmark_regionkey()
         res = regionkey("MT", 2, 1000, 2000, -1);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, res);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, res);
 }
 
 int test_extend_regionkey()
@@ -346,12 +340,12 @@ int test_extend_regionkey()
     uint32_t endpos = extract_regionkey_endpos(erk);
     if (startpos != 9000)
     {
-        fprintf(stderr, "%s Expecting STARTPOS 9000, got %" PRIu32 "\n", __func__, startpos);
+        (void) fprintf(stderr, "%s Expecting STARTPOS 9000, got %" PRIu32 "\n", __func__, startpos);
         ++errors;
     }
     if (endpos != 21000)
     {
-        fprintf(stderr, "%s Expecting ENDPOS 21000, got %" PRIu32 "\n", __func__, endpos);
+        (void) fprintf(stderr, "%s Expecting ENDPOS 21000, got %" PRIu32 "\n", __func__, endpos);
         ++errors;
     }
     erk = extend_regionkey(rk, 300000000);
@@ -359,12 +353,12 @@ int test_extend_regionkey()
     endpos = extract_regionkey_endpos(erk);
     if (startpos != 0)
     {
-        fprintf(stderr, "%s Expecting STARTPOS 9000, got %" PRIu32 "\n", __func__, startpos);
+        (void) fprintf(stderr, "%s Expecting STARTPOS 9000, got %" PRIu32 "\n", __func__, startpos);
         ++errors;
     }
     if (endpos != RK_MAX_POS)
     {
-        fprintf(stderr, "%s Expecting ENDPOS %" PRIu32 ", got %" PRIu32 "\n", __func__, RK_MAX_POS, endpos);
+        (void) fprintf(stderr, "%s Expecting ENDPOS %" PRIu32 ", got %" PRIu32 "\n", __func__, RK_MAX_POS, endpos);
         ++errors;
     }
     return errors;
@@ -373,14 +367,14 @@ int test_extend_regionkey()
 int test_regionkey_hex()
 {
     int errors = 0;
-    int i;
+    int i = 0;
     char rs[17] = "";
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         regionkey_hex(test_data[i].rk, rs);
         if (strcmp(rs, test_data[i].rs) != 0)
         {
-            fprintf(stderr, "%s (%d) Expecting RegionKey HEX %s, got %s\n", __func__, i, test_data[i].rs, rs);
+            (void) fprintf(stderr, "%s (%d) Expecting RegionKey HEX %s, got %s\n", __func__, i, test_data[i].rs, rs);
             ++errors;
         }
     }
@@ -390,12 +384,12 @@ int test_regionkey_hex()
 int test_parse_regionkey_hex()
 {
     int errors = 0;
-    int i;
-    uint64_t rk;
+    int i = 0;
+    uint64_t rk = 0;
     rk = parse_regionkey_hex("1234567890AbCdEf");
     if (rk != 0x1234567890abcdef)
     {
-        fprintf(stderr, "%s : Unexpected regionkey: expected 0x1234567890abcdef, got 0x%016" PRIx64 "\n", __func__, rk);
+        (void) fprintf(stderr, "%s : Unexpected regionkey: expected 0x1234567890abcdef, got 0x%016" PRIx64 "\n", __func__, rk);
         ++errors;
     }
     for (i=0 ; i < TEST_DATA_SIZE; i++)
@@ -403,7 +397,7 @@ int test_parse_regionkey_hex()
         rk = parse_variantkey_hex(test_data[i].rs);
         if (rk != test_data[i].rk)
         {
-            fprintf(stderr, "%s (%d): Unexpected regionkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].rk, rk);
+            (void) fprintf(stderr, "%s (%d): Unexpected regionkey: expected 0x%016" PRIx64 ", got 0x%016" PRIx64 "\n", __func__, i, test_data[i].rk, rk);
             ++errors;
         }
     }
@@ -413,14 +407,14 @@ int test_parse_regionkey_hex()
 int test_get_regionkey_chrom_startpos()
 {
     int errors = 0;
-    int i;
-    uint64_t res;
+    int i = 0;
+    uint64_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = get_regionkey_chrom_startpos(test_data[i].rk);
         if (res != test_data[i].chrom_startpos)
         {
-            fprintf(stderr, "%s (%d) Expecting CHROM + START POS %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].chrom_startpos, res);
+            (void) fprintf(stderr, "%s (%d) Expecting CHROM + START POS %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].chrom_startpos, res);
             ++errors;
         }
     }
@@ -430,14 +424,14 @@ int test_get_regionkey_chrom_startpos()
 int test_get_regionkey_chrom_endpos()
 {
     int errors = 0;
-    int i;
-    uint64_t res;
+    int i = 0;
+    uint64_t res = 0;
     for (i=0 ; i < TEST_DATA_SIZE; i++)
     {
         res = get_regionkey_chrom_endpos(test_data[i].rk);
         if (res != test_data[i].chrom_endpos)
         {
-            fprintf(stderr, "%s (%d) Expecting CHROM + END POS %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].chrom_endpos, res);
+            (void) fprintf(stderr, "%s (%d) Expecting CHROM + END POS %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_data[i].chrom_endpos, res);
             ++errors;
         }
     }
@@ -447,14 +441,14 @@ int test_get_regionkey_chrom_endpos()
 int test_are_overlapping_regions()
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_OVERLAP_SIZE; i++)
     {
         res = are_overlapping_regions(test_overlap[i].a_chrom, test_overlap[i].a_startpos, test_overlap[i].a_endpos, test_overlap[i].b_chrom, test_overlap[i].b_startpos, test_overlap[i].b_endpos);
         if (res != test_overlap[i].res)
         {
-            fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
+            (void) fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
             ++errors;
         }
     }
@@ -464,14 +458,14 @@ int test_are_overlapping_regions()
 int test_are_overlapping_region_regionkey()
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_OVERLAP_SIZE; i++)
     {
         res = are_overlapping_region_regionkey(test_overlap[i].a_chrom, test_overlap[i].a_startpos, test_overlap[i].a_endpos, test_overlap[i].b_rk);
         if (res != test_overlap[i].res)
         {
-            fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
+            (void) fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
             ++errors;
         }
     }
@@ -481,14 +475,14 @@ int test_are_overlapping_region_regionkey()
 int test_are_overlapping_regionkeys()
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_OVERLAP_SIZE; i++)
     {
         res = are_overlapping_regionkeys(test_overlap[i].a_rk, test_overlap[i].b_rk);
         if (res != test_overlap[i].res)
         {
-            fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
+            (void) fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
             ++errors;
         }
     }
@@ -498,14 +492,14 @@ int test_are_overlapping_regionkeys()
 int test_are_overlapping_variantkey_regionkey(nrvk_cols_t nvc)
 {
     int errors = 0;
-    int i;
-    uint8_t res;
+    int i = 0;
+    uint8_t res = 0;
     for (i=0 ; i < TEST_OVERLAP_SIZE; i++)
     {
         res = are_overlapping_variantkey_regionkey(nvc, test_overlap[i].a_vk, test_overlap[i].b_rk);
         if (res != test_overlap[i].res)
         {
-            fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
+            (void) fprintf(stderr, "%s (%d) Expecting %" PRIu8 ", got %" PRIu8 "\n", __func__, i, test_overlap[i].res, res);
             ++errors;
         }
     }
@@ -515,14 +509,14 @@ int test_are_overlapping_variantkey_regionkey(nrvk_cols_t nvc)
 int test_variantkey_to_regionkey(nrvk_cols_t nvc)
 {
     int errors = 0;
-    int i;
-    uint64_t res;
+    int i = 0;
+    uint64_t res = 0;
     for (i=0 ; i < TEST_OVERLAP_SIZE; i++)
     {
         res = variantkey_to_regionkey(nvc, test_overlap[i].a_vk);
         if (res != test_overlap[i].a_rk)
         {
-            fprintf(stderr, "%s (%d) Expecting %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_overlap[i].a_rk, res);
+            (void) fprintf(stderr, "%s (%d) Expecting %016" PRIx64 ", got %016" PRIx64 "\n", __func__, i, test_overlap[i].a_rk, res);
             ++errors;
         }
     }
@@ -532,7 +526,7 @@ int test_variantkey_to_regionkey(nrvk_cols_t nvc)
 int main()
 {
     int errors = 0;
-    int err;
+    int err = 0;
 
     mmfile_t nrvk = {0};
     nrvk_cols_t nvc = {0};
@@ -540,7 +534,7 @@ int main()
 
     if (nrvk.nrows != TEST_DATA_SIZE)
     {
-        fprintf(stderr, "Expecting %d items, got instead: %" PRIu64 "\n", TEST_DATA_SIZE, nrvk.nrows);
+        (void) fprintf(stderr, "Expecting %d items, got instead: %" PRIu64 "\n", TEST_DATA_SIZE, nrvk.nrows);
         return 1;
     }
 
@@ -572,7 +566,7 @@ int main()
     err = munmap_binfile(nrvk);
     if (err != 0)
     {
-        fprintf(stderr, "Got %d error while unmapping the nrvk file\n", err);
+        (void) fprintf(stderr, "Got %d error while unmapping the nrvk file\n", err);
         return 1;
     }
 

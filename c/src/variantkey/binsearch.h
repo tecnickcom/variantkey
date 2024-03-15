@@ -5,8 +5,8 @@
 // @category   Libraries
 // @author     Nicola Asuni <info@tecnick.com>
 // @link       https://github.com/tecnickcom/binsearch
-// @license    MIT (see https://raw.githubusercontent.com/tecnickcom/binsearch/main/LICENSE)
-// @copyright  (c) 2017-2023 Nicola Asuni - Tecnick.com
+// @license    MIT (see LICENSE file)
+// @copyright  (c) 2017-2024 Nicola Asuni - Tecnick.com
 
 /**
  * @file binsearch.h
@@ -179,7 +179,7 @@
 #define order_le_uint64_t(x) (x) //!< Return LE uint64_t in the correct endianness order
 #endif
 
-#define MAXCOLS 256 //!< Maximum number of indexable columns
+#define MAXCOLS 256 //!< Maximum number of columns indexable
 
 /**
  * Returns the absolute file address position of the specified item (binary block).
@@ -915,7 +915,7 @@ define_col_has_prev_sub(uint64_t)
 
 static inline void parse_col_offset(mmfile_t *mf)
 {
-    uint8_t i;
+    uint8_t i = 0;
     uint64_t b = 0;
     mf->index[0] = mf->doffset;
     for (i = 0; i < mf->ncols; i++)
@@ -941,13 +941,13 @@ static inline void parse_info_binsrc(mmfile_t *mf)
     mf->doffset = (uint64_t)9 + mf->ncols + ((8 - ((mf->ncols + 1) & 7)) & 7); // account for 8-byte padding
     const uint64_t *op = (const uint64_t *)(mf->src + mf->doffset);
     mf->nrows = *op++;
-    uint8_t i;
+    uint8_t i = 0;
     for (i = 0; i < mf->ncols; i++)
     {
         mf->ctbytes[i] = *tp++;
         mf->index[i] = *op++;
     }
-    mf->doffset += ((mf->ncols + 1) * 8); // skip column offsets section
+    mf->doffset += ((uint64_t)(mf->ncols + 1) * 8); // skip column offsets section
     mf->dlength -= mf->doffset;
 }
 
@@ -1016,6 +1016,8 @@ static inline void mmap_binfile(const char *file, mmfile_t *mf)
     // Basic support for Feather File format.
     case 0x0000000031414546: // magic number "FEA1" in LE
         parse_info_feather(mf);
+        break;
+    default:
         break;
     }
     parse_col_offset(mf);

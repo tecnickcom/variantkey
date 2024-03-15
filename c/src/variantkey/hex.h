@@ -44,8 +44,8 @@ static inline size_t hex_uint64_t(uint64_t n, char *str)
 static inline uint64_t parse_hex_uint64_t(const char *s)
 {
     uint64_t v = 0;
-    uint8_t b;
-    size_t i;
+    uint8_t b = 0;
+    size_t i = 0;
     for (i = 0; i < 16; i++)
     {
         b = s[i];

@@ -9,12 +9,6 @@
 
 // Test for hex
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -27,7 +21,7 @@
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
@@ -38,7 +32,7 @@ int test_hex_uint64_t()
     hex_uint64_t(0x1234567890abcdef, s);
     if (strcmp(s, "1234567890abcdef") != 0)
     {
-        fprintf(stderr, "%s : Unexpected variantkey: expected %s, got %s\n", __func__, "1234567890abcdef", s);
+        (void) fprintf(stderr, "%s : Unexpected variantkey: expected %s, got %s\n", __func__, "1234567890abcdef", s);
         ++errors;
     }
     return errors;
@@ -47,8 +41,8 @@ int test_hex_uint64_t()
 void benchmark_hex_uint64_t()
 {
     char s[17] = "";
-    uint64_t tstart, tend;
-    int i;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -56,17 +50,17 @@ void benchmark_hex_uint64_t()
         hex_uint64_t(size, s);
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_parse_hex_uint64_t()
 {
     int errors = 0;
-    uint64_t k;
+    uint64_t k = 0;
     k = parse_hex_uint64_t("1234567890AbCdEf");
     if (k != 0x1234567890abcdef)
     {
-        fprintf(stderr, "%s : Unexpected value: expected 0x1234567890abcdef, got 0x%016" PRIx64 "\n", __func__, k);
+        (void) fprintf(stderr, "%s : Unexpected value: expected 0x1234567890abcdef, got 0x%016" PRIx64 "\n", __func__, k);
         ++errors;
     }
     return errors;
@@ -74,9 +68,9 @@ int test_parse_hex_uint64_t()
 
 void benchmark_parse_hex_uint64_t()
 {
-    uint64_t k;
-    uint64_t tstart, tend;
-    int i;
+    uint64_t k = 0;
+    uint64_t tstart = 0, tend = 0;
+    int i = 0;
     int size = 1000;
     tstart = get_time();
     for (i=0 ; i < size; i++)
@@ -84,7 +78,7 @@ void benchmark_parse_hex_uint64_t()
         k = parse_hex_uint64_t("1234567890AbCdEf");
     }
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, k);
+    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, k);
 }
 
 int main()

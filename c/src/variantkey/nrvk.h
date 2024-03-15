@@ -190,7 +190,7 @@ static inline uint64_t get_variantkey_chrom_startpos(uint64_t vk)
 
 /** @brief Get the CHROM + END POS encoding from VariantKey.
  *
- * @param nvc      Structure containing the pointers to the memory mapped file columns.
+ * @param nvc   Structure containing the pointers to the memory mapped file columns.
  * @param vk    VariantKey code.
  *
  * @return CHROM + END POS.
@@ -211,11 +211,11 @@ static inline uint64_t get_variantkey_chrom_endpos(nrvk_cols_t nvc, uint64_t vk)
  */
 static inline size_t nrvk_bin_to_tsv(nrvk_cols_t nvc, const char *tsvfile)
 {
-    FILE * fp;
-    size_t sizeref, sizealt, len = 0;
+    FILE *fp = 0;
+    size_t sizeref = 0, sizealt = 0, len = 0;
     char ref[ALLELE_MAXSIZE];
     char alt[ALLELE_MAXSIZE];
-    uint64_t i;
+    uint64_t i = 0;
     fp = fopen(tsvfile, "we");
     if (fp == NULL)
     {
@@ -224,9 +224,9 @@ static inline size_t nrvk_bin_to_tsv(nrvk_cols_t nvc, const char *tsvfile)
     for (i = 0; i < nvc.nrows; i++)
     {
         len += (get_nrvk_ref_alt_by_pos(nvc, i, ref, &sizeref, alt, &sizealt) + 19);
-        fprintf(fp, "%016" PRIx64 "\t%s\t%s\n", *nvc.vk++, ref, alt);
+        (void) fprintf(fp, "%016" PRIx64 "\t%s\t%s\n", *nvc.vk++, ref, alt);
     }
-    fclose(fp);
+    (void) fclose(fp);
     return len;
 }
 

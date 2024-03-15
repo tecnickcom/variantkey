@@ -9,12 +9,6 @@
 
 // Test for set
 
-#if __STDC_VERSION__ >= 199901L
-#define _XOPEN_SOURCE 600
-#else
-#define _XOPEN_SOURCE 500
-#endif
-
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -27,7 +21,7 @@
 uint64_t get_time()
 {
     struct timespec t;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t);
+    (void) timespec_get(&t, TIME_UTC);
     return (((uint64_t)t.tv_sec * 1000000000) + (uint64_t)t.tv_nsec);
 }
 
@@ -37,12 +31,12 @@ int test_sort_uint64_t()
     uint64_t arr[10] = {8,1,9,3,2,7,4,0,5,6};
     uint64_t tmp[10];
     sort_uint64_t(arr, tmp, 10);
-    uint32_t i;
+    uint32_t i = 0;
     for(i = 0; i < 10; i++)
     {
         if (arr[i] != i)
         {
-            fprintf(stderr, "%s : Expected %" PRIu32 ", got %" PRIu64 "\n", __func__, i, arr[i]);
+            (void) fprintf(stderr, "%s : Expected %" PRIu32 ", got %" PRIu64 "\n", __func__, i, arr[i]);
             ++errors;
         }
     }
@@ -53,16 +47,16 @@ void benchmark_sort_uint64_t()
 {
     const uint32_t nitems = 100000;
     uint64_t arr[nitems], tmp[nitems];
-    uint32_t i;
+    uint32_t i = 0;
     for (i = 0; i < nitems; i--)
     {
         arr[i] = (uint64_t)(nitems - i);
     }
-    uint64_t tstart, tend;
+    uint64_t tstart = 0, tend = 0;
     tstart = get_time();
     sort_uint64_t(arr, tmp, nitems);
     tend = get_time();
-    fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/nitems);
+    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/nitems);
 }
 
 int test_order_uint64_t()
@@ -96,12 +90,12 @@ int test_order_uint64_t()
         0xffffffffffffffff, // 2
     };
     order_uint64_t(arr, tmp, idx, tdx, 10);
-    uint32_t i;
+    uint32_t i = 0;
     for(i = 0; i < 10; i++)
     {
         if (arr[i] != exp[i])
         {
-            fprintf(stderr, "%s (%" PRIu32 "): Expected value %" PRIu64 ", got %" PRIu64 "\n", __func__, i, exp[i], arr[i]);
+            (void) fprintf(stderr, "%s (%" PRIu32 "): Expected value %" PRIu64 ", got %" PRIu64 "\n", __func__, i, exp[i], arr[i]);
             ++errors;
         }
     }
@@ -110,7 +104,7 @@ int test_order_uint64_t()
     {
         if (idx[i] != edx[i])
         {
-            fprintf(stderr, "%s (%" PRIu32 "): Expected index %" PRIu32 ", got %" PRIu32 "\n", __func__, i, edx[i], idx[i]);
+            (void) fprintf(stderr, "%s (%" PRIu32 "): Expected index %" PRIu32 ", got %" PRIu32 "\n", __func__, i, edx[i], idx[i]);
             ++errors;
         }
     }
@@ -122,12 +116,12 @@ int test_reverse_uint64_t()
     int errors = 0;
     uint64_t arr[9] = {0,1,2,3,4,5,6,7,8};
     reverse_uint64_t(arr, 9);
-    uint64_t i;
+    uint64_t i = 0;
     for(i = 0; i < 9; i++)
     {
         if (arr[i] != (8 - i))
         {
-            fprintf(stderr, "%s : Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, (8 - i), arr[i]);
+            (void) fprintf(stderr, "%s : Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, (8 - i), arr[i]);
             ++errors;
         }
     }
@@ -142,15 +136,15 @@ int test_unique_uint64_t()
     uint64_t n = (p - arr);
     if (n != 10)
     {
-        fprintf(stderr, "%s : Expected 10, got %" PRIu64 "\n", __func__, n);
+        (void) fprintf(stderr, "%s : Expected 10, got %" PRIu64 "\n", __func__, n);
         ++errors;
     }
-    uint64_t i;
+    uint64_t i = 0;
     for(i = 0; i < n; i++)
     {
         if (arr[i] != i)
         {
-            fprintf(stderr, "%s : Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, arr[i]);
+            (void) fprintf(stderr, "%s : Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, arr[i]);
             ++errors;
         }
     }
@@ -165,7 +159,7 @@ int test_unique_uint64_t_zero()
     uint64_t n = (p - arr);
     if (n != 0)
     {
-        fprintf(stderr, "%s : Expected 0, got %" PRIu64 "\n", __func__, n);
+        (void) fprintf(stderr, "%s : Expected 0, got %" PRIu64 "\n", __func__, n);
         ++errors;
     }
     return errors;
@@ -181,16 +175,16 @@ int test_intersection_uint64_t()
     uint64_t n = (p - o_arr);
     if (n != 6)
     {
-        fprintf(stderr, "%s : Expected 5, got %" PRIu64 "\n", __func__, n);
+        (void) fprintf(stderr, "%s : Expected 5, got %" PRIu64 "\n", __func__, n);
         ++errors;
     }
-    uint64_t i;
+    uint64_t i = 0;
     uint64_t e[6] = {0,3,3,5,6,9};
     for(i = 0; i < n; i++)
     {
         if (o_arr[i] != e[i])
         {
-            fprintf(stderr, "%s (%" PRIu64 "): Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, e[i], o_arr[i]);
+            (void) fprintf(stderr, "%s (%" PRIu64 "): Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, e[i], o_arr[i]);
             ++errors;
         }
     }
@@ -207,16 +201,16 @@ int test_union_uint64_t()
     uint64_t n = (p - o_arr);
     if (n != 11)
     {
-        fprintf(stderr, "%s : Expected 10, got %" PRIu64 "\n", __func__, n);
+        (void) fprintf(stderr, "%s : Expected 10, got %" PRIu64 "\n", __func__, n);
         ++errors;
     }
-    uint64_t i;
+    uint64_t i = 0;
     uint64_t e[11] = {0,1,2,3,3,4,5,6,6,7,8};
     for(i = 0; i < n; i++)
     {
         if (o_arr[i] != e[i])
         {
-            fprintf(stderr, "%s (%" PRIu64 "): Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, e[i], o_arr[i]);
+            (void) fprintf(stderr, "%s (%" PRIu64 "): Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, e[i], o_arr[i]);
             ++errors;
         }
     }
@@ -233,16 +227,16 @@ int test_union_uint64_t_ba()
     uint64_t n = (p - o_arr);
     if (n != 11)
     {
-        fprintf(stderr, "%s : Expected 5, got %" PRIu64 "\n", __func__, n);
+        (void) fprintf(stderr, "%s : Expected 5, got %" PRIu64 "\n", __func__, n);
         ++errors;
     }
-    uint64_t i;
+    uint64_t i = 0;
     uint64_t e[11] = {0,1,2,3,4,5,6,7,8,9,9};
     for(i = 0; i < n; i++)
     {
         if (o_arr[i] != e[i])
         {
-            fprintf(stderr, "%s (%" PRIu64 "): Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, e[i], o_arr[i]);
+            (void) fprintf(stderr, "%s (%" PRIu64 "): Expected %" PRIu64 ", got %" PRIu64 "\n", __func__, i, e[i], o_arr[i]);
             ++errors;
         }
     }
