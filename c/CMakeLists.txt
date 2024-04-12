@@ -37,7 +37,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
 
     set(CMAKE_C_FLAGS_RELEASE   "-O3")
     set(CMAKE_C_FLAGS_DEBUG     "-O0 -g3")
-    set(CMAKE_C_FLAGS_COVERAGE  "-O0 -pg -g3 --coverage ${CMAKE_C_FLAGS_ASAN}")
+    set(CMAKE_C_FLAGS_COVERAGE  "-O0 -pg -g3 --coverage")
     set(CMAKE_C_FLAGS_CHECK     "-O2 -Werror")
     set(CMAKE_C_FLAGS_CHECKFULL "${CMAKE_C_FLAGS_CHECK} -Wcast-qual")
 endif(CMAKE_COMPILER_IS_GNUCC)

@@ -4,9 +4,23 @@
 # @link        https://github.com/tecnickcom/variantkey
 # ------------------------------------------------------------------------------
 
-# Install R in Ubuntu/Debian:
-# sudo apt install r-base libfontconfig1-dev libcurl4-openssl-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
-# sudo Rscript -e "install.packages(c('Rcpp', 'base', 'devtools', 'inline', 'pryr', 'renv', 'ragg', 'roxygen2', 'testthat', 'pkgdown', 'libgfortran-ng'), repos = 'http://cran.us.r-project.org')"
+# To install R please refere to the official guides at: https://cran.r-project.org
+#
+# For Ubuntu:
+#
+#     cd /tmp
+#     wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | sudo gpg --dearmor -o /usr/share/keyrings/r-project.gpg
+#     echo "deb [signed-by=/usr/share/keyrings/r-project.gpg] https://cloud.r-project.org/bin/linux/ubuntu jammy-cran40/" | sudo tee -a /etc/apt/sources.list.d/r-project.list
+#     sudo apt update
+#     sudo apt install --no-install-recommends r-base
+#
+# Install additional R packages required for this project:
+#     sudo Rscript -e "install.packages(c('Rcpp', 'devtools', 'inline', 'pryr', 'renv', 'ragg', 'roxygen2', 'testthat', 'pkgdown'), repos = 'http://cran.us.r-project.org')"
+#
+# ------------------------------------------------------------------------------
+
+SHELL=/bin/bash
+.SHELLFLAGS=-o pipefail -c
 
 # Project name
 PROJECT=variantkey
