@@ -71,8 +71,10 @@ vbuild: clean version
 	rm -rf venv
 	virtualenv -p /usr/bin/python3 venv
 	source venv/bin/activate \
-	&& pip install -e ../python/ \
 	&& python --version \
-	&& pip install --pre black \
+	&& pip install -e ../python/ \
+	&& pip install --pre black build pytest wheel \
 	&& pip install -e .[test] \
-	&& python setup.py sdist bdist_wheel install test
+	&& pytest \
+	&& python -m build --sdist --wheel
+
