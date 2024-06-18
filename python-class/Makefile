@@ -63,7 +63,7 @@ format:
 .PHONY: version
 version:
 	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
-	sed -i "s/variantkey==.*,$$/variantkey==$(VERSION).$(RELEASE)\",/" setup.py
+	sed -i "s/variantkey>=.*,$$/variantkey>=$(VERSION).$(RELEASE)\",/" setup.py
 
 # Build and test the package
 .PHONY: vbuild

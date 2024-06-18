@@ -56,7 +56,7 @@ setup(
     ],
     install_requires=[
         "numpy>=1.24.2,<2",
-        "variantkey==5.6.9.0",
+        "variantkey>=5.6.9.0",
     ],
     extras_require={
         "test": [
