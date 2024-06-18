@@ -46,7 +46,7 @@ build: clean version
 # Remove any build artifact
 .PHONY: clean
 clean:
-	rm -rf venv target c Dockerfile htmlcov build dist .pytest_cache .cache .benchmarks ./test/*.so ./test/__pycache__ ./variantkey/__pycache__ ./variantkey.egg-info
+	rm -rf venv target c Dockerfile htmlcov build dist .pytest_cache .cache .benchmarks ./test/*.so ./test/__pycache__ ./pyvariantkey/__pycache__ ./pyvariantkey.egg-info
 	find . -type f -name '*.pyc' -exec rm -f {} \;
 
 # Generate source code documentation
@@ -63,7 +63,7 @@ format:
 .PHONY: version
 version:
 	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
-	sed -i "s/'variantkey>=.*',$$/\"variantkey>=$(VERSION).$(RELEASE)\",/" setup.py
+	sed -i "s/variantkey==.*,$$/variantkey==$(VERSION).$(RELEASE)\",/" setup.py
 
 # Build and test the package
 .PHONY: vbuild
