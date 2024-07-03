@@ -627,12 +627,7 @@ func TestEncodeChrom(t *testing.T) {
 	}
 
 	for i, s := range cdata {
-		i := i
-		s := s
-
 		for _, v := range s {
-			v := v
-
 			t.Run("", func(t *testing.T) {
 				t.Parallel()
 
@@ -671,7 +666,6 @@ func TestDecodeChrom(t *testing.T) {
 
 	for k, v := range cdata {
 		k := uint8(k)
-		v := v
 
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
@@ -733,12 +727,12 @@ func TestEncodeRefAlt(t *testing.T) {
 
 	var ri, rj, tmp int
 
-	for i := 0; i < 11; i++ {
+	for i := range 11 {
 		for j := i; j < 11; j++ {
 			ri = i
 			rj = j
 
-			for r := 0; r < 2; r++ {
+			for range 2 {
 				lenref = uint8(len(cdata[ri]))
 				lenalt = uint8(len(cdata[rj]))
 
@@ -810,8 +804,6 @@ func TestEncodeVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -833,8 +825,6 @@ func TestExtractVariantKeyChrom(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -856,8 +846,6 @@ func TestExtractVariantKeyPos(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -879,8 +867,6 @@ func TestExtractVariantKeyRefAlt(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -902,8 +888,6 @@ func TestDecodeVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -927,8 +911,6 @@ func TestVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -986,8 +968,6 @@ func TestRange(t *testing.T) {
 	}
 
 	for _, v := range vkrangeTestData {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -1022,8 +1002,6 @@ func TestCompareVariantKeyChrom(t *testing.T) {
 	}
 
 	for _, v := range cmpTestData {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -1059,8 +1037,6 @@ func TestCompareVariantKeyChromPos(t *testing.T) {
 	}
 
 	for _, v := range cmpTestData {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -1082,8 +1058,6 @@ func TestHex(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -1105,8 +1079,6 @@ func TestParseHex(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -1130,8 +1102,6 @@ func TestReverseVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getVariantsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 

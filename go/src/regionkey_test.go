@@ -69,8 +69,6 @@ func TestEncodeRegionStrand(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -92,8 +90,6 @@ func TestDecodeRegionStrand(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -115,8 +111,6 @@ func TestEncodeRegionKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -138,8 +132,6 @@ func TestExtractRegionKeyChrom(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -161,8 +153,6 @@ func TestExtractRegionKeyStartPos(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -184,8 +174,6 @@ func TestExtractRegionKeyEndPos(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -207,8 +195,6 @@ func TestExtractRegionKeyStrand(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -230,8 +216,6 @@ func TestDecodeRegionKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -256,8 +240,6 @@ func TestReverseRegionKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -282,8 +264,6 @@ func TestRegionKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -324,8 +304,6 @@ func TestGetRegionKeyChromStartPos(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -347,8 +325,6 @@ func TestGetRegionKeyChromEndPos(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getRegionsTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -370,8 +346,6 @@ func TestAreOverlappingRegions(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getOverlapData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -393,8 +367,6 @@ func TestAreOverlappingRegionRegionKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getOverlapData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -416,8 +388,6 @@ func TestAreOverlappingRegionKeys(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getOverlapData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -439,8 +409,6 @@ func TestAreOverlappingVariantKeyRegionKey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getOverlapData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -462,8 +430,6 @@ func TestVariantToRegionkey(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getOverlapData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 

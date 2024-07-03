@@ -38,9 +38,6 @@ func TestFindRefAltByVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestNonRevVKData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -66,9 +63,6 @@ func TestNRReverseVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestNonRevVKData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -96,9 +90,6 @@ func TestGetVariantKeyRefLength(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestNonRevVKData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -126,9 +117,6 @@ func TestGetVariantKeyEndPos(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestNonRevVKData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -143,9 +131,6 @@ func TestGetVariantKeyChromStartPos(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestNonRevVKData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -159,9 +144,6 @@ func TestGetVariantKeyChromEndPos(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestNonRevVKData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 

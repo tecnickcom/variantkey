@@ -33,9 +33,6 @@ func TestFindRVVariantKeyByRsid(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -98,9 +95,6 @@ func TestFindVRRsidByVariantKey(t *testing.T) {
 	t.Parallel()
 
 	for i, tt := range getTestData() {
-		i := i
-		tt := tt
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 

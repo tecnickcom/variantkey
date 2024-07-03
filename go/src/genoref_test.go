@@ -103,8 +103,6 @@ func TestCheckReference(t *testing.T) {
 	}
 
 	for _, v := range tdata {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -158,8 +156,6 @@ func TestNormalizeVariant(t *testing.T) {
 	}
 
 	for _, v := range ndata {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -210,8 +206,6 @@ func TestNormalizedVariantKey(t *testing.T) {
 	}
 
 	for _, v := range ndata {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 

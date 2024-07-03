@@ -134,8 +134,6 @@ func TestEncodeStringID(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getEsidTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -157,8 +155,6 @@ func TestEncodeStringNumID(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getEsidNumTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -180,8 +176,6 @@ func TestDecodeStringID(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getEsidTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -203,8 +197,6 @@ func TestDecodeStringNumID(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getEsidNumTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
@@ -226,8 +218,6 @@ func TestHashStringID(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range getEsidTestData() {
-		v := v
-
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 

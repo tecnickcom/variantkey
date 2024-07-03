@@ -268,7 +268,7 @@ func castCTMMFileToGo(mf C.mmfile_t) TMMFile {
 
 	var i uint8
 
-	for i = 0; i < ncols; i++ {
+	for i = range ncols {
 		ctbytes[i] = uint8(mf.ctbytes[i])
 		index[i] = uint64(mf.index[i])
 	}
