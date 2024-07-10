@@ -19,6 +19,9 @@ RELEASE=$(shell cat ../RELEASE)
 # Current directory
 CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 
+# Path fot the python binary
+PYTHON=$(shell which python3)
+
 # --- MAKE TARGETS ---
 
 # Display general help about this command
@@ -28,20 +31,22 @@ help:
 	@echo "${PROJECT} Python Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "    make build   : Build and test the library"
+	@echo "    make build   : Build the library"
 	@echo "    make clean   : Remove any build artifact"
 	@echo "    make docs    : Generate documentation"
 	@echo "    make format  : Format the source code"
+	@echo "    make test    : Test the library"
+	@echo "    make venv    : Create a virtual environment"
 	@echo "    make version : Set the version from VERSION file"
-	@echo "    make vbuild  : Build and test the library inside a virtualenv"
 	@echo ""
 
-all: clean vbuild
+all: clean venv build test
 
-# Build and test the package
+# Build the package
 .PHONY: build
-build: clean version
-	pip install -e .[test] && python setup.py sdist bdist_wheel install test
+build: version
+	source venv/bin/activate \
+	&& python -m build --sdist --wheel
 
 # Remove any build artifact
 .PHONY: clean
@@ -61,19 +66,23 @@ format:
 	astyle --style=allman --recursive --suffix=none 'variantkey/*.c'
 	black setup.py
 
+.PHONY: test
+test:
+	source venv/bin/activate \
+	&& pytest
+
 # Set the version from VERSION file
 .PHONY: version
 version:
 	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
 
-# Build and test the package
-.PHONY: vbuild
-vbuild: clean version
+# Create a virtual environment
+.PHONY: venv
+venv: clean version
 	rm -rf venv
-	virtualenv -p /usr/bin/python3 venv
+	virtualenv -p $(PYTHON) venv
 	source venv/bin/activate \
 	&& python --version \
-	&& pip install --pre black build pytest wheel \
-	&& pip install -e .[test] \
-	&& pytest \
-	&& python -m build --sdist --wheel
+	&& pip install --upgrade pip \
+	&& pip install --pre wheel build black pytest \
+	&& pip install -e .[test]

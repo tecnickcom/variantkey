@@ -80,7 +80,7 @@ jobs:
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd python && make vbuild
+        run: cd python && make all
 
   python-class:
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd python-class && make vbuild
+        run: cd python-class && make all
 
   r:
     runs-on: ubuntu-latest
