@@ -84,5 +84,5 @@ venv: clean version
 	source venv/bin/activate \
 	&& python --version \
 	&& pip install --upgrade pip \
-	&& pip install --pre wheel build black pytest \
-	&& pip install -e .[test]
+	&& pip install --upgrade --pre wheel build black pytest setuptools \
+	&& pip install --use-pep517 --no-build-isolation -e .[test]
