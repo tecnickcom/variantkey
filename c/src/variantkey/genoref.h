@@ -46,8 +46,6 @@
  *
  * @param file  Path to the file to map.
  * @param mf    Structure containing the memory mapped file.
- *
- * @return Returns the memory-mapped file descriptors.
  */
 static inline void mmap_genoref_file(const char *file, mmfile_t *mf)
 {
@@ -86,8 +84,6 @@ static inline int aztoupper(int c)
  * @param pre    Character to prepend.
  * @param string String to modify.
  * @param size   Input string length.
- *
- * @return void
  */
 static inline void prepend_char(const char pre, char *string, size_t *size)
 {

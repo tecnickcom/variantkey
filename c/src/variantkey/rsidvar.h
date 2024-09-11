@@ -49,8 +49,6 @@ typedef struct rsidvar_cols_t
  * @param file  Path to the file to map.
  * @param mf    Structure containing the memory mapped file.
  * @param cvr   Structure containing the pointers to the VKRS memory mapped file columns.
- *
- * @return Returns the memory-mapped file descriptors.
  */
 static inline void mmap_vkrs_file(const char *file, mmfile_t *mf, rsidvar_cols_t *cvr)
 {
@@ -66,8 +64,6 @@ static inline void mmap_vkrs_file(const char *file, mmfile_t *mf, rsidvar_cols_t
  * @param file  Path to the file to map.
  * @param mf    Structure containing the memory mapped file.
  * @param crv   Structure containing the pointers to the RSVK memory mapped file columns.
- *
- * @return Returns the memory-mapped file descriptors.
  */
 static inline void mmap_rsvk_file(const char *file, mmfile_t *mf, rsidvar_cols_t *crv)
 {

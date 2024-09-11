@@ -69,8 +69,6 @@ typedef struct nrvk_cols_t
  * @param file  Path to the file to map.
  * @param mf    Structure containing the memory mapped file.
  * @param nvc   Structure containing the pointers to the memory mapped file columns.
- *
- * @return Returns the memory-mapped file descriptors.
  */
 static inline void mmap_nrvk_file(const char *file, mmfile_t *mf, nrvk_cols_t *nvc)
 {

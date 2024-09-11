@@ -979,8 +979,6 @@ static inline void parse_info_feather(mmfile_t *mf)
  *
  * @param file  Path to the file to map.
  * @param mf    Structure containing the memory mapped file.
- *
- * @return Returns the memory-mapped file descriptors.
  */
 static inline void mmap_binfile(const char *file, mmfile_t *mf)
 {
