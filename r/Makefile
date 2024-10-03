@@ -43,11 +43,11 @@ help:
 	@echo "VariantKey R Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "    make build   : Build the library"
-	@echo "    make test    : Test the library"
-	@echo "    make format  : Format the source code"
-	@echo "    make clean   : Remove any build artifact"
-	@echo "    make devdoc  : Generate documentation"
+	@echo "  make build  : Build the library"
+	@echo "  make test   : Test the library"
+	@echo "  make format : Format the source code"
+	@echo "  make clean  : Remove any build artifact"
+	@echo "  make devdoc : Generate documentation"
 	@echo ""
 
 all: clean format build test

@@ -49,15 +49,16 @@ help:
 	@echo "VariantKey Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "    make c            : Build and test the C version"
-	@echo "    make go           : Build and test the GO version"
-	@echo "    make javascript   : Build and test the Javascript version"
-	@echo "    make python       : Build and test the Python version"
-	@echo "    make python-class : Build and test the Python wrapper class"
-	@echo "    make r            : Build and test the R version"
-	@echo "    make clean        : Remove any build artifact"
-	@echo "    make dbuild       : Build everything inside a Docker container"
-	@echo "    make tag          : Tag the Git repository"
+	@echo "  make c            : Build and test the C version"
+	@echo "  make go           : Build and test the GO version"
+	@echo "  make javascript   : Build and test the Javascript version"
+	@echo "  make python       : Build and test the Python version"
+	@echo "  make python-class : Build and test the Python wrapper class"
+	@echo "  make r            : Build and test the R version"
+	@echo "  make clean        : Remove any build artifact"
+	@echo "  make dbuild       : Build everything inside a Docker container"
+	@echo "  make tag          : Tag the Git repository"
+	@echo "  make versionup    : Increase the patch number in the VERSION file"
 	@echo ""
 
 all: c go javascript python python-class r
@@ -147,3 +148,9 @@ pubdocs:
 tag:
 	git tag -a "v$(VERSION)" -m "Version $(VERSION)" && \
 	git push origin --tags
+
+# Increase the patch number in the VERSION file
+.PHONY: versionup
+versionup:
+	echo ${VERSION} | gawk -F. '{printf("%d.%d.%d",$$1,$$2,(($$3+1)));}' > VERSION
+	$(MAKE) version
