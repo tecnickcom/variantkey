@@ -146,7 +146,7 @@ func TestEncodeStringID(t *testing.T) {
 func BenchmarkEncodeStringID(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		EncodeStringID("ABC0123456", 0)
 	}
 }
@@ -167,7 +167,7 @@ func TestEncodeStringNumID(t *testing.T) {
 func BenchmarkEncodeStringNumID(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		EncodeStringNumID("AbCDE:000012345", ':')
 	}
 }
@@ -188,7 +188,7 @@ func TestDecodeStringID(t *testing.T) {
 func BenchmarkDecodeStringID(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		DecodeStringID(0x08628e49669e8a6a)
 	}
 }
@@ -209,7 +209,7 @@ func TestDecodeStringNumID(t *testing.T) {
 func BenchmarkDecodeStringNumID(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		DecodeStringID(0xf8628e4978bc614e)
 	}
 }
@@ -230,7 +230,7 @@ func TestHashStringID(t *testing.T) {
 func BenchmarkHashStringID(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		HashStringID("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	}
 }

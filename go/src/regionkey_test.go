@@ -81,7 +81,7 @@ func TestEncodeRegionStrand(t *testing.T) {
 func BenchmarkEncodeRegionStrand(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		EncodeRegionStrand(-1)
 	}
 }
@@ -102,7 +102,7 @@ func TestDecodeRegionStrand(t *testing.T) {
 func BenchmarkDecodeRegionStrand(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		DecodeRegionStrand(2)
 	}
 }
@@ -123,7 +123,7 @@ func TestEncodeRegionKey(t *testing.T) {
 func BenchmarkEncodeRegionKey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		EncodeRegionKey(25, 1000, 2000, 2)
 	}
 }
@@ -144,7 +144,7 @@ func TestExtractRegionKeyChrom(t *testing.T) {
 func BenchmarkExtractRegionKeyChrom(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ExtractRegionKeyChrom(0x080001f400002260)
 	}
 }
@@ -165,7 +165,7 @@ func TestExtractRegionKeyStartPos(t *testing.T) {
 func BenchmarkExtractRegionKeyStartPos(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ExtractRegionKeyStartPos(0x080001f400002260)
 	}
 }
@@ -186,7 +186,7 @@ func TestExtractRegionKeyEndPos(t *testing.T) {
 func BenchmarkExtractRegionKeyEndPos(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ExtractRegionKeyEndPos(0x080001f400002260)
 	}
 }
@@ -207,7 +207,7 @@ func TestExtractRegionKeyStrand(t *testing.T) {
 func BenchmarkExtractRegionKeyStrand(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ExtractRegionKeyStrand(0x080001f400002260)
 	}
 }
@@ -231,7 +231,7 @@ func TestDecodeRegionKey(t *testing.T) {
 func BenchmarkDecodeRegionKey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		DecodeRegionKey(0x080001f400002260)
 	}
 }
@@ -255,7 +255,7 @@ func TestReverseRegionKey(t *testing.T) {
 func BenchmarkReverseRegionKey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ReverseRegionKey(0x080001f400002260)
 	}
 }
@@ -276,7 +276,7 @@ func TestRegionKey(t *testing.T) {
 func BenchmarkRegionKey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		RegionKey("MT", 1000, 2000, -1)
 	}
 }
@@ -316,7 +316,7 @@ func TestGetRegionKeyChromStartPos(t *testing.T) {
 func BenchmarkGetRegionKeyChromStartPos(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		GetRegionKeyChromStartPos(0x080001f400002260)
 	}
 }
@@ -337,7 +337,7 @@ func TestGetRegionKeyChromEndPos(t *testing.T) {
 func BenchmarkGetRegionKeyChromEndPos(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		GetRegionKeyChromEndPos(0x080001f400002260)
 	}
 }
@@ -358,7 +358,7 @@ func TestAreOverlappingRegions(t *testing.T) {
 func BenchmarkAreOverlappingRegions(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		AreOverlappingRegions(5, 4, 6, 5, 3, 7)
 	}
 }
@@ -379,7 +379,7 @@ func TestAreOverlappingRegionRegionKey(t *testing.T) {
 func BenchmarkAreOverlappingRegionRegionKey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		AreOverlappingRegionRegionKey(5, 4, 6, 0x2800000180000038)
 	}
 }
@@ -400,7 +400,7 @@ func TestAreOverlappingRegionKeys(t *testing.T) {
 func BenchmarkAreOverlappingRegionKeys(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		AreOverlappingRegionKeys(0x2800000200000030, 0x2800000180000038)
 	}
 }
@@ -421,7 +421,7 @@ func TestAreOverlappingVariantKeyRegionKey(t *testing.T) {
 func BenchmarkAreOverlappingVariantKeyRegionKey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		nrvk.AreOverlappingVariantKeyRegionKey(0x2800000210920000, 0x2800000180000038)
 	}
 }
@@ -442,7 +442,7 @@ func TestVariantToRegionkey(t *testing.T) {
 func BenchmarkVariantToRegionkey(b *testing.B) {
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		nrvk.VariantToRegionkey(0x2800000210920000)
 	}
 }

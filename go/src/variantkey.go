@@ -25,14 +25,14 @@ import (
 // maxcols is the maximum number of indexable columns as in binsearch.h file.
 const maxcols = 256
 
-// TVariantKey contains a representation of a genetic variant key
+// TVariantKey contains a representation of a genetic variant key.
 type TVariantKey struct {
 	Chrom  uint8  `json:"chrom"`
 	Pos    uint32 `json:"pos"`
 	RefAlt uint32 `json:"refalt"`
 }
 
-// TVariantKeyRev contains a genetic variant components
+// TVariantKeyRev contains a genetic variant components.
 type TVariantKeyRev struct {
 	Chrom   string `json:"chrom"`
 	Pos     uint32 `json:"pos"`
@@ -42,7 +42,7 @@ type TVariantKeyRev struct {
 	SizeAlt uint8  `json:"size_alt"`
 }
 
-// TVKRange contains min and max VariantKey values for range searches
+// TVKRange contains min and max VariantKey values for range searches.
 type TVKRange struct {
 	Min uint64 `json:"min"`
 	Max uint64 `json:"max"`
@@ -77,8 +77,8 @@ func castCVKRrange(vr C.vkrange_t) TVKRange {
 	}
 }
 
-// StringToNTBytes safely convert a string to byte array with an extra null terminator
-// This is to ensure a correct CGO conversion to char*
+// StringToNTBytes safely convert a string to byte array with an extra null terminator.
+// This is to ensure a correct CGO conversion to char*.
 func StringToNTBytes(s string) []byte {
 	b := make([]byte, len(s)+1)
 
@@ -105,7 +105,7 @@ func EncodeChrom(chrom string) uint8 {
 	return uint8(C.encode_chrom((*C.char)(pchrom), C.size_t(sizechrom)))
 }
 
-// DecodeChrom decode chrom to string
+// DecodeChrom decode chrom to string.
 func DecodeChrom(c uint8) string {
 	cstr := C.malloc(4)
 
@@ -128,7 +128,7 @@ func EncodeRefAlt(ref string, alt string) uint32 {
 	return uint32(C.encode_refalt((*C.char)(pref), C.size_t(sizeref), (*C.char)(palt), C.size_t(sizealt)))
 }
 
-// DecodeRefAlt decode Ref+Alt code if reversible
+// DecodeRefAlt decode Ref+Alt code if reversible.
 func DecodeRefAlt(c uint32) (string, string, uint8, uint8, uint8) {
 	cref := C.malloc(12)
 
@@ -247,7 +247,7 @@ func ReverseVariantKey(v uint64) (string, uint32, string, string, uint8, uint8) 
 
 // --- BINSEARCH ---
 
-// TMMFile contains the memory mapped file info
+// TMMFile contains the memory mapped file info.
 type TMMFile struct {
 	Src     unsafe.Pointer // Pointer to the memory map.
 	Fd      int            // File descriptor.
@@ -414,7 +414,7 @@ func (crv RSIDVARCols) FindRVVariantKeyByRsid(first, last uint64, rsid uint32) (
 }
 
 // GetNextRVVariantKeyByRsid get the next VariantKey for the specified rsID in the RV file.
-// Returns the VariantKey or 0, and the position
+// Returns the VariantKey or 0, and the position.
 func (crv RSIDVARCols) GetNextRVVariantKeyByRsid(pos, last uint64, rsid uint32) (uint64, uint64) {
 	cpos := C.uint64_t(pos)
 	vk := uint64(C.get_next_rv_variantkey_by_rsid(castGoRSIDVARColsToC(crv), &cpos, C.uint64_t(last), C.uint32_t(rsid)))
@@ -423,7 +423,7 @@ func (crv RSIDVARCols) GetNextRVVariantKeyByRsid(pos, last uint64, rsid uint32) 
 }
 
 // FindAllRVVariantKeyByRsid get all VariantKeys for the specified rsID in the RV file.
-// Returns a list of VariantKeys
+// Returns a list of VariantKeys.
 func (crv RSIDVARCols) FindAllRVVariantKeyByRsid(first, last uint64, rsid uint32) []uint64 {
 	ccr := castGoRSIDVARColsToC(crv)
 	cfirst := C.uint64_t(first)
@@ -450,7 +450,7 @@ func (crv RSIDVARCols) FindVRRsidByVariantKey(first uint64, last uint64, vk uint
 }
 
 // GetNextVRRsidByVariantKey get the next rsID for the specified VariantKey in the VR file.
-// Returns the rsID or 0, and the position
+// Returns the rsID or 0, and the position.
 //
 //nolint:revive
 func (cvr RSIDVARCols) GetNextVRRsidByVariantKey(pos, last uint64, vk uint64) (uint32, uint64) {
@@ -694,7 +694,7 @@ func (mf TMMFile) NormalizedVariantKey(chrom string, pos uint32, posindex uint8,
 
 // --- REGIONKEY ---
 
-// TRegionKey contains a representation of a genomic region key
+// TRegionKey contains a representation of a genomic region key.
 type TRegionKey struct {
 	Chrom    uint8  `json:"chrom"`
 	StartPos uint32 `json:"startpos"`
@@ -702,7 +702,7 @@ type TRegionKey struct {
 	Strand   uint8  `json:"strand"`
 }
 
-// TRegionKeyRev contains a genomic region components
+// TRegionKeyRev contains a genomic region components.
 type TRegionKeyRev struct {
 	Chrom    string `json:"chrom"`
 	StartPos uint32 `json:"startpos"`
@@ -740,7 +740,7 @@ func DecodeRegionStrand(strand uint8) int8 {
 	return int8(C.decode_region_strand(C.uint8_t(strand)))
 }
 
-// EncodeRegionKey returns  a 64 bit regionkey
+// EncodeRegionKey returns  a 64 bit regionkey.
 func EncodeRegionKey(chrom uint8, startpos, endpos uint32, strand uint8) uint64 {
 	return uint64(C.encode_regionkey(C.uint8_t(chrom), C.uint32_t(startpos), C.uint32_t(endpos), C.uint8_t(strand)))
 }
