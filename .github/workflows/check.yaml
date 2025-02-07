@@ -9,8 +9,8 @@ on:
       - 'main'
 
 env:
-  NODE_VERSION: 18
-  PYTHON_VERSION: 3.x
+  NODE_VERSION: 22
+  PYTHON_VERSION: 3.12
 
 permissions:
   contents: read
