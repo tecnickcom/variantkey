@@ -10,7 +10,7 @@ func TestGenorefIndex(t *testing.T) {
 	t.Parallel()
 
 	exp := []uint64{248, 248, 274, 299, 323, 346, 368, 389, 409, 428, 446, 463, 479, 494, 508, 521, 533, 544, 554, 563, 571, 578, 584, 589, 593, 596, 598}
-	require.Equal(t, len(exp), len(gref.Index), "Expected size %d, got %d", len(exp), len(gref.Index))
+	require.Len(t, gref.Index, len(exp), "Expected size %d, got %d", len(exp), len(gref.Index))
 
 	for k, v := range exp {
 		require.Equal(t, gref.Index[k], v, "(%d) Expected value %d, got %d", k, v, gref.Index[k])
