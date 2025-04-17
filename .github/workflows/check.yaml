@@ -56,7 +56,7 @@ jobs:
       - name: setup node build environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
       - name: install dependencies
         run: npm install --global uglify-js js-beautify
       - name: set RELEASE number
