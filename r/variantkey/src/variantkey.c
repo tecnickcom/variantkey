@@ -246,7 +246,7 @@ static const mmfile_t *get_mmfile_mf(SEXP mf)
 {
     if (R_ExternalPtrAddr(mf) == NULL)
     {
-        return (const mmfile_t *)Calloc(1, mmfile_t);
+        return (const mmfile_t *)R_Calloc(1, mmfile_t);
     }
     return (const mmfile_t *)R_ExternalPtrAddr(mf);
 }
@@ -258,7 +258,7 @@ static void destroy_mf(SEXP mf)
     {
         return;
     }
-    Free(cmf);
+    R_Free(cmf);
     R_ClearExternalPtr(mf);
 }
 
@@ -278,7 +278,7 @@ static const rsidvar_cols_t *get_rsidvar_mc(SEXP mc)
 {
     if (R_ExternalPtrAddr(mc) == NULL)
     {
-        return (const rsidvar_cols_t *)Calloc(1, rsidvar_cols_t);
+        return (const rsidvar_cols_t *)R_Calloc(1, rsidvar_cols_t);
     }
     return (const rsidvar_cols_t *)R_ExternalPtrAddr(mc);
 }
@@ -290,14 +290,14 @@ static void destroy_rsidvar_mc(SEXP mc)
     {
         return;
     }
-    Free(cmc);
+    R_Free(cmc);
     R_ClearExternalPtr(mc);
 }
 
 SEXP R_mmap_rsvk_file(SEXP file, SEXP ctbytes)
 {
-    mmfile_t *mf = (mmfile_t *)Calloc(1, mmfile_t);
-    rsidvar_cols_t *mc = (rsidvar_cols_t *)Calloc(1, rsidvar_cols_t);
+    mmfile_t *mf = (mmfile_t *)R_Calloc(1, mmfile_t);
+    rsidvar_cols_t *mc = (rsidvar_cols_t *)R_Calloc(1, rsidvar_cols_t);
     mf->ncols = (uint8_t)(LENGTH(ctbytes));
     int *px = INTEGER(ctbytes);
     for (int i = 0; i < mf->ncols; i++)
@@ -320,8 +320,8 @@ SEXP R_mmap_rsvk_file(SEXP file, SEXP ctbytes)
 
 SEXP R_mmap_vkrs_file(SEXP file, SEXP ctbytes)
 {
-    mmfile_t *mf = (mmfile_t *)Calloc(1, mmfile_t);
-    rsidvar_cols_t *mc = (rsidvar_cols_t *)Calloc(1, rsidvar_cols_t);
+    mmfile_t *mf = (mmfile_t *)R_Calloc(1, mmfile_t);
+    rsidvar_cols_t *mc = (rsidvar_cols_t *)R_Calloc(1, rsidvar_cols_t);
     mf->ncols = (uint8_t)(LENGTH(ctbytes));
     int *px = INTEGER(ctbytes);
     for (int i = 0; i < mf->ncols; i++)
@@ -512,7 +512,7 @@ static const nrvk_cols_t *get_nrvk_mc(SEXP mc)
 {
     if (R_ExternalPtrAddr(mc) == NULL)
     {
-        return (const nrvk_cols_t *)Calloc(1, nrvk_cols_t);
+        return (const nrvk_cols_t *)R_Calloc(1, nrvk_cols_t);
     }
     return (const nrvk_cols_t *)R_ExternalPtrAddr(mc);
 }
@@ -524,14 +524,14 @@ static void destroy_nrvk_mc(SEXP mc)
     {
         return;
     }
-    Free(cmc);
+    R_Free(cmc);
     R_ClearExternalPtr(mc);
 }
 
 SEXP R_mmap_nrvk_file(SEXP file)
 {
-    mmfile_t *mf = (mmfile_t *)Calloc(1, mmfile_t);
-    nrvk_cols_t *mc = (nrvk_cols_t *)Calloc(1, nrvk_cols_t);
+    mmfile_t *mf = (mmfile_t *)R_Calloc(1, mmfile_t);
+    nrvk_cols_t *mc = (nrvk_cols_t *)R_Calloc(1, nrvk_cols_t);
     mmap_nrvk_file(CHAR(STRING_ELT(file, 0)), mf, mc);
     SEXP emf = PROTECT(R_MakeExternalPtr(mf, R_NilValue, R_NilValue));
     R_RegisterCFinalizerEx(emf, destroy_mf, TRUE);
@@ -665,7 +665,7 @@ SEXP R_nrvk_bin_to_tsv(SEXP mc, SEXP tsvfile)
 
 SEXP R_mmap_genoref_file(SEXP file)
 {
-    mmfile_t *mf = (mmfile_t *)Calloc(1, mmfile_t);
+    mmfile_t *mf = (mmfile_t *)R_Calloc(1, mmfile_t);
     mmap_genoref_file(CHAR(STRING_ELT(file, 0)), mf);
     SEXP emf = PROTECT(R_MakeExternalPtr(mf, R_NilValue, R_NilValue));
     R_RegisterCFinalizerEx(emf, destroy_mf, TRUE);

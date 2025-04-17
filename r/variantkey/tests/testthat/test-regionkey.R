@@ -127,11 +127,11 @@ test_that("AreOverlappingRegionKeys", {
 })
 
 test_that("AreOverlappingVariantKeyRegionKey", {
-    res <- AreOverlappingVariantKeyRegionKey(mc = NULL, as.hex64(unlist(t[,"a_vk"])), as.hex64(unlist(t[,"b_rk"])))
+    res <- AreOverlappingVariantKeyRegionKey(as.hex64(unlist(t[,"a_vk"])), as.hex64(unlist(t[,"b_rk"])))
     expect_that(res, equals(unlist(t[,"exp"])))
 })
 
 test_that("VariantToRegionkey", {
-    res <- VariantToRegionkey(mc = NULL, as.hex64(unlist(t[,"a_vk"])))
+    res <- VariantToRegionkey(as.hex64(unlist(t[,"a_vk"])))
     expect_identical(res, as.uint64(as.hex64(unlist(t[,"a_rk"]))))
 })
