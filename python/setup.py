@@ -30,7 +30,7 @@ class RunTests(Command):
 
 setup(
     name="variantkey",
-    version="5.6.35.0",
+    version="5.6.36.0",
     keywords=("variantkey variant key genetic genomics"),
     description="VariantKey Bindings for Python",
     long_description=read("../README.md"),
@@ -64,7 +64,6 @@ setup(
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Programming Language :: C",
         "Programming Language :: Python",

@@ -38,7 +38,7 @@ class RunTests(Command):
 
 setup(
     name="pyvariantkey",
-    version="5.6.35.0",
+    version="5.6.36.0",
     keywords=("variantkey variant key genetic genomics"),
     description="VariantKey Python wrapper class",
     long_description=read("../README.md"),
@@ -50,13 +50,12 @@ setup(
     packages=find_packages(exclude=["doc", "test*"]),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
-        "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
     ],
     install_requires=[
         "numpy>=1.24.2,<2",
-        "variantkey>=5.6.35.0",
+        "variantkey>=5.6.36.0",
     ],
     extras_require={
         "test": [
