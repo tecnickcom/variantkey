@@ -7,8 +7,10 @@ This software library provides:
 * ***ESID***: a reversible numerical encoding schema for genetic string identifiers.
 * ***normalize_variant***: a function to normalize human genetic variants for a given genome reference.
 
+[![Donate via PayPal](https://img.shields.io/badge/donate-paypal-87ceeb.svg)](https://www.paypal.com/donate/?hosted_button_id=NZUEC5XS8MFBJ)
+*Please consider supporting this project by making a donation via [PayPal](https://www.paypal.com/donate/?hosted_button_id=NZUEC5XS8MFBJ)*
+
 [![check](https://github.com/tecnickcom/variantkey/actions/workflows/check.yaml/badge.svg)](https://github.com/tecnickcom/variantkey/actions/workflows/check.yaml)
-[![Master Coverage Status](https://coveralls.io/repos/tecnickcom/variantkey/badge.svg?branch=master&service=github)](https://coveralls.io/github/tecnickcom/variantkey?branch=master)
 
 * **category**    Libraries
 * **author**      Nicola Asuni
