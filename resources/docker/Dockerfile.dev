@@ -7,5 +7,4 @@
 # ------------------------------------------------------------------------------
 
 FROM tecnickcom/alldev
-MAINTAINER info@tecnick.com
 ENV PATH=/usr/local/go/bin/:$PATH
