@@ -245,7 +245,7 @@ static inline size_t esid_decode_string_num_id(size_t size, uint64_t esid, char 
     if (num > 0)
     {
         char *ptr = (str + size);
-        size += snprintf(ptr, (str + 32) - ptr, "%" PRIu64, num);
+        size += snprintf(ptr, 20, "%" PRIu64, num);
     }
     str[size] = 0;
     return size;
