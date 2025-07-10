@@ -10,7 +10,7 @@ Vcs-Git: https://github.com/tecnickcom/variantkey.git
 Package: ~#PKGNAME#~
 Provides: variantkey
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends}
 Description: Numerical Encoding for Human Genetic Variants.
  Provides C header-only files for:
  VariantKey, a reversible numerical encoding schema for human genetic variants.
