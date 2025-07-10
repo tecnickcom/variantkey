@@ -245,6 +245,14 @@ static inline void flip_allele(char *allele, size_t size)
     allele[size] = 0;
 }
 
+/**
+ * Swap two sizes.
+ * The first size is copied to a temporary variable, then the second size is copied to the first,
+ * and finally the temporary variable is copied to the second size.
+ *
+ * @param first  Pointer to the first size.
+ * @param second Pointer to the second size.
+ */
 static inline void swap_sizes(size_t *first, size_t *second)
 {
     size_t tmp = *first;
@@ -252,12 +260,23 @@ static inline void swap_sizes(size_t *first, size_t *second)
     *second = tmp;
 }
 
+/**
+ * Swap two alleles.
+ * The first allele is copied to a temporary buffer, then the second allele is copied to the first,
+ * and finally the temporary buffer is copied to the second allele.
+ * The sizes of the alleles are also swapped.
+ *
+ * @param first       First allele string.
+ * @param sizefirst   Pointer to the length of the first allele string, excluding the terminating null byte.
+ * @param second      Second allele string.
+ * @param sizesecond  Pointer to the length of the second allele string, excluding the terminating null byte.
+ */
 static inline void swap_alleles(char *first, size_t *sizefirst, char *second, size_t *sizesecond)
 {
-    char tmp[ALLELE_MAXSIZE] = "";
-    strncpy(tmp, first, *sizefirst);
-    strncpy(first, second, *sizesecond);
-    strncpy(second, tmp, *sizefirst);
+    char tmp[ALLELE_MAXSIZE];
+    memcpy(tmp, first, *sizefirst);
+    memcpy(first, second, *sizesecond);
+    memcpy(second, tmp, *sizefirst);
     swap_sizes(sizefirst, sizesecond);
     first[*sizefirst] = 0;
     second[*sizesecond] = 0;
@@ -385,6 +404,10 @@ static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, c
 }
 
 /** @brief Returns a normalized 64 bit variant key based on CHROM, POS, REF, ALT.
+ *
+ * This function normalizes the variant using the genome reference data
+ * from the memory mapped binary fasta file and returns a 64 bit code
+ * representing the normalized variant.
  *
  * @param mf         Structure containing the memory mapped binary fasta file.
  * @param chrom      Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.

@@ -27,6 +27,14 @@
 #define ESID_NUMPOS   27 //!< Number of bit used to encode a number in the srting_num encoding
 #define ESID_MAXPAD   7  //!< Max number of padding zero digits
 
+/**
+ * Encode a single character into a 64 bit unsigned integer.
+ * This function can be used to convert generic string IDs to numeric IDs.
+ *
+ * @param c    The character to encode. It must be an ASCII character from '!' to 'z'.
+ *
+ * @return Encoded character ID.
+ */
 static inline uint64_t esid_encode_char(int c)
 {
     if (c < '!')
@@ -40,6 +48,15 @@ static inline uint64_t esid_encode_char(int c)
     return (uint64_t)(c - ESID_SHIFT);
 }
 
+/**
+ * Decode a single character from a 64 bit unsigned integer.
+ * This function can be used to convert generic string IDs to numeric IDs.
+ *
+ * @param esid  Encoded character ID.
+ * @param pos   Position of the character in the encoded string ID.
+ *
+ * @return Decoded character.
+ */
 static inline char esid_decode_char(uint64_t esid, size_t pos)
 {
     return (char)(((esid >> pos) & 0x3f) + ESID_SHIFT); // 0x3f hex = 63 dec = 00111111 bin
@@ -153,6 +170,17 @@ static inline uint64_t encode_string_num_id(const char *str, size_t size, char s
     return h;
 }
 
+/**
+ * Decode the encoded string ID.
+ * This function is the reverse of encode_string_id.
+ * The string is always returned in uppercase mode.
+ *
+ * @param size   Size of the string to decode, excluding the terminating null byte.
+ * @param esid   Encoded string ID code.
+ * @param str    String buffer to be returned. Its size should be enough to contain the results (at least 11 bytes).
+ *
+ * @return The total number of characters excluding the null-character appended at the end of the string.
+ */
 static inline size_t esid_decode_string_id(size_t size, uint64_t esid, char *str)
 {
     switch (size)
@@ -193,6 +221,17 @@ static inline size_t esid_decode_string_id(size_t size, uint64_t esid, char *str
     return size;
 }
 
+/**
+ * Decode the encoded string ID with a number.
+ * This function is the reverse of encode_string_num_id.
+ * The string is always returned in uppercase mode.
+ *
+ * @param size   Size of the string to decode, excluding the terminating null byte.
+ * @param esid   Encoded string ID code.
+ * @param str    String buffer to be returned. Its size should be enough to contain the results (at least 11 bytes).
+ *
+ * @return The total number of characters excluding the null-character appended at the end of the string.
+ */
 static inline size_t esid_decode_string_num_id(size_t size, uint64_t esid, char *str)
 {
     size = esid_decode_string_id(size, esid, str);
@@ -206,7 +245,7 @@ static inline size_t esid_decode_string_num_id(size_t size, uint64_t esid, char 
     if (num > 0)
     {
         char *ptr = (str + size);
-        size += sprintf(ptr, "%" PRIu64, num);
+        size += snprintf(ptr, (str + 32) - ptr, "%" PRIu64, num);
     }
     str[size] = 0;
     return size;
@@ -232,7 +271,16 @@ static inline size_t decode_string_id(uint64_t esid, char *str)
     return esid_decode_string_id(size, esid, str);
 }
 
-// Mix two 64 bit hash numbers using a MurmurHash3-like algorithm
+/**
+ * Mix two 64 bit hash numbers using a MurmurHash3-like algorithm.
+ * This function is used to combine hash values in a way that
+ * ensures a good distribution of the resulting hash.
+ *
+ * @param k    The key to mix.
+ * @param h    The hash value to mix with the key.
+ *
+ * @return The mixed hash value.
+ */
 static inline uint64_t muxhash64(uint64_t k, uint64_t h)
 {
     k *= 0x87c37b91114253d5;

@@ -55,6 +55,10 @@ typedef struct vkrange_t
 
 /** @brief Returns the encoding for a numerical chromosome input.
  *
+ * This function encodes a chromosome string that contains only digits (0-9).
+ * It processes each character of the chromosome string,
+ * converting it into a numerical value.
+ *
  * @param chrom  Chromosome. An identifier from the reference genome, no white-space permitted.
  * @param size   Length of the chrom string, excluding the terminating null byte.
  *
@@ -62,36 +66,47 @@ typedef struct vkrange_t
  */
 static inline uint8_t encode_numeric_chrom(const char *chrom, size_t size)
 {
-    size_t i = 0;
-    uint8_t v = (chrom[0] - '0');
-    for (i = 1; i < size; i++)
+    uint8_t v = 0;
+    for (size_t i = 0; i < size; ++i)
     {
-        if ((chrom[i] > '9') || (chrom[i] < '0'))
+        unsigned char c = (unsigned char)chrom[i];
+        if (c < '0' || c > '9')
         {
             return 0; // NA: a character that is not a number was found.
         }
-        v = ((v * 10) + (chrom[i] - '0'));
+        v = (uint8_t)((v * 10) + (c - '0'));
     }
     return v;
 }
 
 
-/** @brief Returns a true value (1) if the input chrom has 'chr' prefix (case insensitive).
+/** @brief Returns a true value (1) if the input chrom has 'chr' or 'CHR' prefix.
+ *
+ * This function checks if the chromosome string starts with the common prefix "chr" or "CHR".
  *
  * @param chrom  Chromosome. An identifier from the reference genome, no white-space permitted.
  * @param size   Length of the chrom string, excluding the terminating null byte.
  *
- * @return True (1) if the chr prefix is present.
+ * @return True (1) if the 'chr' prefix is present.
  */
 static inline int has_chrom_chr_prefix(const char *chrom, size_t size)
 {
-    return ((size > 3)
-            && ((chrom[0] == 'c') || (chrom[0] == 'C'))
-            && ((chrom[1] == 'h') || (chrom[1] == 'H'))
-            && ((chrom[2] == 'r') || (chrom[2] == 'R')));
+    if (size > 3)
+    {
+        // case-insensitive comparison for chr or CHR prefix
+        uint32_t v = ((uint8_t)chrom[0] | 0x20) << 16 | ((uint8_t)chrom[1] | 0x20) << 8 | ((uint8_t)chrom[2] | 0x20);
+        // 'c' = 0x63, 'h' = 0x68, 'r' = 0x72
+        return (v == 0x636872);
+    }
+    return 0;
 }
 
 /** @brief Returns chromosome numerical encoding.
+ *
+ * This function encodes a chromosome string into a numerical code.
+ * It processes the chromosome string to handle both numeric chromosomes (0-22) and special cases for X, Y, and M.
+ * It also checks for the common prefix "chr" or "CHR" and removes it if present.
+ * If the chromosome string is empty or contains invalid characters, it returns 0 (NA).
  *
  * @param chrom  Chromosome. An identifier from the reference genome, no white-space permitted.
  * @param size   Length of the chrom string, excluding the terminating null byte.
@@ -116,7 +131,7 @@ static inline uint8_t encode_chrom(const char *chrom, size_t size)
     };
     if (has_chrom_chr_prefix(chrom, size))
     {
-        // remove "chr" prefix
+        // remove "chr" or "CHR" prefix
         chrom += 3;
         size -= 3;
     }
@@ -128,7 +143,7 @@ static inline uint8_t encode_chrom(const char *chrom, size_t size)
     {
         return encode_numeric_chrom(chrom, size);
     }
-    if ((size == 1) || ((size == 2) && ((chrom[1] == 'T') || (chrom[1] == 't'))))
+    if ((size == 1) || ((size == 2) && (((uint8_t)chrom[1] | 0x20) == 't')))
     {
         return onecharmap[((uint8_t)chrom[0])];
     }
@@ -136,6 +151,10 @@ static inline uint8_t encode_chrom(const char *chrom, size_t size)
 }
 
 /** @brief Decode the chromosome numerical code.
+ *
+ * This function decodes a numerical chromosome code into a string representation.
+ * It handles numeric chromosomes (1-22) and special cases for X, Y, and M.
+ * It also returns 'NA' for invalid codes.
  *
  * @param code   CHROM code.
  * @param chrom  CHROM string buffer to be returned. Its size should be enough to contain the results (max 4 bytes).
@@ -146,27 +165,66 @@ static inline uint8_t encode_chrom(const char *chrom, size_t size)
  */
 static inline size_t decode_chrom(uint8_t code, char *chrom)
 {
-    if ((code < 1) || (code > 25))
+    // Fast path for numeric chromosomes 1-22
+    if ((code >= 1) && (code <= 22))
     {
-        return sprintf(chrom, "NA");
+        if (code < 10)
+        {
+            chrom[0] = (char)('0' + code);
+            chrom[1] = '\0';
+            return 1;
+        }
+        chrom[0] = (char)('0' + (code / 10));
+        chrom[1] = (char)('0' + (code % 10));
+        chrom[2] = '\0';
+        return 2;
     }
-    if (code < 23)
+    // X=23
+    if (code == 23)
     {
-        return sprintf(chrom, "%" PRIu8, code);
+        chrom[0] = 'X';
+        chrom[1] = '\0';
+        return 1;
     }
-    static const char *map[] = {"X", "Y", "MT"};
-    return sprintf(chrom, "%s", map[(code - 23)]);
+
+    // Y=24
+    if (code == 24)
+    {
+        chrom[0] = 'Y';
+        chrom[1] = '\0';
+        return 1;
+    }
+    // MT=25
+    if (code == 25)
+    {
+        chrom[0] = 'M';
+        chrom[1] = 'T';
+        chrom[2] = '\0';
+        return 2;
+    }
+    // Invalid code 'NA'
+    chrom[0] = 'N';
+    chrom[1] = 'A';
+    chrom[2] = '\0';
+    return 2;
 }
 
+/** @brief Encodes a nucleotide base into a numerical code.
+ *
+ * This function encodes a nucleotide character into a 2-bit numerical code.
+ * The mapping is as follows:
+ * - A = 0
+ * - C = 1
+ * - G = 2
+ * - T = 3
+ * Invalid characters are mapped to 4.
+ *
+ * @param c  Nucleotide character to encode.
+ *
+ * @return Numerical code for the nucleotide base (A=0, C=1, G=2, T=3, invalid=4).
+ */
 static inline uint32_t encode_base(const uint8_t c)
 {
-    /*
-      Encode base:
-      A = 0
-      C = 1
-      G = 2
-      T = 3
-    */
     static const uint32_t map[] =
     {
         4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
@@ -183,6 +241,21 @@ static inline uint32_t encode_base(const uint8_t c)
     return map[c];
 }
 
+/** @brief Encodes a nucleotide allele into an integer.
+ *
+ * This function encodes a nucleotide allele into an integer.
+ * It processes each character of the allele string,
+ * encoding it into a 2 bit value (A=0, C=1, G=2, T=3).
+ * If an invalid base is encountered (i.e., a base that is not A, C, G, or T),
+ * it returns -1 to indicate an error.
+ *
+ * @param h        Pointer to the 32 bit hash where the encoded allele will be stored.
+ * @param bitpos   Pointer to the current bit position in the hash.
+ * @param str      Pointer to the allele string to be encoded.
+ * @param size     Size of the allele string, excluding the terminating null byte.
+ *
+ * @return         0 on success, or -1 if an invalid base is encountered (i.e., a base that is not A, C, G, or T).
+ */
 static inline int encode_allele(uint32_t *h, uint8_t *bitpos, const char *str, size_t size)
 {
     uint32_t v = 0;
@@ -199,12 +272,27 @@ static inline int encode_allele(uint32_t *h, uint8_t *bitpos, const char *str, s
     return 0;
 }
 
+/**
+ * @brief Encodes a REF+ALT pair.
+ *
+ * This function encodes a REF+ALT pair into a 32 bit unsigned integer.
+ * It uses a reversible encoding scheme for REF and ALT alleles,
+ * where each allele is represented by its length and the nucleotide bases.
+ * The encoding is reversible for alleles with a total length of 11 or less bases.
+ *
+ * @param ref      Reference allele string.
+ * @param sizeref  Length of the reference allele string, excluding the terminating null byte.
+ * @param alt      Alternate allele string.
+ * @param sizealt  Length of the alternate allele string, excluding the terminating null byte.
+ *
+ * @return         A 32 bit unisgned integer representing the encoded REF+ALT pair.
+ *                 If an error occurs during encoding (e.g., invalid base), it returns MAXUINT32.
+ */
 static inline uint32_t encode_refalt_rev(const char *ref, size_t sizeref, const char *alt, size_t sizealt)
 {
-    //[******** ******** ******** ******** *RRRRAAA A1122334 45566778 8990011*]
-    uint32_t h = 0;
-    h |= ((uint32_t)(sizeref) << 27); // RRRR: length of (REF - 1)
-    h |= ((uint32_t)(sizealt) << 23); // AAAA: length of (ALT - 1)
+    // [******** ******** ******** ******** *RRRRAAA A1122334 45566778 8990011*]
+    // RRRR: length of (REF - 1) ; AAAA: length of (ALT - 1)
+    uint32_t h = ((uint32_t)(sizeref) << 27) |((uint32_t)(sizealt) << 23);
     uint8_t bitpos = 23;
     if ((encode_allele(&h, &bitpos, ref, sizeref) < 0) || (encode_allele(&h, &bitpos, alt, sizealt) < 0))
     {
@@ -213,7 +301,18 @@ static inline uint32_t encode_refalt_rev(const char *ref, size_t sizeref, const 
     return h;
 }
 
-// Mix two 32 bit hash numbers using a MurmurHash3-like algorithm
+/** @brief Mix two 32 bit hash numbers using a MurmurHash3-like algorithm.
+ *
+ * This function mixes two 32 bit hash numbers using a MurmurHash3-like algorithm.
+ * It takes a key (k) and a hash (h) as input,
+ * and applies a series of bitwise operations and multiplications to mix the two values.
+ * The mixing process ensures that the resulting hash is well-distributed and has good avalanche properties.
+ *
+ * @param k  The key to be mixed.
+ * @param h  The hash to be mixed with the key.
+ *
+ * @return   The mixed hash value.
+ */
 static inline uint32_t muxhash(uint32_t k, uint32_t h)
 {
     k *= 0xcc9e2d51;
@@ -224,20 +323,36 @@ static inline uint32_t muxhash(uint32_t k, uint32_t h)
     return ((h * 5) + 0xe6546b64);
 }
 
+/**
+ * @brief Encodes a character for packing.
+ *
+ * This function encodes a character into a 5 bit value.
+ * It maps characters 'A' to 'Z' and 'a' to 'z' to values 1 to 26.
+ * Invalid characters (i.e., characters not in the range 'A'-'Z' or 'a'-'z') are mapped to 27.
+ *
+ * @param c  The character to be encoded.
+ *
+ * @return   A 5 bit encoded value for the character.
+ */
 static inline uint32_t encode_packchar(int c)
 {
     if (c < 'A')
     {
         return 27;
     }
-    if (c >= 'a')
-    {
-        return (uint32_t)(c - 'a' + 1);
-    }
-    return (uint32_t)(c - 'A' + 1);
+    return (uint32_t)((c | 0x20) - 'a' + 1);
 }
 
-// pack blocks of 6 characters in 32 bit (6 x 5 bit + 2 spare bit) [ 01111122 22233333 44444555 55666660 ]
+/** @brief Packs a string of characters 1 to 5 characters.
+ *
+ * This function packs a string of max 5 characters in 32 bit unsigned integer:
+ * (6 x 5 bit + 2 spare bit) [ 01111122 22233333 44444555 55666660 ].
+ *
+ * @param str  Pointer to the string of characters to be packed.
+ * @param size Length of the string, excluding the terminating null byte.
+ *
+ * @return     A 32 bit unsigned integer containing the packed characters.
+ */
 static inline uint32_t pack_chars_tail(const char *str, size_t size)
 {
     uint32_t h = 0;
@@ -264,6 +379,17 @@ static inline uint32_t pack_chars_tail(const char *str, size_t size)
     return h;
 }
 
+/**
+ * @brief Packs a string of 6 characters into a 32 bit unsigned integer.
+ *
+ * This function packs a string of 6 characters into a 32 bit unsigned integer.
+ * It encodes each character into a 5 bit value and combines them into a single integer.
+ * The characters are packed in reverse order, starting from the 6th character.
+ *
+ * @param str  Pointer to the string of characters to be packed.
+ *
+ * @return     A 32 bit unsigned integer containing the packed characters.
+ */
 static inline uint32_t pack_chars(const char *str)
 {
     const char *pos = (str + 5);
@@ -275,7 +401,15 @@ static inline uint32_t pack_chars(const char *str)
             ^ (encode_packchar(*(pos-5)) << (1 + (5 * 5))));
 }
 
-// Return a 32 bit hash of a nucleotide string
+/** @brief Packs a nucleotide string into a 32 bit hash.
+ *
+ * Return a 32 bit hash of a nucleotide string.
+ *
+ * @param str  Pointer to the nucleotide string to be packed.
+ * @param size Length of the nucleotide string, excluding the terminating null byte.
+ *
+ * @return     A 32 bit unsigned integer containing the hashed characters.
+ */
 static inline uint32_t hash32(const char *str, size_t size)
 {
     uint32_t h = 0;
@@ -293,6 +427,19 @@ static inline uint32_t hash32(const char *str, size_t size)
     return h;
 }
 
+/**
+ * @brief Encodes a REF+ALT pair into a 32 bit hash.
+ *
+ * This function encodes a REF+ALT pair into a 32 bit hash.
+ * It uses a MurmurHash3-like algorithm to mix the hashes of the REF and ALT alleles.
+ *
+ * @param ref      Reference allele string.
+ * @param sizeref  Length of the reference allele string, excluding the terminating null byte.
+ * @param alt      Alternate allele string.
+ * @param sizealt  Length of the alternate allele string, excluding the terminating null byte.
+ *
+ * @return         A 32 bit unsigned integer representing the encoded REF+ALT pair.
+ */
 static inline uint32_t encode_refalt_hash(const char *ref, size_t sizeref, const char *alt, size_t sizealt)
 {
     // 0x3 is the separator character between REF and ALT [00000000 00000000 00000000 00000011]
@@ -307,6 +454,11 @@ static inline uint32_t encode_refalt_hash(const char *ref, size_t sizeref, const
 }
 
 /** @brief Returns reference+alternate numerical encoding.
+ *
+ * This function encodes a REF+ALT pair into a 32 bit unsigned integer.
+ * It uses a reversible encoding scheme for REF and ALT alleles,
+ * when the total length of REF and ALT is 11 or less bases.
+ * If the total length of REF and ALT is greater than 11, it uses a hashing scheme.
  *
  * @param ref      Reference allele. String containing a sequence of nucleotide letters.
  *                 The value in the pos field refers to the position of the first nucleotide in the String.
@@ -331,12 +483,44 @@ static inline uint32_t encode_refalt(const char *ref, size_t sizeref, const char
     return encode_refalt_hash(ref, sizeref, alt, sizealt);
 }
 
+/**
+ * @brief Decodes a base from a 32 bit code.
+ *
+ * This function decodes a base from a 32 bit code.
+ * It extracts the base value from the specified bit position in the code.
+ * The base is represented as a character (A, C, G, T).
+ *
+ * @param code     The 32 bit code containing the base information.
+ * @param bitpos   The bit position from which to extract the base value.
+ *
+ * @return         The decoded base character (A, C, G, T).
+ */
 static inline char decode_base(uint32_t code, int bitpos)
 {
     static const char base[4] = {'A', 'C', 'G', 'T'};
     return base[((code >> bitpos) & 0x3)]; // 0x3 is the 2 bit mask [00000011]
 }
 
+/**
+ *
+ * @brief Decodes a REF+ALT code if reversible (if it has 11 or less bases in total and only contains ACGT letters).
+ *
+ * This function decodes a REF+ALT code into its constituent reference and alternate alleles.
+ * It extracts the sizes of the reference and alternate alleles,
+ * and then decodes the bases from the code.
+ * The function assumes that the code is reversible, meaning it has 11 or fewer bases in total
+ * and only contains valid nucleotide letters (A, C, G, T).
+ *
+ * @param code     REF+ALT code.
+ * @param ref      Reference allele string buffer to be returned.
+ * @param sizeref  Pointer to the size of the ref buffer, excluding the terminating null byte.
+ *                 This will contain the final ref size.
+ * @param alt      Alternate allele string buffer to be returned.
+ * @param sizealt  Pointer to the size of the alt buffer, excluding the terminating null byte.
+ *                 This will contain the final alt size.
+ * @return         If the code is reversible, then the total number of characters of REF+ALT is returned.
+ *                 Otherwise 0 is returned.
+ */
 static inline size_t decode_refalt_rev(uint32_t code, char *ref, size_t *sizeref, char *alt, size_t *sizealt)
 {
     *sizeref = (size_t)((code & 0x78000000) >> 27); // [01111000 00000000 00000000 00000000]
@@ -413,6 +597,11 @@ static inline size_t decode_refalt_rev(uint32_t code, char *ref, size_t *sizeref
 
 /** @brief Decode the 32 bit REF+ALT code if reversible (if it has 11 or less bases in total and only contains ACGT letters).
  *
+ * This function decodes a REF+ALT code into its constituent reference and alternate alleles.
+ * It checks if the code is reversible by examining the last bit.
+ * If the last bit is set, it indicates a non-reversible encoding, and the function returns 0.
+ * If the last bit is not set, it calls decode_refalt_rev to decode the REF+ALT pair.
+ *
  * @param code     REF+ALT code
  * @param ref      REF string buffer to be returned.
  * @param sizeref  Pointer to the size of the ref buffer, excluding the terminating null byte.
@@ -435,6 +624,8 @@ static inline size_t decode_refalt(uint32_t code, char *ref, size_t *sizeref, ch
 
 /** @brief Returns a 64 bit variant key based on the pre-encoded CHROM, POS (0-based) and REF+ALT.
  *
+ * This function encodes a variant key using the provided pre-encoded chromosome, position, and reference+alternate values.
+ *
  * @param chrom      Encoded Chromosome (see encode_chrom).
  * @param pos        Position. The reference position, with the first base having position 0.
  * @param refalt     Encoded Reference + Alternate (see encode_refalt).
@@ -448,6 +639,8 @@ static inline uint64_t encode_variantkey(uint8_t chrom, uint32_t pos, uint32_t r
 
 /** @brief Extract the CHROM code from VariantKey.
  *
+ * This function extracts the chromosome code from a VariantKey.
+ *
  * @param vk VariantKey code.
  *
  * @return CHROM code.
@@ -458,6 +651,8 @@ static inline uint8_t extract_variantkey_chrom(uint64_t vk)
 }
 
 /** @brief Extract the POS code from VariantKey.
+ *
+ * This function extracts the position code from a VariantKey.
  *
  * @param vk VariantKey code.
  *
@@ -470,6 +665,8 @@ static inline uint32_t extract_variantkey_pos(uint64_t vk)
 
 /** @brief Extract the REF+ALT code from VariantKey.
  *
+ * This function extracts the reference and alternate alleles from a VariantKey.
+ *
  * @param vk VariantKey code.
  *
  * @return REF+ALT code.
@@ -481,6 +678,9 @@ static inline uint32_t extract_variantkey_refalt(uint64_t vk)
 
 /** @brief Decode a VariantKey code and returns the components as variantkey_t structure.
  *
+ * This function decodes a VariantKey code into its constituent components:
+ * chromosome, position, and reference+alternate alleles.
+ *
  * @param code VariantKey code.
  * @param vk   Decoded variantkey structure.
  */
@@ -491,8 +691,9 @@ static inline void decode_variantkey(uint64_t code, variantkey_t *vk)
     vk->refalt = extract_variantkey_refalt(code);
 }
 
-/**
- * Returns a 64 bit variant key based on CHROM, POS (0-based), REF, ALT.
+/** @brief Returns a 64 bit variantkey based on CHROM, POS (0-based), REF, ALT.
+ *
+ * Returns a 64 bit variantkey based on CHROM, POS (0-based), REF, ALT.
  * The variant should be already normalized (see normalize_variant or use normalized_variantkey).
  *
  * @param chrom      Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.
@@ -515,6 +716,11 @@ static inline uint64_t variantkey(const char *chrom, size_t sizechrom, uint32_t 
 
 /** @brief Returns minimum and maximum VariantKeys for range searches.
  *
+ * This function computes the minimum and maximum VariantKeys for a given range.
+ * It takes the chromosome, start position, end position, and a pointer to a vkrange_t structure.
+ * The function sets the min and max fields of the vkrange_t structure
+ * to the computed minimum and maximum VariantKeys.
+ *
  * @param chrom     Chromosome encoded number.
  * @param pos_min   Start reference position, with the first base having position 0.
  * @param pos_max   End reference position, with the first base having position 0.
@@ -527,12 +733,31 @@ static inline void variantkey_range(uint8_t chrom, uint32_t pos_min, uint32_t po
     range->max = (c | ((uint64_t)pos_max << VKSHIFT_POS) | VKMASK_REFALT);
 }
 
+/**
+ * @brief Compares two unsigned 64 bit integers.
+ *
+ * This function compares two unsigned 64 bit integers and returns:
+ * - -1 if the first integer is less than the second,
+ * - 0 if they are equal,
+ * - 1 if the first integer is greater than the second.
+ *
+ * @param a  The first unsigned 64 bit integer to be compared.
+ * @param b  The second unsigned 64 bit integer to be compared.
+ *
+ * @return -1 if a < b, 0 if a == b, 1 if a > b.
+ */
 static inline int8_t compare_uint64_t(uint64_t a, uint64_t b)
 {
     return (a < b) ? -1 : (a > b); // NOLINT(bugprone-narrowing-conversions,cppcoreguidelines-narrowing-conversions)
 }
 
 /** @brief Compares two VariantKeys by chromosome only.
+ *
+ * This function compares two VariantKeys by their chromosome values.
+ * The function returns:
+ * - -1 if the first chromosome is smaller than the second,
+ * - 0 if they are equal,
+ * - 1 if the first is greater than the second.
  *
  * @param vka    The first VariantKey to be compared.
  * @param vkb    The second VariantKey to be compared.
@@ -546,6 +771,12 @@ static inline int8_t compare_variantkey_chrom(uint64_t vka, uint64_t vkb)
 
 /** @brief Compares two VariantKeys by chromosome and position.
  *
+ * This function compares two VariantKeys by their chromosome and position values.
+ * The function returns:
+ * - -1 if the first CHROM+POS is smaller than the second,
+ * - 0 if they are equal,
+ * - 1 if the first is greater than the second.
+ *
  * @param vka    The first VariantKey to be compared.
  * @param vkb    The second VariantKey to be compared.
  *
@@ -558,6 +789,7 @@ static inline int8_t compare_variantkey_chrom_pos(uint64_t vka, uint64_t vkb)
 
 /** @brief Returns VariantKey hexadecimal string (16 characters).
  *
+ * This function converts a VariantKey code into a hexadecimal string representation.
  * The string represent a 64 bit number or:
  *   -  5 bit for CHROM
  *   - 28 bit for POS
@@ -577,6 +809,9 @@ static inline size_t variantkey_hex(uint64_t vk, char *str)
 }
 
 /** @brief Parses a VariantKey hexadecimal string and returns the code.
+ *
+ * This function parses a hexadecimal string representation of a VariantKey
+ * and converts it into a 64 bit unsigned integer.
  *
  * @param vs    VariantKey hexadecimal string (it must contain 16 hexadecimal characters).
  *

@@ -79,6 +79,20 @@ static inline void mmap_nrvk_file(const char *file, mmfile_t *mf, nrvk_cols_t *n
     nvc->nrows = mf->nrows;
 }
 
+/**
+ * Retrieve the REF and ALT strings for the specified position.
+ *
+ * @param nvc      Structure containing the pointers to the memory mapped file columns.
+ * @param pos      Position to search.
+ * @param ref      REF string buffer to be returned.
+ * @param sizeref  Pointer to the size of the ref buffer, excluding the terminating null byte.
+ *                 This will contain the final ref size.
+ * @param alt      ALT string buffer to be returned.
+ * @param sizealt  Pointer to the size of the alt buffer, excluding the terminating null byte.
+ *                 This will contain the final alt size.
+ *
+ * @return REF+ALT length or 0 if not found.
+ */
 static inline size_t get_nrvk_ref_alt_by_pos(nrvk_cols_t nvc, uint64_t pos, char *ref, size_t *sizeref, char *alt, size_t *sizealt)
 {
     if (pos >= nvc.nrows)
