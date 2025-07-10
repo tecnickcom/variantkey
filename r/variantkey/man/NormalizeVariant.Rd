@@ -8,17 +8,17 @@ https://genome.sph.umich.edu/wiki/Variant_Normalization
 Return Positive bitmask number in case of success, negative number in case of error.
 When positive, each bit has a different meaning when set, has defined by the NORM_* defines:
   * bit 0:
-      Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
+    Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
   * bit 1:
-      Alleles have been swapped.
+    Alleles have been swapped.
   * bit 2:
-      Alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
+    Alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
   * bit 3:
-      Alleles have been left extended.
+    Alleles have been left extended.
   * bit 4:
-      Alleles have been right trimmed.
+    Alleles have been right trimmed.
   * bit 5:
-      Alleles have been left trimmed.}
+    Alleles have been left trimmed.}
 \usage{
 NormalizeVariant(chrom, pos, ref, alt, mf = vk.env$genoref_$MF)
 }
@@ -40,15 +40,15 @@ https://genome.sph.umich.edu/wiki/Variant_Normalization
 Return Positive bitmask number in case of success, negative number in case of error.
 When positive, each bit has a different meaning when set, has defined by the NORM_* defines:
   * bit 0:
-      Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
+    Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
   * bit 1:
-      Alleles have been swapped.
+    Alleles have been swapped.
   * bit 2:
-      Alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
+    Alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
   * bit 3:
-      Alleles have been left extended.
+    Alleles have been left extended.
   * bit 4:
-      Alleles have been right trimmed.
+    Alleles have been right trimmed.
   * bit 5:
-      Alleles have been left trimmed.
+    Alleles have been left trimmed.
 }
