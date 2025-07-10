@@ -18,7 +18,7 @@
 
 * Ensure the new code is following the existing conventions and the unit test coverage is 100%.
 
-* Before submitting, please run the following command locally to ensure the code is passing the automatic checks: `make buildall`.
+* Before submitting, please run the following command locally to ensure the code is passing the automatic checks: `make all`.
 
 
 ## Add a new feature or change an existing one
