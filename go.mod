@@ -6,7 +6,6 @@ toolchain go1.25.0
 
 require (
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
-	github.com/rakyll/gotest v0.0.6
 	github.com/stretchr/testify v1.10.0
 )
 

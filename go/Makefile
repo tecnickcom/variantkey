@@ -47,7 +47,7 @@ export PATH := $(GOPATH)/bin:$(PATH)
 GO=GOPATH=$(GOPATH) GOPRIVATE=$(CVSPATH) $(shell which go)
 GOVERSION=${shell go version | grep -Po '(go[0-9]+.[0-9]+)'}
 GOFMT=$(shell which gofmt)
-GOTEST=GOPATH=$(GOPATH) $(shell which gotest)
+GOTEST=$(GO) test
 GODOC=GOPATH=$(GOPATH) $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
 GOLANGCILINTVERSION=v2.4.0
@@ -114,7 +114,6 @@ coverage: ensuretarget
 .PHONY: deps
 deps: ensuretarget
 	curl --silent --show-error --fail --location https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINUTIL) $(GOLANGCILINTVERSION)
-	$(GO) install github.com/rakyll/gotest
 	$(GO) install github.com/jstemmer/go-junit-report/v2@latest
 
 # Create the trget directories if missing
