@@ -1,1 +1,1 @@
-PKG_CFLAGS=-O3 -pedantic -std=c17 -Wall -Wextra -Wno-strict-prototypes -Wunused-value -Wcast-align -Wundef -Wformat -Wformat-security -Wshadow
+PKG_CFLAGS=-O3 -pedantic -std=c2x -Wall -Wextra -Wno-strict-prototypes -Wunused-value -Wcast-align -Wundef -Wformat -Wformat-security -Wshadow
