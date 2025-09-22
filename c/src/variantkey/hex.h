@@ -18,6 +18,7 @@
 #define VARIANTKEY_HEX_H
 
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 
 /** @brief Returns uint64_t hexadecimal string (16 characters).

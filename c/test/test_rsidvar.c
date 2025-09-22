@@ -9,14 +9,14 @@
 
 // Test for rsidvar
 
-#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
-#include <sys/mman.h>
 #include "../src/variantkey/rsidvar.h"
+#include "../src/variantkey/binsearch.h"
 
-#define TEST_DATA_SIZE 10
+enum { TEST_DATA_SIZE = 10};
 
 typedef struct test_data_t
 {

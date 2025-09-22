@@ -13,6 +13,7 @@
 #include <string.h>
 #include <strings.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <time.h>
 #include "../src/variantkey/variantkey.h"
 

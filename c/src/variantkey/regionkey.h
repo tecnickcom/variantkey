@@ -18,8 +18,12 @@
 #ifndef VARIANTKEY_REGIONKEY_H
 #define VARIANTKEY_REGIONKEY_H
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
+#include "variantkey.h"
 #include "nrvk.h"
+#include "hex.h"
 
 #define RK_MAX_POS       0x000000000FFFFFFF  //!< Maximum position value (2^28 - 1)
 #define RKMASK_CHROM     0xF800000000000000  //!< RegionKey binary mask for CHROM     [ 11111000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 ]

@@ -44,6 +44,7 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -989,7 +990,8 @@ static inline void mmap_binfile(const char *file, mmfile_t *mf)
     mf->dlength = 0;
     mf->nrows = 0;
     struct stat statbuf;
-    if (((mf->fd = open(file, O_RDONLY)) < 0) || (fstat(mf->fd, &statbuf) < 0))
+    mf->fd = open(file, O_RDONLY);
+    if ((mf->fd < 0) || (fstat(mf->fd, &statbuf) < 0))
     {
         return;
     }

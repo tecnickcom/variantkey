@@ -30,6 +30,8 @@
 #ifndef VARIANTKEY_NRVK_H
 #define VARIANTKEY_NRVK_H
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "binsearch.h"

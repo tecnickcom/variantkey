@@ -21,6 +21,7 @@
 #define VARIANTKEY_VARIANTKEY_H
 
 #include <inttypes.h>
+#include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 #include "hex.h"
@@ -495,10 +496,10 @@ static inline uint32_t encode_refalt(const char *ref, size_t sizeref, const char
  *
  * @return         The decoded base character (A, C, G, T).
  */
-static inline char decode_base(uint32_t code, int bitpos)
+static inline char decode_base(uint32_t code, uint8_t bitpos)
 {
     static const char base[4] = {'A', 'C', 'G', 'T'};
-    return base[((code >> bitpos) & 0x3)]; // 0x3 is the 2 bit mask [00000011]
+    return base[((code >> (bitpos & 0x1F)) & 0x3)]; // 0x3 is the 2 bit mask [00000011]
 }
 
 /**
@@ -556,6 +557,9 @@ static inline size_t decode_refalt_rev(uint32_t code, char *ref, size_t *sizeref
     // fall through
     case 1:
         ref[0] = decode_base(code, (3 + (2 * 9)));
+        break;
+    default:
+        break;
     }
     ref[*sizeref] = 0;
     uint8_t bitpos = (23 - ((*sizeref) << 1));
@@ -590,6 +594,9 @@ static inline size_t decode_refalt_rev(uint32_t code, char *ref, size_t *sizeref
     // fall through
     case 1:
         alt[0] = decode_base(code, bitpos - (2 * 1));
+        break;
+    default:
+        break;
     }
     alt[*sizealt] = 0;
     return (*sizeref + *sizealt);

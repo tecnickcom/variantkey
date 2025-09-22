@@ -63,7 +63,7 @@ build: version
 	cd variantkey \
 	&& cp ../../LICENSE . \
 	&& R -e 'renv::settings$$snapshot.type("implicit");renv::init();renv::snapshot();'
-	R -e 'setwd("./variantkey");renv::restore();library(devtools);library(roxygen2);pkgbuild::build();'
+	R -e 'setwd("./variantkey");renv::restore();library(devtools);library(roxygen2);library(stringi);pkgbuild::build();'
 
 .PHONY: test
 test:

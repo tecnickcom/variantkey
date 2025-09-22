@@ -84,5 +84,5 @@ venv: clean version
 	&& python --version \
 	&& pip install --upgrade pip \
 	&& pip install -e ../python/ \
-	&& pip install --upgrade --pre wheel build black pytest setuptools \
+	&& pip install --upgrade --pre wheel build black pytest setuptools meson-python Cython \
 	&& pip install --use-pep517 --no-build-isolation -e .[test]

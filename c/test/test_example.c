@@ -11,10 +11,10 @@
 // https://github.com/tecnickcom/variantkey
 
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../src/variantkey/hex.h"
 #include "../src/variantkey/binsearch.h"
 #include "../src/variantkey/esid.h"
 #include "../src/variantkey/genoref.h"

@@ -9,13 +9,13 @@
 
 // Test for genoref
 
-#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <time.h>
-#include <sys/mman.h>
 #include "../src/variantkey/genoref.h"
+#include "../src/variantkey/binsearch.h"
 
 // returns current time in nanoseconds
 uint64_t get_time()

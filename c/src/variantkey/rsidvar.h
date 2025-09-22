@@ -30,8 +30,9 @@
 #ifndef VARIANTKEY_RSIDVAR_H
 #define VARIANTKEY_RSIDVAR_H
 
+#include <inttypes.h>
+#include <stdint.h>
 #include "binsearch.h"
-#include "variantkey.h"
 
 /**
  * Struct containing the RSVK or VKRS memory mapped file column info.

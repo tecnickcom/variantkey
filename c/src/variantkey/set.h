@@ -18,7 +18,7 @@
 #define VARIANTKEY_SET_H
 
 #include <inttypes.h>
-#include <stdlib.h>
+#include <stdint.h>
 
 #define RADIX_SORT_COUNT_BLOCK \
     uint32_t c7[256]= {0}, c6[256]= {0}, c5[256]= {0}, c4[256]= {0}, c3[256]= {0}, c2[256]= {0}, c1[256]= {0}, c0[256]= {0}; \
@@ -137,8 +137,13 @@ static inline void reverse_uint64_t(uint64_t *arr, uint64_t nitems)
 {
     uint64_t *last = (arr + nitems);
     uint64_t tmp = 0;
-    while ((arr != last) && (arr != --last))
+    while (arr != last)
     {
+        --last;
+        if (arr == last)
+        {
+            break;
+        }
         tmp = *last;
         *last = *arr;
         *arr++ = tmp;
@@ -163,9 +168,12 @@ static inline uint64_t *unique_uint64_t(uint64_t *arr, uint64_t nitems)
     uint64_t *p = arr;
     while (++arr != last)
     {
-        if ((*p != *arr) && (*p++ != *arr))
+        if (*p != *arr)
         {
-            *p = *arr;
+            if (*p++ != *arr)
+            {
+                *p = *arr;
+            }
         }
     }
     return ++p;

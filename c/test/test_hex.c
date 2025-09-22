@@ -9,11 +9,10 @@
 
 // Test for hex
 
-#include <errno.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <time.h>
 #include "../src/variantkey/hex.h"
 

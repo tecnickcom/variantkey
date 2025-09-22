@@ -9,16 +9,22 @@
 
 // Test for regionkey
 
-#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
-#include <sys/mman.h>
 #include "../src/variantkey/regionkey.h"
+#include "../src/variantkey/variantkey.h"
+#include "../src/variantkey/binsearch.h"
+#include "../src/variantkey/nrvk.h"
 
-#define TEST_DATA_SIZE 10
-#define TEST_OVERLAP_SIZE 12
+enum
+{
+    TEST_DATA_SIZE = 10,
+    TEST_OVERLAP_SIZE = 12
+};
 
 typedef struct test_data_t
 {

@@ -58,7 +58,6 @@ help:
 	@echo "$(PROJECT) Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "  make qa        : Run all the tests and static analysis reports"
 	@echo "  make test      : Run the unit tests"
 	@echo "  make tidy      : Check the code using clang-tidy"
 	@echo "  make build     : Build the library"
@@ -77,7 +76,7 @@ all: clean version format test tidy build rpm deb package_vk doc
 # Test C code compatibility with C++
 .PHONY: testcpp
 testcpp:
-	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++17 -x c++ -o /dev/null {} \;
+	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++23 -x c++ -o /dev/null {} \;
 
 # Build and run the unit tests
 .PHONY: test

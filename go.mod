@@ -1,6 +1,6 @@
 module github.com/tecnickcom/variantkey
 
-go 1.25
+go 1.25.0
 
 toolchain go1.25.1
 

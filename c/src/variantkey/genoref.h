@@ -21,6 +21,8 @@
 #ifndef VARIANTKEY_GENOREF_H
 #define VARIANTKEY_GENOREF_H
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "binsearch.h"

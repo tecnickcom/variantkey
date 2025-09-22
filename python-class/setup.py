@@ -3,7 +3,7 @@
 from codecs import open
 from os.path import dirname, join
 from subprocess import call
-from setuptools import setup, find_packages, Extension, Command
+from setuptools import setup, find_packages, Command
 
 
 def read(fname):
@@ -38,7 +38,7 @@ class RunTests(Command):
 
 setup(
     name="pyvariantkey",
-    version="5.7.9.0",
+    version="5.7.10.0",
     keywords=("variantkey variant key genetic genomics"),
     description="VariantKey Python wrapper class",
     long_description=read("../README.md"),
@@ -55,7 +55,7 @@ setup(
     ],
     install_requires=[
         "numpy>=1.24.2,<2",
-        "variantkey>=5.7.9.0",
+        "variantkey>=5.7.10.0",
     ],
     extras_require={
         "test": [

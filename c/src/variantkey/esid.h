@@ -18,6 +18,7 @@
 #define VARIANTKEY_ESID_H
 
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #define ESID_MAXLEN   10 //!< Maximum number of characters that can be encoded
@@ -333,6 +334,9 @@ static inline uint64_t hash_string_id(const char *str, size_t size)
     // fall through
     case 1:
         v ^= (uint64_t)tail[0];
+        break;
+    default:
+        break;
     }
     if (v > 0)
     {
