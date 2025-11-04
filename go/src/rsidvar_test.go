@@ -52,9 +52,7 @@ func TestFindRVVariantKeyByRsidNotFound(t *testing.T) {
 }
 
 func BenchmarkFindRVVariantKeyByRsid(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		rv.FindRVVariantKeyByRsid(0, 9, 0x2F81F575)
 	}
 }
@@ -114,9 +112,7 @@ func TestFindVRRsidByVariantKeyNotFound(t *testing.T) {
 }
 
 func BenchmarkFindVRRsidByVariantKey(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		vr.FindVRRsidByVariantKey(0, vr.NRows, 0x160017CCA313D0E0)
 	}
 }
@@ -166,9 +162,7 @@ func TestFindVRChromPosRangeNotFound(t *testing.T) {
 }
 
 func BenchmarkFindVRChromPosRange(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		vr.FindVRChromPosRange(0, vr.NRows, 0x19, 0x001AF8FD, 0x001C8F2A)
 	}
 }

@@ -52,9 +52,7 @@ func TestFindRefAltByVariantKey(t *testing.T) {
 }
 
 func BenchmarkFindRefAltByVariantKey(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		nrvk.FindRefAltByVariantKey(0xb000c35b64690b25)
 	}
 }
@@ -79,9 +77,7 @@ func TestNRReverseVariantKey(t *testing.T) {
 }
 
 func BenchmarkNRReverseVariantKey(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		nrvk.ReverseVariantKey(0xb000c35b64690b25)
 	}
 }

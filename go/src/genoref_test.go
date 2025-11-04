@@ -39,9 +39,7 @@ func TestGetGenorefSeq(t *testing.T) {
 }
 
 func BenchmarkGetGenorefSeq(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		gref.GetGenorefSeq(13, 1)
 	}
 }

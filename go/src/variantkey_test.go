@@ -785,17 +785,13 @@ func BenchmarkEncodeRefAltRev(b *testing.B) {
 }
 
 func BenchmarkEncodeRefAltHash(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		EncodeRefAlt("GAGTGGAATGGAATAGAGTGTAGTGAAATGC", "G")
 	}
 }
 
 func BenchmarkDecodeRefAlt(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		DecodeRefAlt(0x08440000)
 	}
 }
@@ -835,9 +831,7 @@ func TestExtractVariantKeyChrom(t *testing.T) {
 }
 
 func BenchmarkExtractVariantKeyChrom(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		ExtractVariantKeyChrom(0x880082d600138000)
 	}
 }
@@ -856,9 +850,7 @@ func TestExtractVariantKeyPos(t *testing.T) {
 }
 
 func BenchmarkExtractVariantKeyPos(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		ExtractVariantKeyPos(0x880082d600138000)
 	}
 }
@@ -877,9 +869,7 @@ func TestExtractVariantKeyRefAlt(t *testing.T) {
 }
 
 func BenchmarkExtractVariantKeyRefAlt(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		ExtractVariantKeyRefAlt(0x880082d600138000)
 	}
 }
@@ -900,9 +890,7 @@ func TestDecodeVariantKey(t *testing.T) {
 }
 
 func BenchmarkDecodeVariantKey(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		DecodeVariantKey(0x880082d600138000)
 	}
 }
@@ -979,9 +967,7 @@ func TestRange(t *testing.T) {
 }
 
 func BenchmarkRange(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		Range(15, 12002028, 12152133)
 	}
 }
@@ -1012,9 +998,7 @@ func TestCompareVariantKeyChrom(t *testing.T) {
 }
 
 func BenchmarkCompareVariantKeyChrom(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		CompareVariantKeyChrom(0x0fffffff88b80000, 0x08027a2188c80000)
 	}
 }
@@ -1047,9 +1031,7 @@ func TestCompareVariantKeyChromPos(t *testing.T) {
 }
 
 func BenchmarkCompareVariantKeyChromPos(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		CompareVariantKeyChromPos(0x0fffffff88b80000, 0x0fffffff8ae2503b)
 	}
 }
@@ -1068,9 +1050,7 @@ func TestHex(t *testing.T) {
 }
 
 func BenchmarkHex(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		_ = Hex(0xa852662880400000)
 	}
 }
@@ -1091,9 +1071,7 @@ func TestParseHex(t *testing.T) {
 func BenchmarkParseHex(b *testing.B) {
 	bs := "a852662880400000"
 
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		ParseHex(bs)
 	}
 }
@@ -1119,9 +1097,7 @@ func TestReverseVariantKey(t *testing.T) {
 }
 
 func BenchmarkReverseVariantKey(b *testing.B) {
-	b.ResetTimer()
-
-	for range b.N {
+	for b.Loop() {
 		ReverseVariantKey(0x08027a2588b00000)
 	}
 }
