@@ -6,7 +6,7 @@
 // @author     Nicola Asuni <info@tecnick.com>
 // @link       https://github.com/tecnickcom/binsearch
 // @license    MIT (see LICENSE file)
-// @copyright  (c) 2017-2025 Nicola Asuni - Tecnick.com
+// @copyright  (c) 2017-2026 Nicola Asuni - Tecnick.com
 
 /**
  * @file binsearch.h
