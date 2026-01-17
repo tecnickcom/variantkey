@@ -2,7 +2,7 @@ module github.com/tecnickcom/variantkey
 
 go 1.25
 
-toolchain go1.25.5
+toolchain go1.25.6
 
 require (
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
