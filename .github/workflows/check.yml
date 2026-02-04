@@ -116,7 +116,6 @@ jobs:
             any::Rcpp
             any::devtools
             any::inline
-            any::pryr
             any::renv
             any::roxygen2
             any::testthat

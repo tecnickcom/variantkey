@@ -724,7 +724,7 @@ int test_decode_chrom()
         }
         if (clen <= 0)
         {
-            (void) fprintf(stderr, "%s : expecting string lenght greater than 0\n", __func__);
+            (void) fprintf(stderr, "%s : expecting string length greater than 0\n", __func__);
             ++errors;
         }
     }
