@@ -74,7 +74,7 @@ test:
 # Set the version from VERSION file
 .PHONY: version
 version:
-	sed -i "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
+	sed --in-place=.bak "s/version=.*,$$/version=\"$(VERSION).$(RELEASE)\",/" setup.py
 
 # Create a virtual environment
 .PHONY: venv

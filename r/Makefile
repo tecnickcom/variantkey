@@ -15,7 +15,7 @@
 #     sudo apt install --no-install-recommends r-base
 #
 # Install additional R packages required for this project:
-#     sudo Rscript -e "install.packages(c('Rcpp', 'devtools', 'inline', 'pryr', 'renv', 'ragg', 'roxygen2', 'testthat', 'pkgdown'), repos = 'http://cran.us.r-project.org')"
+#     sudo Rscript -e "install.packages(c('Rcpp', 'devtools', 'inline', 'renv', 'ragg', 'roxygen2', 'testthat', 'pkgdown'), repos = 'http://cran.us.r-project.org')"
 #
 # ------------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ all: clean format build test
 # Set the version from VERSION file
 .PHONY: version
 version:
-	sed -i "s/Version:.*$$/Version: $(VERSION).$(RELEASE)/" variantkey/DESCRIPTION
+	sed --in-place=.bak "s/Version:.*$$/Version: $(VERSION).$(RELEASE)/" variantkey/DESCRIPTION
 
 # Build the library
 .PHONY: build

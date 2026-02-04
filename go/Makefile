@@ -174,19 +174,19 @@ updateall: updatego updatelint updatemod
 # Update go version
 .PHONY: updatego
 updatego:
-	$(eval LAST_GO_TOOLCHAIN=$(shell curl -s https://go.dev/dl/ | grep -oP 'go[0-9]+\.[0-9]+\.[0-9]+\.linux-amd64\.tar\.gz' | head -n 1 | grep -oP 'go[0-9]+\.[0-9]+\.[0-9]+'))
-	$(eval LAST_GO_VERSION=$(shell echo ${LAST_GO_TOOLCHAIN} | grep -oP '[0-9]+\.[0-9]+'))
-	sed -i "s|^go [0-9]*\.[0-9]*$$|go ${LAST_GO_VERSION}|g" ../go.mod
-	sed -i "s|^toolchain go[0-9]*\.[0-9]*\.[0-9]*$$|toolchain ${LAST_GO_TOOLCHAIN}|g" ../go.mod
+	$(eval LAST_GO_TOOLCHAIN=$(shell curl -s https://go.dev/dl/ | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+\.linux-amd64\.tar\.gz' | head -n 1 | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+'))
+	$(eval LAST_GO_VERSION=$(shell echo ${LAST_GO_TOOLCHAIN} | grep -oE '[0-9]+\.[0-9]+'))
+	sed --in-place=.bak "s|^go [0-9]*\.[0-9]*$$|go ${LAST_GO_VERSION}|g" ../go.mod
+	sed --in-place=.bak "s|^toolchain go[0-9]*\.[0-9]*\.[0-9]*$$|toolchain ${LAST_GO_TOOLCHAIN}|g" ../go.mod
 
 # Update linter version
 .PHONY: updatelint
 updatelint:
-	$(eval LAST_GOLANGCILINT_VERSION=$(shell curl -sL https://github.com/golangci/golangci-lint/releases/latest | grep -oP '<title>Release \Kv[0-9]+\.[0-9]+\.[0-9]+'))
-	sed -i "s|^GOLANGCILINTVERSION=v[0-9]*\.[0-9]*\.[0-9]*$$|GOLANGCILINTVERSION=${LAST_GOLANGCILINT_VERSION}|g" Makefile
+	$(eval LAST_GOLANGCILINT_VERSION=$(shell curl -sL https://github.com/golangci/golangci-lint/releases/latest | sed -n 's/.*<title>Release \(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'))
+	sed --in-place=.bak "s|^GOLANGCILINTVERSION=v[0-9]*\.[0-9]*\.[0-9]*$$|GOLANGCILINTVERSION=${LAST_GOLANGCILINT_VERSION}|g" Makefile
 
 # Update dependencies
 .PHONY: updatemod
 updatemod: mod
 	$(GO) get -t -u ./... && \
-	$(GO) mod tidy -compat=$(shell grep -oP 'go \K[0-9]+\.[0-9]+' ../go.mod)
+	$(GO) mod tidy -compat=$(shell sed -n -E 's/^go ([0-9]+\.[0-9]+).*/\1/p' ../go.mod)
