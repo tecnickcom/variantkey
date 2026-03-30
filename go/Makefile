@@ -34,6 +34,12 @@ TARGETDIR=$(CURRENTDIR)target
 # Directory where to store binary utility tools
 BINUTIL=$(TARGETDIR)/binutil
 
+# sed argument for in-place substitutions
+SEDINPLACE=-i
+ifeq ($(shell uname -s),Darwin)
+	SEDINPLACE=-i ''
+endif
+
 # GO lang path
 ifeq ($(GOPATH),)
 	# extract the GOPATH
@@ -50,7 +56,7 @@ GOFMT=$(shell which gofmt)
 GOTEST=$(GO) test
 GODOC=GOPATH=$(GOPATH) $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
-GOLANGCILINTVERSION=v2.11.3
+GOLANGCILINTVERSION=v2.11.4
 
 # Directory containing the source code
 SRCDIR=./src
@@ -176,14 +182,14 @@ updateall: updatego updatelint updatemod
 updatego:
 	$(eval LAST_GO_TOOLCHAIN=$(shell curl -s https://go.dev/dl/ | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+\.linux-amd64\.tar\.gz' | head -n 1 | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+'))
 	$(eval LAST_GO_VERSION=$(shell echo ${LAST_GO_TOOLCHAIN} | grep -oE '[0-9]+\.[0-9]+'))
-	sed --in-place=.bak "s|^go [0-9]*\.[0-9]*$$|go ${LAST_GO_VERSION}|g" ../go.mod
-	sed --in-place=.bak "s|^toolchain go[0-9]*\.[0-9]*\.[0-9]*$$|toolchain ${LAST_GO_TOOLCHAIN}|g" ../go.mod
+	sed $(SEDINPLACE) "s|^go [0-9]*\.[0-9]*$$|go ${LAST_GO_VERSION}|g" ../go.mod
+	sed $(SEDINPLACE) "s|^toolchain go[0-9]*\.[0-9]*\.[0-9]*$$|toolchain ${LAST_GO_TOOLCHAIN}|g" ../go.mod
 
 # Update linter version
 .PHONY: updatelint
 updatelint:
 	$(eval LAST_GOLANGCILINT_VERSION=$(shell curl -sL https://github.com/golangci/golangci-lint/releases/latest | sed -n 's/.*<title>Release \(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'))
-	sed --in-place=.bak "s|^GOLANGCILINTVERSION=v[0-9]*\.[0-9]*\.[0-9]*$$|GOLANGCILINTVERSION=${LAST_GOLANGCILINT_VERSION}|g" Makefile
+	sed $(SEDINPLACE) "s|^GOLANGCILINTVERSION=v[0-9]*\.[0-9]*\.[0-9]*$$|GOLANGCILINTVERSION=${LAST_GOLANGCILINT_VERSION}|g" Makefile
 
 # Update dependencies
 .PHONY: updatemod
