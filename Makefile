@@ -42,58 +42,48 @@ endif
 
 # --- MAKE TARGETS ---
 
-# Display general help about this command
 .PHONY: help
 help:
 	@echo ""
-	@echo "VariantKey Makefile."
+	@echo "$(PROJECT) Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "  make c            : Build and test the C version"
-	@echo "  make go           : Build and test the GO version"
-	@echo "  make javascript   : Build and test the Javascript version"
-	@echo "  make python       : Build and test the Python version"
-	@echo "  make python-class : Build and test the Python wrapper class"
-	@echo "  make r            : Build and test the R version"
-	@echo "  make clean        : Remove any build artifact"
-	@echo "  make dbuild       : Build everything inside a Docker container"
-	@echo "  make tag          : Tag the Git repository"
-	@echo "  make versionup    : Increase the patch number in the VERSION file"
+	@awk '/^## /{desc=substr($$0,4)} /^\.PHONY:/{if(NF>1) {target=$$2; if(desc) printf "  make %-15s: %s\n",target,desc; desc=""}}' Makefile
 	@echo ""
 
 all: c go javascript python python-class r
 
-# Build and test the C version
+## Build and test the C version
 .PHONY: c
 c:
 	cd c && make all
 
-# Build and test the GO version
+## Build and test the GO version
 .PHONY: go
 go:
 	cd go && make all
 
-# Build and test the Javascript version
+## Build and test the Javascript version
 .PHONY: javascript
 javascript:
 	cd javascript && make all
 
-# Build and test the Python version
+## Build and test the Python version
 .PHONY: python
 python:
 	cd python && make all
 
-# Build and test the Python wrapper class
+## Build and test the Python wrapper class
 .PHONY: python-class
 python-class:
 	cd python-class && make all
 
-# Build and test the R version
+## Build and test the R version
 .PHONY: r
 r:
 	cd r && make all
 
-# Remove any build artifact
+## Remove any build artifact
 .PHONY: clean
 clean:
 	rm -rf target
@@ -104,7 +94,7 @@ clean:
 	cd python-class && make clean
 	cd r && make clean
 
-# Build everything inside a Docker container
+## Build everything inside a Docker container
 .PHONY: dbuild
 dbuild: dockerdev
 	@mkdir -p $(TARGETDIR)
@@ -113,12 +103,12 @@ dbuild: dockerdev
 	CVSPATH=$(CVSPATH) VENDOR=$(LCVENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' $(CURRENTDIR)dockerbuild.sh
 	@exit `cat $(TARGETDIR)/make.exit`
 
-# Build a base development Docker image
+## Build a base development Docker image
 .PHONY: dockerdev
 dockerdev:
 	$(DOCKER) build --pull --tag ${LCVENDOR}/dev_${PROJECT} --file ./resources/docker/Dockerfile.dev ./resources/docker/
 
-# Publish Documentation in GitHub (requires writing permissions)
+## Publish Documentation in GitHub (requires writing permissions)
 .PHONY: pubdocs
 pubdocs:
 	rm -rf ./target/DOCS
@@ -143,13 +133,13 @@ pubdocs:
 	git commit -m 'Update documentation' && \
 	git push origin gh-pages --force
 
-# Tag the Git repository
+## Tag the Git repository
 .PHONY: tag
 tag:
 	git tag -a "v$(VERSION)" -m "Version $(VERSION)" && \
 	git push origin --tags
 
-# Increase the patch number in the VERSION file
+## Increase the patch number in the VERSION file
 .PHONY: versionup
 versionup:
 	echo ${VERSION} | gawk -F. '{printf("%d.%d.%d\n",$$1,$$2,(($$3+1)));}' > VERSION

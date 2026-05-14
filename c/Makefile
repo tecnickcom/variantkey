@@ -57,34 +57,23 @@ endif
 
 # --- MAKE TARGETS ---
 
-# Display general help about this command
 .PHONY: help
 help:
 	@echo ""
 	@echo "$(PROJECT) Makefile."
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "  make test      : Run the unit tests"
-	@echo "  make tidy      : Check the code using clang-tidy"
-	@echo "  make build     : Build the library"
-	@echo "  make version   : Set version from VERSION file"
-	@echo "  make doc       : Generate source code documentation"
-	@echo "  make format    : Format the source code"
-	@echo "  make clean     : Remove any build artifact"
-	@echo "  make install   : Install the library"
-	@echo "  make uninstall : Uninstall the library"
-	@echo "  make rpm       : Build an RPM package"
-	@echo "  make deb       : Build a DEB package"
+	@awk '/^## /{desc=substr($$0,4)} /^\.PHONY:/{if(NF>1) {target=$$2; if(desc) printf "  make %-15s: %s\n",target,desc; desc=""}}' Makefile
 	@echo ""
 
 all: clean version format test tidy build rpm deb package_vk doc
 
-# Test C code compatibility with C++
+## Test C code compatibility with C++
 .PHONY: testcpp
 testcpp:
 	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++23 -x c++ -o /dev/null {} \;
 
-# Build and run the unit tests
+## Build and run the unit tests
 .PHONY: test
 test: testcpp
 	@mkdir -p target/test/test
@@ -112,13 +101,13 @@ ifeq ($(VH_BUILD_DOXYGEN),ON)
 	make doc | tee doc.log ; test $${PIPESTATUS[0]} -eq 0
 endif
 
-# use clang-tidy
+## Tidy the code via clang-tidy
 .PHONY: tidy
 tidy:
 	clang-tidy -checks='*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-clang-analyzer-alpha.*' -header-filter=.* -p . src/variantkey/*.h vk/*.c 
 	clang-tidy -checks='*,-concurrency-mt-unsafe,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-clang-analyzer-alpha.*' -header-filter=.* -p . test/*.c test/rsidvar_bench/*.c
 
-# Build the library
+## Build the library
 .PHONY: build
 build:
 	@mkdir -p target/build
@@ -138,34 +127,35 @@ build:
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ && \
 	env CTEST_OUTPUT_ON_FAILURE=1 make test | tee build.log ; test $${PIPESTATUS[0]} -eq 0
 
+## Package vk tool
 .PHONY: package_vk
 package_vk: version
 	cd target/build/vk && make -j package
 
-# Set the version from VERSION file
+## Set the version from VERSION file
 .PHONY: version
 version:
 	sed $(SEDINPLACE) "s/PROJECT_NUMBER.*=.*$$/PROJECT_NUMBER = $(VERSION)/" doc/Doxyfile
 
-# Generate source code documentation
+## Generate source code documentation
 .PHONY: doc
 doc:
 	cd target/build && \
 	make doc | tee doc.log ; test $${PIPESTATUS[0]} -eq 0
 
-# Format the source code
+## Format the source code
 .PHONY: format
 format:
 	astyle --style=allman --recursive --suffix=none 'src/variantkey/*.h'
 	astyle --style=allman --recursive --suffix=none 'test/*.c'
 	astyle --style=allman --recursive --suffix=none 'vk/*.c'
 
-# Remove any build artifact
+## Remove any build artifact
 .PHONY: clean
 clean:
 	rm -rf target
 
-# Install this application
+## Install this application
 .PHONY: install
 install: uninstall
 	mkdir -p $(PATHINSTLIB)
@@ -178,13 +168,13 @@ install: uninstall
 	cp -f ../RELEASE $(PATHINSTDOC)
 	chmod -R 644 $(PATHINSTDOC)*
 
-# Remove all installed files (excluding configuration files)
+## Remove all installed files (excluding configuration files)
 .PHONY: uninstall
 uninstall:
 	rm -rf $(PATHINSTLIB)
 	rm -rf $(PATHINSTDOC)
 
-# Build the RPM package for RedHat-like Linux distributions
+## Build the RPM package for RedHat-like Linux distributions
 .PHONY: rpm
 rpm:
 	rm -rf $(PATHRPMPKG)
@@ -201,7 +191,7 @@ rpm:
 	--define "_docpath /$(DOCPATH)" \
 	-bb resources/rpm/rpm.spec
 
-# Build the DEB package for Debian-like Linux distributions
+## Build the DEB package for Debian-like Linux distributions
 .PHONY: deb
 deb:
 	rm -rf $(PATHDEBPKG)

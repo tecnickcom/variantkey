@@ -12,6 +12,7 @@ linters:
     - depguard
     - err113
     - exhaustruct
+    - gomodguard
     - ireturn
     - lll
     - mnd

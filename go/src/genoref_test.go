@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const cdeRef = "CDE"
+
 func TestGenorefIndex(t *testing.T) {
 	t.Parallel()
 
@@ -143,8 +145,8 @@ func TestNormalizeVariant(t *testing.T) {
 		{-1, 1, 0, 0, 1, 1, 1, 1, "J", "C", "J", "C"},           // invalid reference
 		{4, 1, 0, 0, 1, 1, 1, 1, "A", "C", "T", "G"},            // flip
 		{0, 1, 0, 0, 1, 1, 1, 1, "A", "C", "A", "C"},            // OK
-		{32, 13, 2, 3, 3, 2, 2, 1, "DE", "D", "CDE", "CD"},      // left trim
-		{48, 13, 2, 3, 3, 3, 1, 1, "D", "F", "CDE", "CFE"},      // left trim + right trim
+		{32, 13, 2, 3, 3, 2, 2, 1, "DE", "D", cdeRef, "CD"},     // left trim
+		{48, 13, 2, 3, 3, 3, 1, 1, "D", "F", cdeRef, "CFE"},     // left trim + right trim
 		{48, 1, 0, 2, 6, 6, 1, 1, "C", "K", "aBCDEF", "aBKDEF"}, // left trim + right trim
 		{0, 1, 0, 0, 1, 0, 1, 0, "A", "", "A", ""},              // OK
 		{8, 1, 3, 2, 1, 0, 2, 1, "CD", "C", "D", ""},            // left extend
@@ -193,8 +195,8 @@ func TestNormalizedVariantKey(t *testing.T) {
 		{-1, "1", 1, 1, 0, 1, 1, 1, 1, 0x08000000736a947f, "J", "C", "J", "C"},           // invalid reference
 		{4, "1", 0, 0, 0, 1, 1, 1, 1, 0x0800000008880000, "A", "C", "T", "G"},            // flip
 		{0, "1", 0, 0, 0, 1, 1, 1, 1, 0x0800000008880000, "A", "C", "A", "C"},            // OK
-		{32, "13", 1, 3, 3, 3, 2, 2, 1, 0x68000001fed6a22d, "DE", "D", "CDE", "CD"},      // left trim
-		{48, "13", 0, 2, 3, 3, 3, 1, 1, 0x68000001c7868961, "D", "F", "CDE", "CFE"},      // left trim + right trim
+		{32, "13", 1, 3, 3, 3, 2, 2, 1, 0x68000001fed6a22d, "DE", "D", cdeRef, "CD"},     // left trim
+		{48, "13", 0, 2, 3, 3, 3, 1, 1, 0x68000001c7868961, "D", "F", cdeRef, "CFE"},     // left trim + right trim
 		{48, "1", 0, 0, 2, 6, 6, 1, 1, 0x0800000147df7d13, "C", "K", "aBCDEF", "aBKDEF"}, // left trim + right trim
 		{0, "1", 0, 0, 0, 1, 0, 1, 0, 0x0800000008000000, "A", "", "A", ""},              // OK
 		{8, "1", 0, 3, 2, 1, 0, 2, 1, 0x0800000150b13d0f, "CD", "C", "D", ""},            // left extend

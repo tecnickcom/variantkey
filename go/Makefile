@@ -56,7 +56,7 @@ GOFMT=$(shell which gofmt)
 GOTEST=$(GO) test
 GODOC=GOPATH=$(GOPATH) $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
-GOLANGCILINTVERSION=v2.11.4
+GOLANGCILINTVERSION=v2.12.2
 
 # Directory containing the source code
 SRCDIR=./src
@@ -70,33 +70,13 @@ endif
 
 # --- MAKE TARGETS ---
 
-# Display general help about this command
 .PHONY: help
 help:
 	@echo ""
 	@echo "$(PROJECT) Makefile."
-	@echo "GOPATH=$(GOPATH)"
 	@echo "The following commands are available:"
 	@echo ""
-	@echo "  make clean      : Remove any build artifact"
-	@echo "  make coverage   : Generate the coverage report"
-	@echo "  make deps       : Get dependencies"
-	@echo "  make format     : Format the source code"
-	@echo "  make linter     : Check code against multiple linters"
-	@echo "  make mod        : Download dependencies"
-	@echo "  make qa         : Run all tests and static analysis tools"
-	@echo "  make test       : Run unit tests"
-	@echo "  make updateall  : Update everything"
-	@echo "  make updatego   : Update Go version"
-	@echo "  make updatelint : Update golangci-lint version"
-	@echo "  make updatemod  : Update dependencies"
-	@echo ""
-	@echo "Use DEVMODE=LOCAL for human friendly output."
-	@echo ""
-	@echo "To test and build everything from scratch:"
-	@echo "    DEVMODE=LOCAL make format clean mod deps qa"
-	@echo "or use the shortcut:"
-	@echo "    make x"
+	@awk '/^## /{desc=substr($$0,4)} /^\.PHONY:/{if(NF>1) {target=$$2; if(desc) printf "  make %-15s: %s\n",target,desc; desc=""}}' Makefile
 	@echo ""
 
 all: x
@@ -106,12 +86,12 @@ all: x
 x:
 	DEVMODE=LOCAL $(MAKE) format clean mod deps qa
 
-# Remove any build artifact
+## Remove any build artifact
 .PHONY: clean
 clean:
 	rm -rf $(TARGETDIR)
 
-# Generate the coverage report
+## Generate the coverage report
 .PHONY: coverage
 coverage: ensuretarget
 	$(GO) tool cover -html=$(TARGETDIR)/report/coverage.out -o $(TARGETDIR)/report/coverage.html
@@ -119,9 +99,9 @@ coverage: ensuretarget
 # Get the test dependencies
 .PHONY: deps
 deps: ensuretarget
-	curl --silent --show-error --fail --location https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(BINUTIL) $(GOLANGCILINTVERSION)
+	curl --silent --show-error --fail --location "https://golangci-lint.run/install.sh" | sh -s -- -b $(BINUTIL) $(GOLANGCILINTVERSION)
 
-# Create the trget directories if missing
+## Create the trget directories if missing
 .PHONY: ensuretarget
 ensuretarget:
 	@mkdir -p $(TARGETDIR)/test
@@ -129,31 +109,32 @@ ensuretarget:
 	@mkdir -p $(TARGETDIR)/binutil
 	@mkdir -p $(TARGETDIR)/docs
 
-# build example
+## Build example
 .PHONY: example
 example:
 	$(GO) build -o $(TARGETDIR)/example $(CURRENTDIR)/example \
 	&& $(TARGETDIR)/example
 
-# Format the source code
+## Format the source code
 .PHONY: format
 format:
 	@find $(SRCDIR) -type f -name "*.go" -exec bash -c "$(GOFMT) -s -w {}" \;
 
-# Execute multiple linter tools
+## Execute multiple linter tools
 .PHONY: linter
 linter:
 	$(GOLANGCILINT) run $(SRCDIR)/...
 
+## Download mod dependencies
 .PHONY: mod
 mod: gotools
 	$(GO) mod download all
 
-# Run all tests and static analysis tools
+## Run all tests and static analysis tools
 .PHONY: qa
 qa: linter test coverage
 
-# Run the unit tests
+## Run the unit tests
 .PHONY: test
 test: ensuretarget
 	@echo -e "\n\n>>> START: Unit Tests <<<\n\n"
@@ -168,16 +149,16 @@ test: ensuretarget
 	-v $(SRCDIR) $(TESTEXTRACMD)
 	@echo -e "\n\n>>> END: Unit Tests <<<\n\n"
 
-# Get the go tools
+## Get the go tools
 .PHONY: gotools
 gotools:
 	$(GO) install github.com/jstemmer/go-junit-report/v2@latest
 
-# Update everything
+## Update everything
 .PHONY: updateall
 updateall: updatego updatelint updatemod
 
-# Update go version
+## Update go version
 .PHONY: updatego
 updatego:
 	$(eval LAST_GO_TOOLCHAIN=$(shell curl -s https://go.dev/dl/ | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+\.linux-amd64\.tar\.gz' | head -n 1 | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+'))
@@ -185,13 +166,13 @@ updatego:
 	sed $(SEDINPLACE) "s|^go [0-9]*\.[0-9]*$$|go ${LAST_GO_VERSION}|g" ../go.mod
 	sed $(SEDINPLACE) "s|^toolchain go[0-9]*\.[0-9]*\.[0-9]*$$|toolchain ${LAST_GO_TOOLCHAIN}|g" ../go.mod
 
-# Update linter version
+## Update linter version
 .PHONY: updatelint
 updatelint:
 	$(eval LAST_GOLANGCILINT_VERSION=$(shell curl -sL https://github.com/golangci/golangci-lint/releases/latest | sed -n 's/.*<title>Release \(v[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'))
 	sed $(SEDINPLACE) "s|^GOLANGCILINTVERSION=v[0-9]*\.[0-9]*\.[0-9]*$$|GOLANGCILINTVERSION=${LAST_GOLANGCILINT_VERSION}|g" Makefile
 
-# Update dependencies
+## Update dependencies
 .PHONY: updatemod
 updatemod: mod
 	$(GO) get -t -u ./... && \
