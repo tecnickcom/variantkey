@@ -62,31 +62,37 @@ version:
 .PHONY: build
 build: version
 	cd variantkey \
-	&& cp ../../LICENSE . \
-	&& R -e 'renv::settings$$snapshot.type("implicit");renv::init();renv::snapshot();'
-	R -e 'setwd("./variantkey");renv::restore();library(devtools);library(roxygen2);library(stringi);pkgbuild::build();'
+	&& cp ../../LICENSE .
+	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);pkgbuild::build();'
+
+## Re-build lockfile dependencies
+.PHONY: rebuild
+rebuild:
+	R -e 'setwd("./variantkey");lock<-renv::lockfile_read("renv.lock");renv::rebuild(packages=names(lock$$Packages))'
 
 ## Unit tests
 .PHONY: test
 test:
-	R -e 'setwd("./variantkey");renv::restore();library(devtools);devtools::document();library(testthat);testthat::test_dir("tests")'
+	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);testthat::test_dir("tests")'
+
+## Generate docs and run unit tests
+.PHONY: testdoc
+testdoc:
+	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);renv::install(c("cpp11","vctrs","roxygen2"),prompt=FALSE);roxygen2::roxygenise();testthat::test_dir("tests")'
 
 ## Format the source code
 .PHONY: format
 format:
 	astyle --style=allman --recursive --suffix=none 'variantkey/src/*.c'
 	astyle --style=allman --recursive --suffix=none 'variantkey/src/*.h'
-	#astyle --style=google --recursive --suffix=none 'variantkey/R/*.R'
-	#astyle --style=google --recursive --suffix=none 'variantkey/tests/*.R'
-	#astyle --style=google --recursive --suffix=none 'example/*.R'
 
 ## Remove any build artifact
 .PHONY: clean
 clean:
-	rm -f variantkey.Rcheck variantkey/src/variantkey.o variantkey/src/variantkey.so variantkey/renv.lock
+	rm -f variantkey.Rcheck variantkey/src/variantkey.o variantkey/src/variantkey.so
 	rm -rf renv variantkey/renv variantkey/.Rbuildignore variantkey/.Rprofile .Rprofile
 
 ## Generate documentation
 .PHONY: devdoc
 devdoc:
-	R -e 'setwd("./variantkey");renv::restore();library(devtools);devtools::document();'
+	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);renv::install(c("cpp11","vctrs","roxygen2"),prompt=FALSE);roxygen2::roxygenise()'

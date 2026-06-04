@@ -16,6 +16,15 @@
 
 #define MAX_UINT64_DEC_CHARS 21
 
+static inline SEXP vk_lengthgets_preserve_attrib(SEXP x, R_xlen_t n)
+{
+    SEXP ox = PROTECT(x);
+    SEXP nx = Rf_xlengthgets(x, n);
+    Rf_copyMostAttrib(ox, nx);
+    UNPROTECT(1);
+    return nx;
+}
+
 // --- UINT64 ---
 
 #define CMP_EQ(r, x, y) r = (x == y);
@@ -156,7 +165,7 @@ SEXP R_unique_uint64(SEXP x, SEXP ret)
     uint64_t *res = (uint64_t *)REAL(ret);
     memcpy((void *)res, (void *)REAL(x), (n * sizeof(uint64_t)));
     uint64_t *p = unique_uint64_t(res, n);
-    SETLENGTH(ret, (p - res));
+    ret = vk_lengthgets_preserve_attrib(ret, (R_xlen_t)(p - res));
     return ret;
 }
 
@@ -167,7 +176,7 @@ SEXP R_intersect_uint64(SEXP x, SEXP y, SEXP ret)
     uint64_t *px = (uint64_t *)REAL(x);
     uint64_t *py = (uint64_t *)REAL(y);
     uint64_t *p = intersection_uint64_t(px, nx, py, ny, res);
-    SETLENGTH(ret, (p - res));
+    ret = vk_lengthgets_preserve_attrib(ret, (R_xlen_t)(p - res));
     return ret;
 }
 
@@ -178,6 +187,6 @@ SEXP R_union_uint64(SEXP x, SEXP y, SEXP ret)
     uint64_t *px = (uint64_t *)REAL(x);
     uint64_t *py = (uint64_t *)REAL(y);
     uint64_t *p = union_uint64_t(px, nx, py, ny, res);
-    SETLENGTH(ret, (p - res));
+    ret = vk_lengthgets_preserve_attrib(ret, (R_xlen_t)(p - res));
     return ret;
 }

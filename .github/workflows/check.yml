@@ -112,14 +112,6 @@ jobs:
         with:
           working-directory: './r/variantkey/'
           cache-version: 2
-          extra-packages: |
-            any::Rcpp
-            any::devtools
-            any::inline
-            any::renv
-            any::roxygen2
-            any::testthat
-            any::pkgdown
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test

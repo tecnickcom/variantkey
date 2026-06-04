@@ -404,7 +404,7 @@ SEXP R_find_all_rv_variantkey_by_rsid(SEXP mc, SEXP first, SEXP last, SEXP rsid,
         i++;
         vk = get_next_rv_variantkey_by_rsid(*cmc, &pfirst, asInteger(last), asInteger(rsid));
     }
-    SETLENGTH(ret, i);
+    ret = vk_lengthgets_preserve_attrib(ret, (R_xlen_t)i);
     return ret;
 }
 
@@ -471,7 +471,7 @@ SEXP R_find_all_vr_rsid_by_variantkey(SEXP mc, SEXP first, SEXP last, SEXP vk, S
         i++;
         rsid = get_next_vr_rsid_by_variantkey(*cmc, &pfirst, asInteger(last), *pvk);
     }
-    SETLENGTH(ret, i);
+    ret = vk_lengthgets_preserve_attrib(ret, (R_xlen_t)i);
     return ret;
 }
 
