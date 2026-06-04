@@ -73,7 +73,7 @@ rebuild:
 ## Unit tests
 .PHONY: test
 test:
-	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);testthat::test_dir("tests")'
+	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);renv::install(".",prompt=FALSE);testthat::test_dir("tests")'
 
 ## Generate docs and run unit tests
 .PHONY: testdoc
