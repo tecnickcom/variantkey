@@ -19,6 +19,27 @@ vk.env$vkrs_ <- list(MF=NULL, MC=NULL, NROWS=0)
 # Common error message
 vk.env$ERR_INPUT_LENGTH <- "Error: input vectors must have the same length."
 
+# Convert numeric vectors in the unsigned 32-bit domain to R integers preserving bit patterns.
+vk.env$as_uint32_bits <- function(x, argname) {
+  if (is.integer(x)) {
+    return(x)
+  }
+  if (!is.numeric(x)) {
+    stop(paste0("Error: ", argname, " must be numeric."))
+  }
+  if (any(!is.finite(x))) {
+    stop(paste0("Error: ", argname, " must contain finite values only."))
+  }
+  if (any(x < 0) || any(x > 4294967295)) {
+    stop(paste0("Error: ", argname, " must be in range [0, 4294967295]."))
+  }
+  if (any(x != floor(x))) {
+    stop(paste0("Error: ", argname, " must contain integer values only."))
+  }
+  y <- ifelse(x > 2147483647, x - 4294967296, x)
+  return(as.integer(y))
+}
+
 #' Load the VariantKey support files.
 #' This should be the first function called in order to load the support files.
 #' @param genoref_file Name and path of the binary file containing the genome reference (fasta.bin). This file can be generated from a FASTA file using the resources/tools/fastabin.sh script.
@@ -302,7 +323,8 @@ FindRvVariantKeyByRsid <- function(rsid, first=0, last=vk.env$rsvk_$NROWS, mc=vk
   n <- length(rsid)
   vk <- uint64(n)
   rfirst <- integer(n)
-  return(.Call("R_find_rv_variantkey_by_rsid", mc, as.integer(first), as.integer(last), as.integer(rsid), vk, rfirst))
+  irsid <- vk.env$as_uint32_bits(rsid, "rsid")
+  return(.Call("R_find_rv_variantkey_by_rsid", mc, as.integer(first), as.integer(last), irsid, vk, rfirst))
 }
 
 #' Get the next VariantKey for the specified rsID in the RV file, or 0 if not found
@@ -317,7 +339,8 @@ GetNextRvVariantKeyByRsid <- function(rsid, pos, last=vk.env$rsvk_$NROWS, mc=vk.
   n <- length(rsid)
   vk <- uint64(n)
   rpos <- integer(n)
-  return(.Call("R_get_next_rv_variantkey_by_rsid", mc, as.integer(pos), as.integer(last), as.integer(rsid), vk, rpos))
+  irsid <- vk.env$as_uint32_bits(rsid, "rsid")
+  return(.Call("R_get_next_rv_variantkey_by_rsid", mc, as.integer(pos), as.integer(last), irsid, vk, rpos))
 }
 
 #' Search for the specified rsID and returns all the associated VariantKeys in the RV file.
@@ -331,7 +354,8 @@ GetNextRvVariantKeyByRsid <- function(rsid, pos, last=vk.env$rsvk_$NROWS, mc=vk.
 #' @export
 FindAllRvVariantKeyByRsid <- function(rsid, max=10, first=0, last=vk.env$rsvk_$NROWS, mc=vk.env$rsvk_$MC) {
   ret <- uint64(max)
-  return(.Call("R_find_all_rv_variantkey_by_rsid", mc, as.integer(first), as.integer(last), as.integer(rsid), ret))
+  irsid <- vk.env$as_uint32_bits(rsid, "rsid")
+  return(.Call("R_find_all_rv_variantkey_by_rsid", mc, as.integer(first), as.integer(last), irsid, ret))
 }
 
 #' Search for the specified VariantKey and returns the first occurrence of rsID in the VR file, or 0 if not found.
@@ -394,7 +418,10 @@ FindVrChromposRange <- function(chrom, pos_min, pos_max, first=0, last=vk.env$vk
   rsid <- integer(n)
   rfirst <- integer(n)
   rlast <- integer(n)
-  return(.Call("R_find_vr_chrompos_range", mc, as.integer(first), as.integer(last), as.integer(chrom), as.integer(pos_min), as.integer(pos_max), rsid, rfirst, rlast))
+  ichrom <- vk.env$as_uint32_bits(chrom, "chrom")
+  ipos_min <- vk.env$as_uint32_bits(pos_min, "pos_min")
+  ipos_max <- vk.env$as_uint32_bits(pos_max, "pos_max")
+  return(.Call("R_find_vr_chrompos_range", mc, as.integer(first), as.integer(last), ichrom, ipos_min, ipos_max, rsid, rfirst, rlast))
 }
 
 # --- NRVK ---
