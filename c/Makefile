@@ -26,7 +26,7 @@ VERSION=$(shell cat ../VERSION)
 RELEASE=$(shell cat ../RELEASE)
 
 # Current directory
-CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+CURRENTDIR=$(CURDIR)/
 
 # Name of RPM or DEB package
 PKGNAME=${VENDOR}-${PROJECT}-headers
@@ -158,26 +158,27 @@ clean:
 ## Install this application
 .PHONY: install
 install: uninstall
-	mkdir -p $(PATHINSTLIB)
-	cp src/variantkey/*.h $(PATHINSTLIB)
-	find $(PATHINSTLIB) -type f -exec chmod 644 {} \;
-	mkdir -p $(PATHINSTDOC)
-	cp -f ../LICENSE $(PATHINSTDOC)
-	cp -f ../README.md $(PATHINSTDOC)
-	cp -f ../VERSION $(PATHINSTDOC)
-	cp -f ../RELEASE $(PATHINSTDOC)
-	chmod -R 644 $(PATHINSTDOC)*
+	mkdir -p "$(PATHINSTLIB)"
+	cp src/variantkey/*.h "$(PATHINSTLIB)"
+	find "$(PATHINSTLIB)" -type f -exec chmod 644 {} \;
+	mkdir -p "$(PATHINSTDOC)"
+	cp -f ../LICENSE "$(PATHINSTDOC)"
+	cp -f ../README.md "$(PATHINSTDOC)"
+	cp -f ../VERSION "$(PATHINSTDOC)"
+	cp -f ../RELEASE "$(PATHINSTDOC)"
+	chmod -R 644 "$(PATHINSTDOC)"*
 
 ## Remove all installed files (excluding configuration files)
 .PHONY: uninstall
 uninstall:
-	rm -rf $(PATHINSTLIB)
-	rm -rf $(PATHINSTDOC)
+	rm -rf "$(PATHINSTLIB)"
+	rm -rf "$(PATHINSTDOC)"
 
 ## Build the RPM package for RedHat-like Linux distributions
 .PHONY: rpm
 rpm:
-	rm -rf $(PATHRPMPKG)
+	@test $(words $(CURDIR)) -eq 1 || { echo "ERROR: rpmbuild does not support spaces in the project path: $(CURDIR)"; exit 1; }
+	rm -rf "$(PATHRPMPKG)"
 	rpmbuild \
 	--define "_topdir $(PATHRPMPKG)" \
 	--define "_vendor $(VENDOR)" \
@@ -194,18 +195,18 @@ rpm:
 ## Build the DEB package for Debian-like Linux distributions
 .PHONY: deb
 deb:
-	rm -rf $(PATHDEBPKG)
-	make install DESTDIR=$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)
-	rm -f $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/$(DOCPATH)LICENSE
-	tar -zcvf $(PATHDEBPKG)/$(PKGNAME)_$(VERSION).orig.tar.gz -C $(PATHDEBPKG)/ $(PKGNAME)-$(VERSION)
-	cp -rf ./resources/debian $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#DATE#~/`date -R`/" {} \;
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#PKGNAME#~/$(PKGNAME)/" {} \;
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#VERSION#~/$(VERSION)/" {} \;
-	find $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/ -type f -exec sed $(SEDINPLACE) "s/~#RELEASE#~/$(RELEASE)/" {} \;
-	echo $(LIBPATH) > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(LIBPATH)* $(LIBPATH)" > $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
-	echo $(DOCPATH) >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs
-	echo "$(DOCPATH)* $(DOCPATH)" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install
-	echo "new-package-should-close-itp-bug" >> $(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides
-	cd $(PATHDEBPKG)/$(PKGNAME)-$(VERSION) && debuild -us -uc
+	rm -rf "$(PATHDEBPKG)"
+	make install DESTDIR="$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)"
+	rm -f "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/$(DOCPATH)LICENSE"
+	tar -zcvf "$(PATHDEBPKG)/$(PKGNAME)_$(VERSION).orig.tar.gz" -C "$(PATHDEBPKG)/" "$(PKGNAME)-$(VERSION)"
+	cp -rf ./resources/debian "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian"
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#DATE#~/`date -R`/" {} \;
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#PKGNAME#~/$(PKGNAME)/" {} \;
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#VERSION#~/$(VERSION)/" {} \;
+	find "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/" -type f -exec sed $(SEDINPLACE) "s/~#RELEASE#~/$(RELEASE)/" {} \;
+	echo "$(LIBPATH)" > "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(LIBPATH)* $(LIBPATH)" > "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
+	echo "$(DOCPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).dirs"
+	echo "$(DOCPATH)* $(DOCPATH)" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/install"
+	echo "new-package-should-close-itp-bug" >> "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)/debian/$(PKGNAME).lintian-overrides"
+	cd "$(PATHDEBPKG)/$(PKGNAME)-$(VERSION)" && debuild -us -uc

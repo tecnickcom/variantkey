@@ -17,7 +17,7 @@ VERSION=$(shell cat ../VERSION)
 RELEASE=$(shell cat ../RELEASE)
 
 # Current directory
-CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+CURRENTDIR=$(CURDIR)/
 
 # Path fot the python binary
 PYTHON=$(shell which python3)

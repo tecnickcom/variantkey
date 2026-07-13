@@ -26,10 +26,10 @@ VERSION=$(shell cat ../VERSION)
 RELEASE=$(shell cat ../RELEASE)
 
 # Current directory
-CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+CURRENTDIR=$(CURDIR)/
 
 # Target directory
-TARGETDIR=$(CURRENTDIR)target
+TARGETDIR=target
 
 # Directory where to store binary utility tools
 BINUTIL=$(TARGETDIR)/binutil
@@ -43,18 +43,18 @@ endif
 # GO lang path
 ifeq ($(GOPATH),)
 	# extract the GOPATH
-	GOPATH=$(firstword $(subst /src/, ,$(CURRENTDIR)))
+	GOPATH=$(shell echo "$(CURDIR)" | sed 's|/src/.*||')
 endif
 
 # Add the GO binary dir in the PATH
 export PATH := $(GOPATH)/bin:$(PATH)
 
 # Common commands
-GO=GOPATH=$(GOPATH) GOPRIVATE=$(CVSPATH) $(shell which go)
+GO=GOPATH="$(GOPATH)" GOPRIVATE=$(CVSPATH) $(shell which go)
 GOVERSION=${shell go version | grep -Eo '(go[0-9]+.[0-9]+)'}
 GOFMT=$(shell which gofmt)
 GOTEST=$(GO) test
-GODOC=GOPATH=$(GOPATH) $(shell which godoc)
+GODOC=GOPATH="$(GOPATH)" $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
 GOLANGCILINTVERSION=v2.12.2
 
@@ -65,7 +65,7 @@ SRCDIR=./src
 ifeq ($(strip $(DEVMODE)),LOCAL)
 	TESTEXTRACMD=&& $(GO) tool cover -func=$(TARGETDIR)/report/coverage.out
 else
-	TESTEXTRACMD=2>&1 | tee >(PATH=$(GOPATH)/bin:$(PATH) go-junit-report > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
+	TESTEXTRACMD=2>&1 | tee >(PATH="$(GOPATH)/bin:$(PATH)" go-junit-report > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
 endif
 
 # --- MAKE TARGETS ---
@@ -89,41 +89,41 @@ x:
 ## Remove any build artifact
 .PHONY: clean
 clean:
-	rm -rf $(TARGETDIR)
+	rm -rf "$(TARGETDIR)"
 
 ## Generate the coverage report
 .PHONY: coverage
 coverage: ensuretarget
-	$(GO) tool cover -html=$(TARGETDIR)/report/coverage.out -o $(TARGETDIR)/report/coverage.html
+	$(GO) tool cover -html="$(TARGETDIR)/report/coverage.out" -o "$(TARGETDIR)/report/coverage.html"
 
 # Get the test dependencies
 .PHONY: deps
 deps: ensuretarget
-	curl --silent --show-error --fail --location "https://golangci-lint.run/install.sh" | sh -s -- -b $(BINUTIL) $(GOLANGCILINTVERSION)
+	curl --silent --show-error --fail --location "https://golangci-lint.run/install.sh" | sh -s -- -b "$(BINUTIL)" $(GOLANGCILINTVERSION)
 
 ## Create the trget directories if missing
 .PHONY: ensuretarget
 ensuretarget:
-	@mkdir -p $(TARGETDIR)/test
-	@mkdir -p $(TARGETDIR)/report
-	@mkdir -p $(TARGETDIR)/binutil
-	@mkdir -p $(TARGETDIR)/docs
+	@mkdir -p "$(TARGETDIR)/test"
+	@mkdir -p "$(TARGETDIR)/report"
+	@mkdir -p "$(TARGETDIR)/binutil"
+	@mkdir -p "$(TARGETDIR)/docs"
 
 ## Build example
 .PHONY: example
 example:
-	$(GO) build -o $(TARGETDIR)/example $(CURRENTDIR)/example \
+	$(GO) build -o "$(TARGETDIR)/example" "$(CURRENTDIR)/example" \
 	&& $(TARGETDIR)/example
 
 ## Format the source code
 .PHONY: format
 format:
-	@find $(SRCDIR) -type f -name "*.go" -exec bash -c "$(GOFMT) -s -w {}" \;
+	@find "$(SRCDIR)" -type f -name "*.go" -exec bash -c "$(GOFMT) -s -w {}" \;
 
 ## Execute multiple linter tools
 .PHONY: linter
 linter:
-	$(GOLANGCILINT) run $(SRCDIR)/...
+	$(GOLANGCILINT) run "$(SRCDIR)/..."
 
 ## Download mod dependencies
 .PHONY: mod
@@ -146,7 +146,7 @@ test: ensuretarget
 	-race \
 	-failfast \
 	-coverprofile=target/report/coverage.out \
-	-v $(SRCDIR) $(TESTEXTRACMD)
+	-v "$(SRCDIR)" $(TESTEXTRACMD)
 	@echo -e "\n\n>>> END: Unit Tests <<<\n\n"
 
 ## Get the go tools

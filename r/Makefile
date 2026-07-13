@@ -32,7 +32,7 @@ VERSION=$(shell cat ../VERSION)
 RELEASE=$(shell cat ../RELEASE)
 
 # Current directory
-CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+CURRENTDIR=$(CURDIR)/
 
 # sed argument for in-place substitutions
 SEDINPLACE=-i

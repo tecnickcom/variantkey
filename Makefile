@@ -29,10 +29,10 @@ VERSION=$(shell cat VERSION)
 RELEASE=$(shell cat RELEASE)
 
 # Current directory
-CURRENTDIR=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+CURRENTDIR=$(CURDIR)/
 
 # Target directory
-TARGETDIR=$(CURRENTDIR)target
+TARGETDIR=target
 
 # Docker command
 ifeq ($(DOCKER),)
@@ -97,16 +97,16 @@ clean:
 ## Build everything inside a Docker container
 .PHONY: dbuild
 dbuild: dockerdev
-	@mkdir -p $(TARGETDIR)
-	@rm -rf $(TARGETDIR)/*
-	@echo 0 > $(TARGETDIR)/make.exit
-	CVSPATH=$(CVSPATH) VENDOR=$(LCVENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' $(CURRENTDIR)dockerbuild.sh
+	@mkdir -p "$(TARGETDIR)"
+	@rm -rf "$(TARGETDIR)/"*
+	@echo 0 > "$(TARGETDIR)/make.exit"
+	CVSPATH=$(CVSPATH) VENDOR=$(LCVENDOR) PROJECT=$(PROJECT) MAKETARGET='$(MAKETARGET)' "$(CURRENTDIR)dockerbuild.sh"
 	@exit `cat $(TARGETDIR)/make.exit`
 
 ## Build a base development Docker image
 .PHONY: dockerdev
 dockerdev:
-	$(DOCKER) build --pull --tag ${LCVENDOR}/dev_${PROJECT} --file ./resources/docker/Dockerfile.dev ./resources/docker/
+	$(DOCKER) build --pull --tag "${LCVENDOR}/dev_${PROJECT}" --file ./resources/docker/Dockerfile.dev ./resources/docker/
 
 ## Publish Documentation in GitHub (requires writing permissions)
 .PHONY: pubdocs

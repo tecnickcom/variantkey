@@ -9,3 +9,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR}/src/varian
 file(COPY DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(rsidvar_bench rsidvar_bench.c)
 target_link_libraries(rsidvar_bench variantkey)
+
+add_executable(vk_csv_lookup_bench vk_csv_lookup_bench.c)
+target_link_libraries(vk_csv_lookup_bench variantkey)

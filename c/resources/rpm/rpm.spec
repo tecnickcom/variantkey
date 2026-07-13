@@ -28,8 +28,8 @@ ESID, a reversible numerical encoding schema for genetic string identifiers.
 #(cd %{_current_directory} && make build)
 
 %install
-rm -rf $RPM_BUILD_ROOT
-(cd %{_current_directory} && make install DESTDIR=$RPM_BUILD_ROOT)
+rm -rf "$RPM_BUILD_ROOT"
+(cd "%{_current_directory}" && make install DESTDIR="$RPM_BUILD_ROOT")
 
 #%clean
 #rm -rf $RPM_BUILD_ROOT
