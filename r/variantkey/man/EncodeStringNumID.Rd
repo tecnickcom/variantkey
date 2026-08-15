@@ -10,7 +10,7 @@ If the string is 10 character or less, then the EncodeStringID() is used.}
 EncodeStringNumID(str, sep = ":")
 }
 \arguments{
-\item{str}{The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.}
+\item{str}{The string to encode. It supports ASCII characters from '!' to 'z'.}
 
 \item{sep}{Separator character between string and number.}
 }

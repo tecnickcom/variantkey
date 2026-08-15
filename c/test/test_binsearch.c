@@ -8,15 +8,15 @@
 // @license    MIT (see LICENSE file)
 // @copyright  (c) 2017-2026 Nicola Asuni - Tecnick.com
 
-#ifdef __STDC__LIB_EXT1__
+// Annex K is optional: __STDC_LIB_EXT1__ is only defined by the standard
+// headers, so the request must come before the first include and the fallback
+// after it.
 #define __STDC_WANT_LIB_EXT1__ 1
-#else
-// Ignore clang-tidy warning for deprecated or unsafe buffer handling
-// NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
-#define fprintf_s fprintf
-#endif
 
 #include <stdio.h>
+#ifndef __STDC_LIB_EXT1__
+#define fprintf_s fprintf
+#endif
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
@@ -1109,7 +1109,7 @@ int main()
 {
     int errors = 0;
 
-    char *file = "test_data.bin"; // file containing test data
+    const char *file = "test_data.bin"; // file containing test data
     uint64_t blklen = 16; // length of each binary block
     uint64_t nrows = 0; // number of binary blocks in the file
 

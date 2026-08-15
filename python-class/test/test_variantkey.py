@@ -694,6 +694,16 @@ class TestFunctions(TestCase):
         h = npvk.encode_refalt(iref, ialt)
         np.testing.assert_array_equal(h, e)
 
+    def test_decode_refalt_invalid_length(self):
+        # Codes whose REF/ALT length fields are outside the reversible range must
+        # not decode. Ported from the C test_decode_refalt_invalid_length.
+        d = np.array([0x78000000, 0x07800000, 0x55000000], dtype=np.uint32)
+        ref, alt, sizeref, sizealt = npvk.decode_refalt(d)
+        np.testing.assert_array_equal(ref, np.array([b"", b"", b""]))
+        np.testing.assert_array_equal(alt, np.array([b"", b"", b""]))
+        np.testing.assert_array_equal(sizeref, np.array([0, 0, 0]))
+        np.testing.assert_array_equal(sizealt, np.array([0, 0, 0]))
+
     def test_decode_refalt(self):
         d = np.array([
             142606336,  142606336,  143130624,  144703488,  726812453,  330097465,
@@ -729,7 +739,7 @@ class TestFunctions(TestCase):
                          b'ACGTAC', b'ACG', b'ACGTACG', b'ACG', b'ACGTACGT', b'', b'', b'', b'', b'ACGTA',
                          b'ACGTA', b'ACGTA', b'ACGTAC', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'',
                          b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'',
-                         b'', b'', b'', b'', b'', b'', b'', b'', b''], dtype=np.string_)
+                         b'', b'', b'', b'', b'', b'', b'', b'', b''], dtype=np.bytes_)
         ealt = np.array([b'A', b'A', b'C', b'A', b'', b'', b'GT', b'A', b'ACG', b'A', b'ACGTA', b'A',
                          b'ACGTAC', b'A', b'ACGTACG', b'A', b'ACGTACGT', b'A', b'ACGTACGTAC', b'A', b'',
                          b'', b'C', b'C', b'', b'', b'GT', b'C', b'ACG', b'C', b'ACGTA', b'C', b'ACGTAC', b'C',
@@ -740,7 +750,7 @@ class TestFunctions(TestCase):
                          b'ACGTACG', b'ACG', b'ACGTACGT', b'ACG', b'', b'', b'', b'', b'ACGTA', b'ACGTA',
                          b'ACGTAC', b'ACGTA', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'',
                          b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'',
-                         b'', b'', b'', b'', b'', b'', b''], dtype=np.string_)
+                         b'', b'', b'', b'', b'', b'', b''], dtype=np.bytes_)
         esizeref = np.array([1, 1, 1, 1, 0, 0, 1, 2, 1, 3, 1, 5, 1, 6, 1, 7, 1, 8, 1, 10, 0, 0, 1, 1,
                              0, 0, 1, 2, 1, 3, 1, 5, 1, 6, 1, 7, 1, 8, 1, 10, 0, 0, 0, 0, 0, 0, 0, 0,
                              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 3, 2, 5, 2, 6, 2, 7, 2, 8,
@@ -840,7 +850,7 @@ class TestFunctions(TestCase):
 
     def test_variantkey_hex(self):
         h = npvk.variantkey_hex(vtd[:, 5])
-        np.testing.assert_array_equal(h, vtd[:, 6].astype(np.string_))
+        np.testing.assert_array_equal(h, vtd[:, 6].astype(np.bytes_))
 
     def test_parse_variantkey_hex(self):
         h = npvk.parse_variantkey_hex(vtd[:, 6])

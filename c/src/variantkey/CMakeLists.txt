@@ -1,16 +1,22 @@
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+# variantkey is a header-only library: every function is "static inline", so
+# there is no object code to build and no symbol to export. An INTERFACE library
+# models that and propagates the include directory to whoever links it.
+add_library (variantkey INTERFACE)
+target_include_directories (variantkey INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-
-# Add the binary tree directory to the search path for linking and include files
-link_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-include_directories (${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR}/src/variantkey )
-
-add_library (variantkey binsearch.h esid.h genoref.h hex.h nrvk.h regionkey.h rsidvar.h set.h variantkey.h)
-target_include_directories (variantkey PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-set_target_properties(variantkey PROPERTIES LINKER_LANGUAGE "C")
-
-# Required to link the math library
-target_link_libraries(variantkey)
+# The headers are the only installable artifacts. Without an install rule the
+# generated install_manifest.txt never exists and the uninstall target aborts.
+include(GNUInstallDirs)
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/binsearch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/esid.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/genoref.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/hex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/nrvk.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/regionkey.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/rsidvar.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/set.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/variantkey.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/variantkey)

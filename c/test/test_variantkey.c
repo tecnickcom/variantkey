@@ -698,7 +698,7 @@ void benchmark_encode_chrom()
         encode_chrom(cdata[idx], clen[idx]);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_decode_chrom()
@@ -750,7 +750,7 @@ void benchmark_decode_chrom()
         decode_chrom((i % 26), chrom);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_encode_refalt()
@@ -823,12 +823,12 @@ int test_encode_refalt()
                     numrev++;
                     if (sizeref != lenref)
                     {
-                        (void) fprintf(stderr, "%s : expecting ref size %lu, got %lu\n", __func__, lenref, sizeref);
+                        (void) fprintf(stderr, "%s : expecting ref size %zu, got %zu\n", __func__, lenref, sizeref);
                         ++errors;
                     }
                     if (sizealt != lenalt)
                     {
-                        (void) fprintf(stderr, "%s : expecting alt size %lu, got %lu\n", __func__, lenalt, sizealt);
+                        (void) fprintf(stderr, "%s : expecting alt size %zu, got %zu\n", __func__, lenalt, sizealt);
                         ++errors;
                     }
                     if (strcasecmp(input_data[ri], ref) != 0)
@@ -884,6 +884,112 @@ int test_encode_refalt()
     return errors;
 }
 
+// Round-trip every reversible REF and ALT length combination, including the
+// empty alleles and the longest allele that still fits the reversible encoding.
+int test_encode_decode_refalt_lengths()
+{
+    int errors = 0;
+    static const char *bases = "ACGTACGTAC";
+    char ref[VKMAX_ALLELE_LEN + 1];
+    char alt[VKMAX_ALLELE_LEN + 1];
+    char dref[VKMAX_ALLELE_LEN + 1];
+    char dalt[VKMAX_ALLELE_LEN + 1];
+    size_t lenref = 0, lenalt = 0, sizeref = 0, sizealt = 0, len = 0;
+    for (lenref = 0; lenref <= VKMAX_ALLELE_LEN; lenref++)
+    {
+        for (lenalt = 0; (lenalt <= VKMAX_ALLELE_LEN) && ((lenref + lenalt) <= VKMAX_REFALT_LEN); lenalt++)
+        {
+            memcpy(ref, bases, lenref);
+            ref[lenref] = '\0';
+            memcpy(alt, (bases + (VKMAX_ALLELE_LEN - lenalt)), lenalt);
+            alt[lenalt] = '\0';
+            uint32_t code = encode_refalt(ref, lenref, alt, lenalt);
+            len = decode_refalt(code, dref, &sizeref, dalt, &sizealt);
+            if (len != (lenref + lenalt))
+            {
+                (void) fprintf(stderr, "%s (%zu,%zu): expecting length %zu, got %zu\n", __func__, lenref, lenalt, (lenref + lenalt), len);
+                ++errors;
+                continue;
+            }
+            if ((sizeref != lenref) || (sizealt != lenalt))
+            {
+                (void) fprintf(stderr, "%s (%zu,%zu): expecting sizes %zu/%zu, got %zu/%zu\n", __func__, lenref, lenalt, lenref, lenalt, sizeref, sizealt);
+                ++errors;
+            }
+            if ((strcmp(ref, dref) != 0) || (strcmp(alt, dalt) != 0))
+            {
+                (void) fprintf(stderr, "%s (%zu,%zu): expecting %s/%s, got %s/%s\n", __func__, lenref, lenalt, ref, alt, dref, dalt);
+                ++errors;
+            }
+        }
+    }
+    return errors;
+}
+
+// An allele longer than VKMAX_ALLELE_LEN is hashed even when the two alleles
+// together fit VKMAX_REFALT_LEN, because the reversible encoding of a single
+// allele stops at VKMAX_ALLELE_LEN bases.
+int test_encode_refalt_long_allele()
+{
+    int errors = 0;
+    int i = 0;
+    static const char *bases = "ACGTACGTACG"; // VKMAX_REFALT_LEN bases
+    uint32_t code[2] =
+    {
+        encode_refalt(bases, VKMAX_REFALT_LEN, "", 0),
+        encode_refalt("", 0, bases, VKMAX_REFALT_LEN),
+    };
+    for (i = 0; i < 2; i++)
+    {
+        if ((code[i] & 0x1) == 0)
+        {
+            (void) fprintf(stderr, "%s (%d): expecting the hash encoding, got %08" PRIx32 "\n", __func__, i, code[i]);
+            ++errors;
+        }
+    }
+    return errors;
+}
+
+// A code whose length fields are outside the range of the reversible encoding
+// is not decodable, even when the last bit marks it as reversible.
+int test_decode_refalt_invalid_length()
+{
+    int errors = 0;
+    int i = 0;
+    static const uint32_t code[3] =
+    {
+        0x78000000, // REF length 15
+        0x07800000, // ALT length 15
+        0x55000000, // REF length 10 and ALT length 10
+    };
+    char ref[VKMAX_ALLELE_LEN + 1];
+    char alt[VKMAX_ALLELE_LEN + 1];
+    size_t sizeref = 0, sizealt = 0;
+    for (i = 0; i < 3; i++)
+    {
+        size_t len = decode_refalt(code[i], ref, &sizeref, alt, &sizealt);
+        if (len != 0)
+        {
+            (void) fprintf(stderr, "%s (%d): expecting 0, got %zu\n", __func__, i, len);
+            ++errors;
+        }
+    }
+    return errors;
+}
+
+// An empty string packs to zero.
+int test_pack_chars_tail_empty()
+{
+    int errors = 0;
+    uint32_t h = pack_chars_tail("", 0);
+    if (h != 0)
+    {
+        (void) fprintf(stderr, "%s : expecting 0, got %08" PRIx32 "\n", __func__, h);
+        ++errors;
+    }
+    return errors;
+}
+
 void benchmark_encode_refalt_rev()
 {
     int idx = 0;
@@ -899,7 +1005,7 @@ void benchmark_encode_refalt_rev()
         encode_refalt(cdata[idx], clen[idx], cdata[idx+1], clen[idx+1]);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 void benchmark_encode_refalt_hash()
@@ -915,7 +1021,7 @@ void benchmark_encode_refalt_hash()
         hash = encode_refalt_hash(allele, 92, allele, 92);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx32 ")\n", __func__, (tend - tstart)/size, hash);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%" PRIx32 ")\n", __func__, (tend - tstart)/size, hash);
 }
 
 void benchmark_decode_refalt()
@@ -931,7 +1037,7 @@ void benchmark_decode_refalt()
         decode_refalt(0x0d436362, ref, &sizeref, alt, &sizealt);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%s - %s)\n", __func__, (tend - tstart)/size, ref, alt);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%s - %s)\n", __func__, (tend - tstart)/size, ref, alt);
 }
 
 int test_encode_variantkey()
@@ -962,7 +1068,7 @@ void benchmark_encode_variantkey()
         encode_variantkey(19, i, 0x08900000);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_extract_variantkey_chrom()
@@ -1055,7 +1161,7 @@ void benchmark_decode_variantkey()
         decode_variantkey(0xa852662880400000, &h);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_variantkey()
@@ -1086,7 +1192,7 @@ void benchmark_variantkey()
         variantkey("Y", 1, 445974, "A", 1, "G", 1);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_variantkey_range()
@@ -1159,7 +1265,7 @@ void benchmark_variantkey_range()
         variantkey_range(15, 12002028, 12152133, &r);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_compare_variantkey_chrom()
@@ -1249,7 +1355,7 @@ void benchmark_variantkey_hex()
         variantkey_hex(0xa852662880400000, vs);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_parse_variantkey_hex()
@@ -1286,7 +1392,7 @@ void benchmark_parse_variantkey_hex()
         parse_variantkey_hex("a852662880400000");
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int main()
@@ -1298,6 +1404,10 @@ int main()
     errors += test_encode_chrom();
     errors += test_decode_chrom();
     errors += test_encode_refalt();
+    errors += test_encode_decode_refalt_lengths();
+    errors += test_encode_refalt_long_allele();
+    errors += test_decode_refalt_invalid_length();
+    errors += test_pack_chars_tail_empty();
     errors += test_encode_variantkey();
     errors += test_extract_variantkey_chrom();
     errors += test_extract_variantkey_pos();

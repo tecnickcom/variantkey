@@ -683,6 +683,12 @@ class TestFunctions(TestCase):
                     ri = rj
                     rj = tmp
 
+    def test_encode_refalt_long_allele(self):
+        # An allele longer than 10 bases is hashed even when the two alleles
+        # together fit the 11 bases of the reversible encoding.
+        self.assertEqual(variantkey.encode_refalt("ACGTACGTACG", "") & 1, 1)
+        self.assertEqual(variantkey.encode_refalt("", "ACGTACGTACG") & 1, 1)
+
     def test_encode_variantkey(self):
         for _, vkchrom, _, vkpos, vkrefalt, vk, _, _, _ in variantsTestData:
             h = variantkey.encode_variantkey(vkchrom, vkpos, vkrefalt)
@@ -783,6 +789,16 @@ class TestFunctions(TestCase):
     def test_parse_variantkey_hex_input_type(self):
         self.assertEqual(variantkey.parse_variantkey_hex(b"b815481990e60000"), variantkey.parse_variantkey_hex("b815481990e60000"))
 
+
+    def test_decode_refalt_invalid_length(self):
+        # Codes whose REF/ALT length fields are outside the reversible range must
+        # not decode. Ported from the C test_decode_refalt_invalid_length.
+        for code in (0x78000000, 0x07800000, 0x55000000):
+            ref, alt, sizeref, sizealt = variantkey.decode_refalt(code)
+            assert ref == b""
+            assert alt == b""
+            assert sizeref == 0
+            assert sizealt == 0
 
 class TestBenchmark(object):
 

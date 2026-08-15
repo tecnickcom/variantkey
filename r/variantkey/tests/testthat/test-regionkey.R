@@ -99,6 +99,9 @@ test_that("ExtendRegionKey", {
     expect_identical(res, as.uint64("13258616630331740228"))
     res <- ExtendRegionKey(rk, 300000000)
     expect_identical(res, as.uint64("13258597305126223868"))
+    # The amount is applied element-wise.
+    res <- ExtendRegionKey(c(rk, rk), c(1000, 300000000))
+    expect_identical(res, as.uint64(c("13258616630331740228", "13258597305126223868")))
 })
 
 test_that("GetRegionKeyChromStartPos", {

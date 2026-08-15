@@ -36,7 +36,9 @@ function encodeChrom(chrom) {
             if ((c > '9') || (c < '0')) {
                 return 0; // NA
             }
-            v = ((v * 10) + (c - '0'));
+            // The C encode_numeric_chrom() accumulates in a uint8_t, so the
+            // value wraps at 256: the mask reproduces the same wrapping.
+            v = (((v * 10) + (c - '0')) & 0xFF);
         }
         return v;
     }
@@ -96,8 +98,8 @@ function encodeAllele(h, bitpos, str, size) {
 
 function encodeRefAltRev(ref, sizeref, alt, sizealt) {
     var h = 0 >>> 0;
-    h |= (sizeref << 27); // RRRR: length of (REF - 1)
-    h |= (sizealt << 23); // AAAA: length of (ALT - 1)
+    h |= (sizeref << 27); // RRRR: length of REF
+    h |= (sizealt << 23); // AAAA: length of ALT
     h = encodeAllele(h, 23, ref, sizeref);
     if (h < 0) {
         return 0xffffffff;
@@ -116,16 +118,16 @@ function muxHash(k, h) {
     k = ((((k & 0xffff) * 0x1b873593) + ((((k >>> 16) * 0x1b873593) & 0xffff) << 16))) & 0xffffffff;
     h ^= k;
     h = ((h << 13) | (h >>> 19));
-    hb = ((((h & 0xffff) * 5) + ((((h >>> 16) * 5) & 0xffff) << 16))) & 0xffffffff;
+    var hb = ((((h & 0xffff) * 5) + ((((h >>> 16) * 5) & 0xffff) << 16))) & 0xffffffff;
     h = (((hb & 0xffff) + 0x6b64) + ((((hb >>> 16) + 0xe654) & 0xffff) << 16));
     return h >>> 0;
 }
 
 function encodePackChar(c) {
-    if (c < 65) {
+    if ((c < 65) || (c > 127)) {
         return (27 >>> 0);
     }
-    if (c >= 97) {
+    if (c >= 96) {
         return ((c - 96) >>> 0);
     }
     return ((c - 64) >>> 0);
@@ -193,7 +195,10 @@ function encodeRefAltHash(ref, sizeref, alt, sizealt) {
 function encodeRefAlt(ref, alt) {
     const sizeref = ref.length >>> 0;
     const sizealt = alt.length >>> 0;
-    if ((sizeref + sizealt) <= 11) {
+    // The length of a single allele is checked as well: the length fields hold
+    // up to 11, but decodeRefAlt only reverses the codes whose alleles are
+    // within 10 bases.
+    if (((sizeref + sizealt) <= 11) && (sizeref <= 10) && (sizealt <= 10)) {
         var h = encodeRefAltRev(ref, sizeref, alt, sizealt);
         if (h != 0xffffffff) {
             return h >>> 0;
@@ -236,6 +241,16 @@ function decodeRefAlt(code) {
             "ref": "",
             "alt": ""
         }; // non-reversible encoding
+    }
+    // Codes whose length fields are outside the reversible range are rejected,
+    // as in the C decode_refalt().
+    const lenref = ((code & 0x78000000) >>> 27);
+    const lenalt = ((code & 0x07800000) >>> 23);
+    if ((lenref > 10) || (lenalt > 10) || ((lenref + lenalt) > 11)) {
+        return {
+            "ref": "",
+            "alt": ""
+        }; // the length fields are out of the reversible range
     }
     return decodeRefAltRev(code);
 }
@@ -384,15 +399,32 @@ function extendRegionKey(rk, size) {
     const drk = decodeRegionKey(rk);
     drk.startpos = ((size >= drk.startpos) ? 0 : (drk.startpos - size));
     drk.endpos = (((0x0FFFFFFF - drk.endpos) <= size) ? 0x0FFFFFFF : (drk.endpos + size));
-    return encodeRegionKey(drk.chrom, drk.startpos, drk.endpos, drk.strand);
+    const out = encodeRegionKey(drk.chrom, drk.startpos, drk.endpos, drk.strand);
+    // C masks with RKMASK_NOPOS = 0xF800000000000007, which keeps bit 0.
+    // Decoding and re-encoding drops it, so it is carried over explicitly.
+    out.lo = ((out.lo | (rk.lo & 0x1)) >>> 0);
+    return out;
 }
 
 function regionKeyString(rk) {
     return padL08(rk.hi.toString(16)) + padL08(rk.lo.toString(16));
 }
 
+// Return the REF length of a VariantKey. Mirrors the C
+// get_variantkey_ref_length().
+// The length is stored in the key only when the REF+ALT pair uses the reversible
+// encoding (bit 0 clear). For a hash-mode key the C version looks the length up
+// in the NRVK binary table; that table is not ported to Javascript, so 0 is
+// always returned here.
+function getVariantKeyRefLength(vk) {
+    if ((vk.lo & 0x1) !== 0) {
+        return 0; // non-reversible encoding: the REF length is not recoverable from the key
+    }
+    return ((vk.lo & 0x78000000) >>> 27);
+}
+
 function getVariantKeyEndPos(vk) {
-    return extractVariantKeyPos(vk) + ((vk.lo & 0x78000000) >>> 27);
+    return extractVariantKeyPos(vk) + getVariantKeyRefLength(vk);
 }
 
 function areOverlappingRegions(a_chrom, a_startpos, a_endpos, b_chrom, b_startpos, b_endpos) {
@@ -419,7 +451,7 @@ function variantKeyToRegionKey(vk) {
 }
 
 function esidEncodeChar(c) {
-    if (c < 33) {
+    if ((c < 33) || (c > 127)) {
         return (63 >>> 0);
     }
     if (c > 95) {
@@ -433,6 +465,12 @@ function esidDecodeChar(esid, pos) {
 }
 
 function encodeStringID(str, start) {
+    if (start > str.length) {
+        return {
+            "hi": (0 >>> 0),
+            "lo": (0 >>> 0),
+        };
+    }
     var size = str.length - start;
     if (size > 10) {
         size = 10;
@@ -512,13 +550,15 @@ function encodeStringNumID(str, sep) {
         c = str.charCodeAt(i++);
     }
     lo |= (num & 0x7FFFFFF);
+    // "lo |= x >>> 0" normalises the operand, not the result of the assignment,
+    // so both fields are normalised here.
     return {
-        "hi": hi,
-        "lo": lo,
+        "hi": hi >>> 0,
+        "lo": lo >>> 0,
     };
 }
 
-function esdiDecodeStringID(size, esid) {
+function esidDecodeStringID(size, esid) {
     var hi = ((esid.hi << 2) | (esid.lo >>> 30)) >>> 0;
     var str = ['', '', '', '', '', '', '', '', '', ''];
     switch (size) {
@@ -556,7 +596,7 @@ function esdiDecodeStringID(size, esid) {
 }
 
 function decodeStringNumID(size, esid) {
-    const str = esdiDecodeStringID(size, esid);
+    const str = esidDecodeStringID(size, esid);
     const npad = (esid.lo >>> 27) & 7;
     const num = (esid.lo & 0x7FFFFFF);
     var numstr = '';
@@ -571,7 +611,59 @@ function decodeStringID(esid) {
     if (size > 10) {
         return decodeStringNumID((size - 10), esid);
     }
-    return esdiDecodeStringID(size, esid);
+    return esidDecodeStringID(size, esid);
+}
+
+// Return a 64 bit hash of a string, for IDs that the reversible encoding cannot
+// represent. Mirrors the C hash_string_id().
+//
+// BigInt is used because this is the only part of the library that needs true 64
+// bit multiplication. The result is returned as the usual {hi, lo} pair.
+//
+// The 8 byte blocks are consumed least-significant byte first, matching the C
+// memcpy on a little-endian host, so the values are endianness dependent.
+const HSID_MASK64 = (1n << 64n) - 1n;
+
+function muxHash64(k, h) {
+    k = (k * 0x87c37b91114253d5n) & HSID_MASK64;
+    k = ((k >> 33n) | (k << 31n)) & HSID_MASK64;
+    k = (k * 0x4cf5ad432745937fn) & HSID_MASK64;
+    h ^= k;
+    h = ((h >> 37n) | (h << 27n)) & HSID_MASK64;
+    return (((h * 5n) & HSID_MASK64) + 0x52dce729n) & HSID_MASK64;
+}
+
+function hashStringID(str) {
+    const size = str.length;
+    const blocks = (size - (size & 7));
+    var h = 0n;
+    var i = 0;
+    var j = 0;
+    for (i = 0; i < blocks; i += 8) {
+        var b = 0n;
+        for (j = 7; j >= 0; j--) {
+            b = ((b << 8n) | BigInt(str.charCodeAt(i + j) & 0xff));
+        }
+        h = muxHash64(b, h);
+    }
+    var v = 0n;
+    for (j = ((size & 7) - 1); j >= 0; j--) {
+        v = ((v << 8n) | BigInt(str.charCodeAt(blocks + j) & 0xff));
+    }
+    if (v > 0n) {
+        h = muxHash64(v, h);
+    }
+    // MurmurHash3 finalization mix
+    h ^= (h >> 33n);
+    h = (h * 0xff51afd7ed558ccdn) & HSID_MASK64;
+    h ^= (h >> 33n);
+    h = (h * 0xc4ceb9fe1a85ec53n) & HSID_MASK64;
+    h ^= (h >> 33n);
+    h |= 0x8000000000000000n; // set the first bit to indicate HASH mode
+    return {
+        "hi": Number(h >> 32n) >>> 0,
+        "lo": Number(h & 0xffffffffn) >>> 0,
+    };
 }
 
 if (typeof(module) !== 'undefined') {
@@ -604,6 +696,7 @@ if (typeof(module) !== 'undefined') {
         regionKey: regionKey,
         extendRegionKey: extendRegionKey,
         regionKeyString: regionKeyString,
+        getVariantKeyRefLength: getVariantKeyRefLength,
         getVariantKeyEndPos: getVariantKeyEndPos,
         areOverlappingRegions: areOverlappingRegions,
         areOverlappingRegionRegionKey: areOverlappingRegionRegionKey,
@@ -613,5 +706,6 @@ if (typeof(module) !== 'undefined') {
         encodeStringID: encodeStringID,
         encodeStringNumID: encodeStringNumID,
         decodeStringID: decodeStringID,
+        hashStringID: hashStringID,
     }
 }

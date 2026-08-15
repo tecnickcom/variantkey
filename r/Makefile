@@ -58,11 +58,23 @@ all: clean format build test
 version:
 	sed $(SEDINPLACE) "s/Version:.*$$/Version: $(VERSION).$(RELEASE)/" variantkey/DESCRIPTION
 
+# Files shared with the rest of the repository that have to be staged inside the
+# package. A package tarball cannot reference anything above its own root, so the
+# C headers and the LICENSE are copied in before the package is built or
+# installed. The copies are listed in .gitignore.
+VKHEADERS=binsearch.h esid.h genoref.h hex.h nrvk.h regionkey.h rsidvar.h set.h variantkey.h
+
+## Stage the shared C headers and the LICENSE inside the package
+.PHONY: headers
+headers:
+	@for file in $(VKHEADERS); do \
+		cp -f "../c/src/variantkey/$$file" "variantkey/src/$$file" || exit 1; \
+	done
+	cp -f ../LICENSE variantkey/LICENSE
+
 ## Build the library
 .PHONY: build
-build: version
-	cd variantkey \
-	&& cp ../../LICENSE .
+build: version headers
 	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);pkgbuild::build();'
 
 ## Re-build lockfile dependencies
@@ -72,7 +84,7 @@ rebuild:
 
 ## Unit tests
 .PHONY: test
-test:
+test: headers
 	R -e 'setwd("./variantkey");renv::restore(prompt=FALSE);renv::install(".",prompt=FALSE);testthat::test_dir("tests")'
 
 ## Generate docs and run unit tests

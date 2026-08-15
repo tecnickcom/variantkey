@@ -4,7 +4,7 @@
 \alias{sort.uint64}
 \title{Sorts a uint64 vector in ascending order.}
 \usage{
-\method{sort}{uint64}(x, ...)
+\method{sort}{uint64}(x, decreasing = FALSE, ...)
 }
 \arguments{
 \item{x}{uint64 vector}

@@ -9,9 +9,7 @@
 
 /**
  * @file set.h
- * @brief Utility functions to sort and join uint64_t arrays.
- *
- * Collection of utility functions to sort and join uint64_t arrays.
+ * @brief In-memory sorting and set operations on uint64_t arrays.
  */
 
 #ifndef VARIANTKEY_SET_H
@@ -19,124 +17,177 @@
 
 #include <inttypes.h>
 #include <stdint.h>
+#include <string.h>
 
-#define RADIX_SORT_COUNT_BLOCK \
-    uint32_t c7[256]= {0}, c6[256]= {0}, c5[256]= {0}, c4[256]= {0}, c3[256]= {0}, c2[256]= {0}, c1[256]= {0}, c0[256]= {0}; \
-    uint32_t o7=0, o6=0, o5=0, o4=0, o3=0, o2=0, o1=0, o0=0; \
-    uint32_t t7, t6, t5, t4, t3, t2, t1, t0; \
-    uint32_t i; \
-    uint64_t v; \
-    for(i = 0; i < nitems; i++) \
-    { \
-        v = arr[i]; \
-        c7[(v & 0xff)]++; \
-        c6[((v >> 8) & 0xff)]++; \
-        c5[((v >> 16) & 0xff)]++; \
-        c4[((v >> 24) & 0xff)]++; \
-        c3[((v >> 32) & 0xff)]++; \
-        c2[((v >> 40) & 0xff)]++; \
-        c1[((v >> 48) & 0xff)]++; \
-        c0[((v >> 56) & 0xff)]++; \
-    } \
-    for(i = 0; i < 256; i++) \
-    { \
-        t7 = (o7 + c7[i]); \
-        c7[i] = o7; \
-        o7 = t7; \
-        t6 = (o6 + c6[i]); \
-        c6[i] = o6; \
-        o6 = t6; \
-        t5 = (o5 + c5[i]); \
-        c5[i] = o5; \
-        o5 = t5; \
-        t4 = (o4 + c4[i]); \
-        c4[i] = o4; \
-        o4 = t4; \
-        t3 = (o3 + c3[i]); \
-        c3[i] = o3; \
-        o3 = t3; \
-        t2 = (o2 + c2[i]); \
-        c2[i] = o2; \
-        o2 = t2; \
-        t1 = (o1 + c1[i]); \
-        c1[i] = o1; \
-        o1 = t1; \
-        t0 = (o0 + c0[i]); \
-        c0[i] = o0; \
-        o0 = t0; \
-    }
-
-#define RADIX_SORT_ITERATION_BLOCK(A, B, BYTE, SHIFT) \
-    for (i = 0; i < nitems; i++) \
-    { \
-        v = (A)[i]; \
-        (B)[c##BYTE[((v >> (SHIFT)) & 0xff)]++] = v; \
-    }
-
-#define RADIX_SORT_ITERATION_INDEX_BLOCK(A, B, BYTE, SHIFT, ADX, BDX) \
-    for (i = 0; i < nitems; i++) \
-    { \
-        v = (A)[i]; \
-        t##BYTE = ((v >> (SHIFT)) & 0xff); \
-        j = c##BYTE[t##BYTE]; \
-        (B)[j] = v; \
-        c##BYTE[t##BYTE]++; \
-        (ADX) = (BDX); \
-    }
+// "restrict" is C99 only and these headers are also compiled as C++, so the
+// keyword is used through a macro that expands to nothing where unavailable.
+#ifndef VK_RESTRICT
+#if defined(__cplusplus)
+#define VK_RESTRICT
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#define VK_RESTRICT restrict
+#else
+#define VK_RESTRICT
+#endif
+#endif
 
 /**
- * Sorts in-memory an array of uint64_t values in ascending order.
- *
- * @param arr    Pointer to the first element of the array to process.
- * @param tmp    Pointer to the first element of a temporary array.
- * @param nitems Number of elements in the array.
+ * @brief Number of bytes of a uint64_t, i.e. the number of radix sort passes.
  */
-static inline void sort_uint64_t(uint64_t *arr, uint64_t *tmp, uint32_t nitems)
+#define RADIX_SORT_PASSES 8
+
+/**
+ * @brief Builds the per-byte histograms of an array and turns them into offsets.
+ *
+ * Each of the RADIX_SORT_PASSES rows of cnt is the exclusive prefix sum of the
+ * byte histogram for that byte position, i.e. the first output offset of each
+ * bucket. The rows of the passes that can be skipped are left as plain counts.
+ *
+ * @param arr    First element of the array to scan.
+ * @param nitems Number of elements in the array.
+ * @param cnt    Bucket offsets to be returned.
+ *
+ * @return The bitwise OR of the differences between the elements and the first
+ *         one: a byte of the result is zero exactly when that byte is identical
+ *         in every element, so the corresponding pass can be skipped.
+ */
+static inline uint64_t radix_sort_count(const uint64_t *arr, uint32_t nitems, uint32_t cnt[RADIX_SORT_PASSES][256])
 {
-    RADIX_SORT_COUNT_BLOCK
-    RADIX_SORT_ITERATION_BLOCK(arr, tmp, 7, 0)
-    RADIX_SORT_ITERATION_BLOCK(tmp, arr, 6, 8)
-    RADIX_SORT_ITERATION_BLOCK(arr, tmp, 5, 16)
-    RADIX_SORT_ITERATION_BLOCK(tmp, arr, 4, 24)
-    RADIX_SORT_ITERATION_BLOCK(arr, tmp, 3, 32)
-    RADIX_SORT_ITERATION_BLOCK(tmp, arr, 2, 40)
-    RADIX_SORT_ITERATION_BLOCK(arr, tmp, 1, 48)
-    RADIX_SORT_ITERATION_BLOCK(tmp, arr, 0, 56)
+    uint64_t diff = 0;
+    uint32_t i = 0;
+    uint8_t b = 0;
+    memset(cnt, 0, (sizeof(uint32_t) * RADIX_SORT_PASSES * 256));
+    // The counting loop is unrolled over the eight byte positions.
+    const uint64_t first = ((nitems > 0) ? arr[0] : 0);
+    for (i = 0; i < nitems; i++)
+    {
+        uint64_t v = arr[i];
+        diff |= (v ^ first);
+        cnt[0][(v & 0xff)]++;
+        cnt[1][((v >> 8) & 0xff)]++;
+        cnt[2][((v >> 16) & 0xff)]++;
+        cnt[3][((v >> 24) & 0xff)]++;
+        cnt[4][((v >> 32) & 0xff)]++;
+        cnt[5][((v >> 40) & 0xff)]++;
+        cnt[6][((v >> 48) & 0xff)]++;
+        cnt[7][((v >> 56) & 0xff)]++;
+    }
+    for (b = 0; b < RADIX_SORT_PASSES; b++)
+    {
+        if (((diff >> (b << 3)) & 0xff) == 0)
+        {
+            continue; // this byte is the same in every element: the pass is skipped
+        }
+        uint32_t offset = 0;
+        for (i = 0; i < 256; i++)
+        {
+            uint32_t total = (offset + cnt[b][i]);
+            cnt[b][i] = offset;
+            offset = total;
+        }
+    }
+    return diff;
 }
 
 /**
- * Sorts in-memory an array of uint64_t values in ascending order and store the permutation order index.
+ * @brief Sorts an array of uint64_t values in ascending order with a radix sort.
  *
- * @param arr    Pointer to the first element of the array to process.
- * @param tmp    Pointer to the first element of a temporary array.
- * @param idx    Pointer to the first element of the index array to be returned.
- * @param tdx    Pointer to the first element of a temporary index array.
+ * A pass whose byte is identical in every element is skipped. Skipping changes
+ * the parity of the buffer ping-pong, so the result is copied back when it ends
+ * up in the temporary buffer.
+ *
+ * @param arr    First element of the array to sort in place.
+ * @param tmp    First element of a temporary array of nitems elements.
  * @param nitems Number of elements in the array.
  */
-static inline void order_uint64_t(uint64_t *arr, uint64_t *tmp, uint32_t *idx, uint32_t *tdx, uint32_t nitems)
+static inline void sort_uint64_t(uint64_t *VK_RESTRICT arr, uint64_t *VK_RESTRICT tmp, uint32_t nitems)
 {
-    uint32_t j = 0;
-    RADIX_SORT_COUNT_BLOCK
-    RADIX_SORT_ITERATION_INDEX_BLOCK(arr, tmp, 7, 0, tdx[j], i)
-    RADIX_SORT_ITERATION_INDEX_BLOCK(tmp, arr, 6, 8, idx[j], tdx[i])
-    RADIX_SORT_ITERATION_INDEX_BLOCK(arr, tmp, 5, 16, tdx[j], idx[i])
-    RADIX_SORT_ITERATION_INDEX_BLOCK(tmp, arr, 4, 24, idx[j], tdx[i])
-    RADIX_SORT_ITERATION_INDEX_BLOCK(arr, tmp, 3, 32, tdx[j], idx[i])
-    RADIX_SORT_ITERATION_INDEX_BLOCK(tmp, arr, 2, 40, idx[j], tdx[i])
-    RADIX_SORT_ITERATION_INDEX_BLOCK(arr, tmp, 1, 48, tdx[j], idx[i])
-    RADIX_SORT_ITERATION_INDEX_BLOCK(tmp, arr, 0, 56, idx[j], tdx[i])
+    uint32_t cnt[RADIX_SORT_PASSES][256];
+    uint64_t diff = radix_sort_count(arr, nitems, cnt);
+    uint64_t *src = arr;
+    uint64_t *dst = tmp;
+    uint8_t b = 0;
+    for (b = 0; b < RADIX_SORT_PASSES; b++)
+    {
+        if (((diff >> (b << 3)) & 0xff) == 0)
+        {
+            continue; // this byte is the same in every element
+        }
+        uint32_t i = 0;
+        for (i = 0; i < nitems; i++)
+        {
+            uint64_t v = src[i];
+            dst[cnt[b][((v >> (b << 3)) & 0xff)]++] = v;
+        }
+        uint64_t *swap = src;
+        src = dst;
+        dst = swap;
+    }
+    if (src != arr)
+    {
+        memcpy(arr, src, (nitems * sizeof(uint64_t)));
+    }
 }
 
 /**
- * Reverse in-place an array of uint64_t values.
+ * @brief Sorts an array of uint64_t values in ascending order and returns the permutation applied.
  *
- * @param arr    Pointer to the first element of the array to process.
+ * @param arr    First element of the array to sort in place.
+ * @param tmp    First element of a temporary array of nitems elements.
+ * @param idx    First element of the index array to be returned.
+ * @param tdx    First element of a temporary index array of nitems elements.
+ * @param nitems Number of elements in the array.
+ */
+static inline void order_uint64_t(uint64_t *VK_RESTRICT arr, uint64_t *VK_RESTRICT tmp, uint32_t *VK_RESTRICT idx, uint32_t *VK_RESTRICT tdx, uint32_t nitems)
+{
+    uint32_t cnt[RADIX_SORT_PASSES][256];
+    uint64_t diff = radix_sort_count(arr, nitems, cnt);
+    uint64_t *vsrc = arr;
+    uint64_t *vdst = tmp;
+    uint32_t *isrc = idx;
+    uint32_t *idst = tdx;
+    uint32_t i = 0;
+    uint8_t b = 0;
+    for (i = 0; i < nitems; i++)
+    {
+        idx[i] = i;
+    }
+    for (b = 0; b < RADIX_SORT_PASSES; b++)
+    {
+        if (((diff >> (b << 3)) & 0xff) == 0)
+        {
+            continue; // this byte is the same in every element
+        }
+        for (i = 0; i < nitems; i++)
+        {
+            uint64_t v = vsrc[i];
+            uint32_t j = cnt[b][((v >> (b << 3)) & 0xff)]++;
+            vdst[j] = v;
+            idst[j] = isrc[i];
+        }
+        uint64_t *vswap = vsrc;
+        vsrc = vdst;
+        vdst = vswap;
+        uint32_t *iswap = isrc;
+        isrc = idst;
+        idst = iswap;
+    }
+    if (vsrc != arr)
+    {
+        memcpy(arr, vsrc, (nitems * sizeof(uint64_t)));
+        memcpy(idx, isrc, (nitems * sizeof(uint32_t)));
+    }
+}
+
+/**
+ * @brief Reverses an array of uint64_t values in place.
+ *
+ * @param arr    First element of the array to reverse.
  * @param nitems Number of elements in the array.
  */
 static inline void reverse_uint64_t(uint64_t *arr, uint64_t nitems)
 {
     uint64_t *last = (arr + nitems);
-    uint64_t tmp = 0;
     while (arr != last)
     {
         --last;
@@ -144,19 +195,22 @@ static inline void reverse_uint64_t(uint64_t *arr, uint64_t nitems)
         {
             break;
         }
-        tmp = *last;
+        uint64_t tmp = *last;
         *last = *arr;
         *arr++ = tmp;
     }
 }
 
 /**
- * Eliminates all but the first element from every consecutive group of equal values.
+ * @brief Removes all but the first element of every run of equal values.
  *
- * @param arr    Pointer to the first element of the array to process.
+ * The elements are moved in place; the ones past the returned end are left
+ * unspecified.
+ *
+ * @param arr    First element of the array to process.
  * @param nitems Number of elements in the array.
  *
- * @return Pointer to the end of the array.
+ * @return Pointer past the last retained element.
  */
 static inline uint64_t *unique_uint64_t(uint64_t *arr, uint64_t nitems)
 {
@@ -164,36 +218,33 @@ static inline uint64_t *unique_uint64_t(uint64_t *arr, uint64_t nitems)
     {
         return arr;
     }
-    uint64_t *last = (arr + nitems);
+    const uint64_t *last = (arr + nitems);
     uint64_t *p = arr;
     while (++arr != last)
     {
         if (*p != *arr)
         {
-            if (*p++ != *arr)
-            {
-                *p = *arr;
-            }
+            *(++p) = *arr;
         }
     }
     return ++p;
 }
 
 /**
- * Returns the intersection of two sorted uint64_t arrays.
+ * @brief Writes the intersection of two sorted uint64_t arrays.
  *
- * @param a_arr    Pointer to the first element of the first array to process.
+ * @param a_arr    First element of the first array.
  * @param a_nitems Number of elements in the first array.
- * @param b_arr    Pointer to the first element of the second array to process.
+ * @param b_arr    First element of the second array.
  * @param b_nitems Number of elements in the second array.
- * @param o_arr    Pointer to the first element or the output array.
+ * @param o_arr    First element of the output array.
  *
- * @return Pointer to the end of the array.
+ * @return Pointer past the last element written.
  */
-static inline uint64_t *intersection_uint64_t(uint64_t *a_arr, uint64_t a_nitems, uint64_t *b_arr, uint64_t b_nitems, uint64_t *o_arr)
+static inline uint64_t *intersection_uint64_t(const uint64_t *VK_RESTRICT a_arr, uint64_t a_nitems, const uint64_t *VK_RESTRICT b_arr, uint64_t b_nitems, uint64_t *VK_RESTRICT o_arr)
 {
-    uint64_t *a_last = (a_arr + a_nitems);
-    uint64_t *b_last = (b_arr + b_nitems);
+    const uint64_t *a_last = (a_arr + a_nitems);
+    const uint64_t *b_last = (b_arr + b_nitems);
     while ((a_arr != a_last) && (b_arr != b_last))
     {
         if (*a_arr < *b_arr)
@@ -211,20 +262,20 @@ static inline uint64_t *intersection_uint64_t(uint64_t *a_arr, uint64_t a_nitems
 }
 
 /**
- * Returns the union of two sorted uint64_t arrays.
+ * @brief Writes the union of two sorted uint64_t arrays.
  *
- * @param a_arr    Pointer to the first element of the first array to process.
+ * @param a_arr    First element of the first array.
  * @param a_nitems Number of elements in the first array.
- * @param b_arr    Pointer to the first element of the second array to process.
+ * @param b_arr    First element of the second array.
  * @param b_nitems Number of elements in the second array.
- * @param o_arr    Pointer to the first element or the output array.
+ * @param o_arr    First element of the output array.
  *
- * @return Pointer to the end of the array.
+ * @return Pointer past the last element written.
  */
-static inline uint64_t *union_uint64_t(uint64_t *a_arr, uint64_t a_nitems, uint64_t *b_arr, uint64_t b_nitems, uint64_t *o_arr)
+static inline uint64_t *union_uint64_t(const uint64_t *VK_RESTRICT a_arr, uint64_t a_nitems, const uint64_t *VK_RESTRICT b_arr, uint64_t b_nitems, uint64_t *VK_RESTRICT o_arr)
 {
-    uint64_t *a_last = (a_arr + a_nitems);
-    uint64_t *b_last = (b_arr + b_nitems);
+    const uint64_t *a_last = (a_arr + a_nitems);
+    const uint64_t *b_last = (b_arr + b_nitems);
     while ((a_arr != a_last) && (b_arr != b_last))
     {
         if (*a_arr < *b_arr)

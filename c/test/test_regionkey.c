@@ -255,7 +255,7 @@ void benchmark_decode_regionkey()
         decode_regionkey(0x080001f400002260 + i, &h);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_reverse_regionkey()
@@ -302,7 +302,7 @@ void benchmark_reverse_regionkey()
         reverse_regionkey(0x080001f400002260 + i, &h);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_regionkey()
@@ -334,7 +334,7 @@ void benchmark_regionkey()
         res = regionkey("MT", 2, 1000, 2000, -1);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, res);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, res);
 }
 
 int test_extend_regionkey()

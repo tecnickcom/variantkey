@@ -35,7 +35,7 @@ typedef struct esid_data_t
     const char str[37];
 } __attribute__((packed)) __attribute__((aligned(128))) esid_data_t;
 
-static const int k_esid_data_size = 36;
+static const int k_esid_data_size = 37;
 
 static const esid_data_t esid_data[] =
 {
@@ -75,6 +75,7 @@ static const esid_data_t esid_data[] =
     { 2,  0,  2, 0x2452000000000000, 0xd94ae1e7173e781d, "12",         "12"                                  },
     { 1,  0,  1, 0x1440000000000000, 0xfc73100baa96ad81, "1",          "1"                                   },
     { 0,  0,  0, 0x0000000000000000, 0x8000000000000000, "",           ""                                    },
+    { 6,  8,  0, 0x0000000000000000, 0xa81279395d9c891e, "",           "012345"                              },
 };
 
 typedef struct esid_num_data_t
@@ -86,7 +87,7 @@ typedef struct esid_num_data_t
     const char str[30];
 } __attribute__((packed)) __attribute__((aligned(128))) esid_num_data_t;
 
-static const int k_esid_num_data_size = 60;
+static const int k_esid_num_data_size = 66;
 
 static const esid_num_data_t esid_num_data[] =
 {
@@ -150,6 +151,12 @@ static const esid_num_data_t esid_num_data[] =
     {25, 21, 0xf8628e4978bc614e, "ABCDE:000000012345678", "AbCdEfG:00000000012345678"},
     {26, 21, 0xf8628e4978bc614e, "ABCDE:000000012345678", "AbCdEfG:000000000012345678"},
     {27, 21, 0xf8628e4978bc614e, "ABCDE:000000012345678", "AbCdEfG:0000000000012345678"},
+    {13,  6, 0xf8628e4940000000, "ABCDE:",                "ABCDEFGHIJKLM"},
+    {11,  6, 0xf8628e4940000000, "ABCDE:",                "ABCDEFGHIJKLM:12"},
+    {12,  9, 0xf8628e4958000000, "ABCDE:000",             "ABCDEFGH:0000000000"},
+    {12,  9, 0xf8628e494000007b, "ABCDE:123",             "ABCDEFGH:12345678"},
+    {17,  8, 0xf8628e494000000c, "ABCDE:12",              "ABCDEFGH:12A45678"},
+    {15, 11, 0xd8628c0038000000, "ABC:0000000",           "ABC:00000000000"},
 };
 
 int test_encode_string_id()
@@ -181,7 +188,7 @@ void benchmark_encode_string_id()
         esid = encode_string_id("ABC0123456", 10, 0);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
 }
 
 int test_encode_string_num_id()
@@ -213,14 +220,14 @@ void benchmark_encode_string_num_id()
         esid = encode_string_num_id("AbCDE:000012345", 15, ':');
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, esid);
 }
 
 int test_decode_string_id()
 {
     int i = 0;
     int errors = 0;
-    char esid[11];
+    char esid[ESID_MAXSTRLEN];
     size_t size = 0;
     for (i=0 ; i < k_esid_data_size; i++)
     {
@@ -232,7 +239,7 @@ int test_decode_string_id()
         }
         if (size != esid_data[i].esize)
         {
-            (void) fprintf(stderr, "%s (%d): Expected size %lu, got %lu\n", __func__, i, esid_data[i].esize, size);
+            (void) fprintf(stderr, "%s (%d): Expected size %zu, got %zu\n", __func__, i, esid_data[i].esize, size);
             ++errors;
         }
     }
@@ -241,7 +248,7 @@ int test_decode_string_id()
 
 void benchmark_decode_string_id()
 {
-    char esid[11] = "";
+    char esid[ESID_MAXSTRLEN] = "";
     size_t len = 0;
     uint64_t tstart = 0, tend = 0;
     int i = 0;
@@ -252,14 +259,14 @@ void benchmark_decode_string_id()
         len = decode_string_id(0x08628e49669e8a6a, esid);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%lu)\n", __func__, (tend - tstart)/size, len);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%zu)\n", __func__, (tend - tstart)/size, len);
 }
 
 int test_decode_string_num_id()
 {
     int i = 0;
     int errors = 0;
-    char esid[30];
+    char esid[ESID_MAXSTRLEN];
     size_t size = 0;
     for (i=0 ; i < k_esid_num_data_size; i++)
     {
@@ -271,7 +278,7 @@ int test_decode_string_num_id()
         }
         if (size != esid_num_data[i].esize)
         {
-            (void) fprintf(stderr, "%s (%d): Expected size %lu, got %lu\n", __func__, i, esid_num_data[i].esize, size);
+            (void) fprintf(stderr, "%s (%d): Expected size %zu, got %zu\n", __func__, i, esid_num_data[i].esize, size);
             ++errors;
         }
     }
@@ -280,7 +287,7 @@ int test_decode_string_num_id()
 
 void benchmark_decode_string_num_id()
 {
-    char esid[30] = "";
+    char esid[ESID_MAXSTRLEN] = "";
     size_t len = 0;
     uint64_t tstart = 0, tend = 0;
     int i = 0;
@@ -291,7 +298,7 @@ void benchmark_decode_string_num_id()
         len = decode_string_id(0xf8628e4978bc614e, esid);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%lu)\n", __func__, (tend - tstart)/size, len);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%zu)\n", __func__, (tend - tstart)/size, len);
 }
 
 int test_hash_string_id()
@@ -323,7 +330,7 @@ void benchmark_hash_string_id()
         hsid = hash_string_id("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 36);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, hsid);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, hsid);
 }
 
 int main()

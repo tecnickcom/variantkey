@@ -10,5 +10,6 @@
 \item{x}{factor vector}
 }
 \description{
-Coerce from factor to hex64.
+The factor is converted through its labels, because unclass() on a factor
+yields the integer codes rather than the hexadecimal strings it holds.
 }

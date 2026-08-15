@@ -19,7 +19,7 @@
 
 #define DEFAULT_BENCH_ROWS 100000UL
 #define DEFAULT_BENCH_QUERIES 200UL
-#define BENCH_ROUNDS 3
+enum { BENCH_ROUNDS = 3 }; // number of timed rounds per benchmark
 
 #define COL_FILE "vk_lookup_test.bin"
 #define CSV_FILE "vk_lookup_test.csv"
@@ -94,7 +94,7 @@ static int build_dataset(row_t *rows, uint64_t nrows)
     for (i = 0; i < nrows; ++i)
     {
         uint8_t chrom_code = (uint8_t)((i % 22U) + 1U);
-        uint32_t pos = (uint32_t)(1000U + i * 2U + (i % 17U));
+        uint32_t pos = (uint32_t)(1000U + (i * 2U) + (i % 17U));
         char ref = bases[i & 3U];
         char alt = bases[(i + 1U) & 3U];
 
@@ -118,7 +118,7 @@ static int build_dataset(row_t *rows, uint64_t nrows)
 
 static int write_columnar_file(const char *filename, const row_t *rows, uint64_t nrows)
 {
-    FILE *f = fopen(filename, "wb");
+    FILE *f = fopen(filename, "wbe");
     if (f == NULL)
     {
         (void)fprintf(stderr, "unable to open %s for writing\n", filename);
@@ -152,7 +152,7 @@ static int write_columnar_file(const char *filename, const row_t *rows, uint64_t
 
 static int write_csv_file(const char *filename, const row_t *rows, uint64_t nrows)
 {
-    FILE *f = fopen(filename, "w");
+    FILE *f = fopen(filename, "we");
     if (f == NULL)
     {
         (void)fprintf(stderr, "unable to open %s for writing\n", filename);
@@ -176,7 +176,7 @@ static int write_csv_file(const char *filename, const row_t *rows, uint64_t nrow
 
 static int load_text_file(const char *filename, char **data, size_t *size)
 {
-    FILE *f = fopen(filename, "rb");
+    FILE *f = fopen(filename, "rbe");
     if (f == NULL)
     {
         return 1;
@@ -460,7 +460,6 @@ int main(int argc, char **argv)
         (void)fprintf(stdout, "variantkey+columnar round=%d sum=%" PRIu64 " time=%" PRIu64 " ns (%" PRIu64 " ns/op)\n", r + 1, sum, dt, dt / nqueries);
     }
 
-    uint64_t last_csv_ns = 0;
     for (r = 0; r < BENCH_ROUNDS; ++r)
     {
         uint64_t i = 0;
@@ -472,7 +471,6 @@ int main(int argc, char **argv)
         }
         uint64_t t1 = get_time_ns();
         uint64_t dt = (t1 - t0 > offset) ? (t1 - t0 - offset) : (t1 - t0);
-        last_csv_ns = dt;
         (void)fprintf(stdout, "csv(chrom,pos,ref,alt) round=%d sum=%" PRIu64 " time=%" PRIu64 " ns (%" PRIu64 " ns/op)\n", r + 1, sum, dt, dt / nqueries);
     }
 
@@ -493,7 +491,7 @@ int main(int argc, char **argv)
         sum_csv += (uint64_t)lookup_csv_payload(csv_data, csv_size, &queries[i]);
     }
     t1 = get_time_ns();
-    last_csv_ns = (t1 - t0 > offset) ? (t1 - t0 - offset) : (t1 - t0);
+    uint64_t last_csv_ns = (t1 - t0 > offset) ? (t1 - t0 - offset) : (t1 - t0);
 
     if (sum_vk != sum_csv)
     {

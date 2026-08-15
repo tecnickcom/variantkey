@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.  */
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <htslib/hts.h>
 #include <htslib/vcf.h>
 #include <htslib/vcfutils.h>
@@ -131,6 +132,7 @@ void destroy(void)
 {
     fclose(fp_vkrs);
     fclose(fp_rsvk);
+    fclose(fp_nrvk);
     printf("VariantKeys: %" PRIu64 "\n", numvar);
     printf("Non-reversible VariantKeys: %" PRIu64 "\n", nrv);
 }

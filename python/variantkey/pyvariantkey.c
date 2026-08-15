@@ -11,14 +11,17 @@
 #define PY_SSIZE_T_CLEAN  //!< Make "s#" use Py_ssize_t rather than int.
 
 #include <Python.h>
-#include "../../c/src/variantkey/binsearch.h"
-#include "../../c/src/variantkey/esid.h"
-#include "../../c/src/variantkey/genoref.h"
-#include "../../c/src/variantkey/hex.h"
-#include "../../c/src/variantkey/nrvk.h"
-#include "../../c/src/variantkey/regionkey.h"
-#include "../../c/src/variantkey/rsidvar.h"
-#include "../../c/src/variantkey/variantkey.h"
+#include <errno.h>
+// The variantkey headers are found through the include path set in setup.py,
+// not by a relative path, so the module also builds from a source distribution.
+#include "binsearch.h"
+#include "esid.h"
+#include "genoref.h"
+#include "hex.h"
+#include "nrvk.h"
+#include "regionkey.h"
+#include "rsidvar.h"
+#include "variantkey.h"
 #include "pyvariantkey.h"
 
 #ifndef Py_UNUSED // This is already defined for Python 3.4 onwards
@@ -203,7 +206,9 @@ static PyObject* py_parse_variantkey_hex(PyObject *Py_UNUSED(ignored), PyObject 
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "s#", kwlist, &vs, &sizevs))
         return NULL;
     uint64_t h = 0;
-    if (sizevs == 16)
+    // Only the first 16 characters are parsed, as in the C reference. A shorter
+    // string is rejected, because the C function reads 16 characters.
+    if (sizevs >= 16)
     {
         h = parse_variantkey_hex(vs);
     }
@@ -212,23 +217,36 @@ static PyObject* py_parse_variantkey_hex(PyObject *Py_UNUSED(ignored), PyObject 
 
 // --- BINSEARCH ---
 
+// Returns non-zero when a mmap_* helper failed. The helpers return void, so the
+// failure is detected from the resulting struct and reported as an OSError.
+static int py_mmap_failed(const mmfile_t *mf)
+{
+    return ((mf->src == NULL) || (mf->src == (uint8_t *)-1) || (mf->size == 0));
+}
+
 static const mmfile_t *py_get_mmfile_mf(PyObject *mf)
 {
     if (mf == Py_None)
     {
-        return (const mmfile_t *)PyMem_Malloc(sizeof(mmfile_t));
+        // None means "no memory-mapped file", a supported way to call the lookup
+        // functions: the C code treats an all-zero struct as an empty table.
+        static const mmfile_t empty = {0};
+        return &empty;
     }
     return (const mmfile_t *)PyCapsule_GetPointer(mf, "mf");
 }
 
 static void destroy_mf(PyObject *mf)
 {
-    const mmfile_t *cmf = py_get_mmfile_mf(mf);
+    // The capsule is read directly rather than through py_get_mmfile_mf, which
+    // sets a Python exception on failure: not allowed from a destructor.
+    void *cmf = PyCapsule_GetPointer(mf, "mf");
     if (cmf == NULL)
     {
+        PyErr_Clear();
         return;
     }
-    PyMem_Free((void *)cmf);
+    PyMem_Free(cmf);
 }
 
 static PyObject* py_munmap_binfile(PyObject *Py_UNUSED(ignored), PyObject *args, PyObject *keywds)
@@ -237,31 +255,52 @@ static PyObject* py_munmap_binfile(PyObject *Py_UNUSED(ignored), PyObject *args,
     static char *kwlist[] = {"mf", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "O", kwlist, &mf))
         return NULL;
-    const mmfile_t *cmf = py_get_mmfile_mf(mf);
-    return Py_BuildValue("i", munmap_binfile(*cmf));
+    mmfile_t *cmf = (mmfile_t *)py_get_mmfile_mf(mf);
+    if (cmf == NULL)
+    {
+        return NULL;
+    }
+    // The struct is invalidated after a successful unmap, so calling this twice
+    // is a no-op.
+    if (cmf->src == NULL)
+    {
+        return Py_BuildValue("i", 0); // already unmapped
+    }
+    int ret = munmap_binfile(*cmf);
+    if (ret == 0)
+    {
+        memset(cmf, 0, sizeof(mmfile_t));
+    }
+    return Py_BuildValue("i", ret);
 }
 
 // ----------
 
 // --- RSIDVAR ---
 
+// The capsule is named "mc_rsidvar" to distinguish it from the NRVK capsule
+// (see py_get_nrvk_mc): the two structs have different layouts.
 static const rsidvar_cols_t *py_get_rsidvar_mc(PyObject *mc)
 {
     if (mc == Py_None)
     {
-        return (const rsidvar_cols_t *)PyMem_Malloc(sizeof(rsidvar_cols_t));
+        // None means "no rsidvar columns", a supported way to call the lookup
+        // functions: the C code treats an all-zero struct as an empty table.
+        static const rsidvar_cols_t empty = {0};
+        return &empty;
     }
-    return (const rsidvar_cols_t *)PyCapsule_GetPointer(mc, "mc");
+    return (const rsidvar_cols_t *)PyCapsule_GetPointer(mc, "mc_rsidvar");
 }
 
 static void destroy_rsidvar_mc(PyObject *mc)
 {
-    const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    void *cmc = PyCapsule_GetPointer(mc, "mc_rsidvar");
     if (cmc == NULL)
     {
+        PyErr_Clear();
         return;
     }
-    PyMem_Free((void *)cmc);
+    PyMem_Free(cmc);
 }
 
 static PyObject* py_mmap_rsvk_file(PyObject *Py_UNUSED(ignored), PyObject *args, PyObject *keywds)
@@ -271,12 +310,14 @@ static PyObject* py_mmap_rsvk_file(PyObject *Py_UNUSED(ignored), PyObject *args,
     static char *kwlist[] = {"file", "ctbytes", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "sO", kwlist, &file, &ctbytes))
         return NULL;
-    mmfile_t *mf = (mmfile_t *)PyMem_Malloc(sizeof(mmfile_t));
+    mmfile_t *mf = (mmfile_t *)PyMem_Calloc(1, sizeof(mmfile_t));
     rsidvar_cols_t *mc = (rsidvar_cols_t *)PyMem_Malloc(sizeof(rsidvar_cols_t));
     ctbytes = PySequence_Fast(ctbytes, "argument must be iterable");
     if (!ctbytes)
     {
-        return 0;
+        PyMem_Free(mf);
+        PyMem_Free(mc);
+        return NULL;
     }
     mf->ncols = (uint8_t)PySequence_Fast_GET_SIZE(ctbytes);
     int i;
@@ -287,22 +328,47 @@ static PyObject* py_mmap_rsvk_file(PyObject *Py_UNUSED(ignored), PyObject *args,
         if (!item)
         {
             Py_DECREF(ctbytes);
-            return 0;
+            PyMem_Free(mf);
+            PyMem_Free(mc);
+            return NULL;
         }
         fitem = PyNumber_Long(item);
         if (!fitem)
         {
             Py_DECREF(ctbytes);
-            return 0;
+            PyMem_Free(mf);
+            PyMem_Free(mc);
+            return NULL;
         }
-        mf->ctbytes[i] = (uint8_t)PyLong_AsUnsignedLong(item);
+        unsigned long value = PyLong_AsUnsignedLong(fitem);
         Py_DECREF(fitem);
+        if ((value == (unsigned long)-1) && (PyErr_Occurred() != NULL))
+        {
+            Py_DECREF(ctbytes);
+            PyMem_Free(mf);
+            PyMem_Free(mc);
+            return NULL;
+        }
+        mf->ctbytes[i] = (uint8_t)value;
     }
     Py_DECREF(ctbytes);
+    int err = 0;
+    Py_BEGIN_ALLOW_THREADS
     mmap_rsvk_file(file, mf, mc);
+    // errno is captured before releasing the GIL, which can overwrite it.
+    err = errno;
+    Py_END_ALLOW_THREADS
+    if (py_mmap_failed(mf))
+    {
+        PyMem_Free(mf);
+        PyMem_Free(mc);
+        errno = err;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, file);
+        return NULL;
+    }
     PyObject *result = PyTuple_New(3);
     PyTuple_SetItem(result, 0, PyCapsule_New(mf, "mf", destroy_mf));
-    PyTuple_SetItem(result, 1, PyCapsule_New(mc, "mc", destroy_rsidvar_mc));
+    PyTuple_SetItem(result, 1, PyCapsule_New(mc, "mc_rsidvar", destroy_rsidvar_mc));
     PyTuple_SetItem(result, 2, Py_BuildValue("K", mc->nrows));
     return result;
 }
@@ -314,12 +380,14 @@ static PyObject* py_mmap_vkrs_file(PyObject *Py_UNUSED(ignored), PyObject *args,
     static char *kwlist[] = {"file", "ctbytes", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "sO", kwlist, &file, &ctbytes))
         return NULL;
-    mmfile_t *mf = (mmfile_t *)PyMem_Malloc(sizeof(mmfile_t));
+    mmfile_t *mf = (mmfile_t *)PyMem_Calloc(1, sizeof(mmfile_t));
     rsidvar_cols_t *mc = (rsidvar_cols_t *)PyMem_Malloc(sizeof(rsidvar_cols_t));
     ctbytes = PySequence_Fast(ctbytes, "argument must be iterable");
     if (!ctbytes)
     {
-        return 0;
+        PyMem_Free(mf);
+        PyMem_Free(mc);
+        return NULL;
     }
     mf->ncols = (uint8_t)PySequence_Fast_GET_SIZE(ctbytes);
     int i;
@@ -330,22 +398,47 @@ static PyObject* py_mmap_vkrs_file(PyObject *Py_UNUSED(ignored), PyObject *args,
         if (!item)
         {
             Py_DECREF(ctbytes);
-            return 0;
+            PyMem_Free(mf);
+            PyMem_Free(mc);
+            return NULL;
         }
         fitem = PyNumber_Long(item);
         if (!fitem)
         {
             Py_DECREF(ctbytes);
-            return 0;
+            PyMem_Free(mf);
+            PyMem_Free(mc);
+            return NULL;
         }
-        mf->ctbytes[i] = (uint8_t)PyLong_AsUnsignedLong(item);
+        unsigned long value = PyLong_AsUnsignedLong(fitem);
         Py_DECREF(fitem);
+        if ((value == (unsigned long)-1) && (PyErr_Occurred() != NULL))
+        {
+            Py_DECREF(ctbytes);
+            PyMem_Free(mf);
+            PyMem_Free(mc);
+            return NULL;
+        }
+        mf->ctbytes[i] = (uint8_t)value;
     }
     Py_DECREF(ctbytes);
+    int err = 0;
+    Py_BEGIN_ALLOW_THREADS
     mmap_vkrs_file(file, mf, mc);
+    // errno is captured before releasing the GIL, which can overwrite it.
+    err = errno;
+    Py_END_ALLOW_THREADS
+    if (py_mmap_failed(mf))
+    {
+        PyMem_Free(mf);
+        PyMem_Free(mc);
+        errno = err;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, file);
+        return NULL;
+    }
     PyObject *result = PyTuple_New(3);
     PyTuple_SetItem(result, 0, PyCapsule_New(mf, "mf", destroy_mf));
-    PyTuple_SetItem(result, 1, PyCapsule_New(mc, "mc", destroy_rsidvar_mc));
+    PyTuple_SetItem(result, 1, PyCapsule_New(mc, "mc_rsidvar", destroy_rsidvar_mc));
     PyTuple_SetItem(result, 2, Py_BuildValue("K", mc->nrows));
     return result;
 }
@@ -359,6 +452,10 @@ static PyObject* py_find_rv_variantkey_by_rsid(PyObject *Py_UNUSED(ignored), PyO
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKI", kwlist, &mc, &first, &last, &rsid))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint64_t h = find_rv_variantkey_by_rsid(*cmc, &first, last, rsid);
     PyObject *result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, Py_BuildValue("K", h));
@@ -375,6 +472,10 @@ static PyObject* py_get_next_rv_variantkey_by_rsid(PyObject *Py_UNUSED(ignored),
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKI", kwlist, &mc, &pos, &last, &rsid))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint64_t h = get_next_rv_variantkey_by_rsid(*cmc, &pos, last, rsid);
     PyObject *result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, Py_BuildValue("K", h));
@@ -384,18 +485,30 @@ static PyObject* py_get_next_rv_variantkey_by_rsid(PyObject *Py_UNUSED(ignored),
 
 static PyObject* py_find_all_rv_variantkey_by_rsid(PyObject *Py_UNUSED(ignored), PyObject *args, PyObject *keywds)
 {
-    PyObject* vks = PyList_New(0);
     uint64_t first, last;
     uint32_t rsid;
     PyObject* mc = NULL;
     static char *kwlist[] = {"mc", "first", "last", "rsid", NULL};
+    // The list is created after the arguments and the capsule are checked, so
+    // nothing is allocated when the call fails.
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKI", kwlist, &mc, &first, &last, &rsid))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
+    PyObject* vks = PyList_New(0);
     uint64_t h = find_rv_variantkey_by_rsid(*cmc, &first, last, rsid);
     while (h > 0)
     {
-        PyList_Append(vks, Py_BuildValue("K", h));
+        // PyList_Append does not steal the reference, so the value is released
+        // afterwards.
+        {
+            PyObject *item = Py_BuildValue("K", h);
+            PyList_Append(vks, item);
+            Py_DECREF(item);
+        }
         h = get_next_rv_variantkey_by_rsid(*cmc, &first, last, rsid);
     }
     return vks;
@@ -409,6 +522,10 @@ static PyObject* py_find_vr_rsid_by_variantkey(PyObject *Py_UNUSED(ignored), PyO
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKK", kwlist, &mc, &first, &last, &vk))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint32_t h = find_vr_rsid_by_variantkey(*cmc, &first, last, vk);
     PyObject *result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, Py_BuildValue("I", h));
@@ -424,6 +541,10 @@ static PyObject* py_get_next_vr_rsid_by_variantkey(PyObject *Py_UNUSED(ignored),
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKK", kwlist, &mc, &pos, &last, &vk))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint32_t h = get_next_vr_rsid_by_variantkey(*cmc, &pos, last, vk);
     PyObject *result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, Py_BuildValue("I", h));
@@ -433,17 +554,25 @@ static PyObject* py_get_next_vr_rsid_by_variantkey(PyObject *Py_UNUSED(ignored),
 
 static PyObject* py_find_all_vr_rsid_by_variantkey(PyObject *Py_UNUSED(ignored), PyObject *args, PyObject *keywds)
 {
-    PyObject* rsids = PyList_New(0);
     uint64_t first, last, vk;
     PyObject* mc = NULL;
     static char *kwlist[] = {"mc", "first", "last", "vk", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKK", kwlist, &mc, &first, &last, &vk))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
+    PyObject* rsids = PyList_New(0);
     uint32_t h = find_vr_rsid_by_variantkey(*cmc, &first, last, vk);
     while (h > 0)
     {
-        PyList_Append(rsids, Py_BuildValue("I", h));
+        {
+            PyObject *item = Py_BuildValue("I", h);
+            PyList_Append(rsids, item);
+            Py_DECREF(item);
+        }
         h = get_next_vr_rsid_by_variantkey(*cmc, &first, last, vk);
     }
     return rsids;
@@ -459,6 +588,10 @@ static PyObject* py_find_vr_chrompos_range(PyObject *Py_UNUSED(ignored), PyObjec
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKKBII", kwlist, &mc, &first, &last, &chrom, &pos_min, &pos_max))
         return NULL;
     const rsidvar_cols_t *cmc = py_get_rsidvar_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint32_t h = find_vr_chrompos_range(*cmc, &first, &last, chrom, pos_min, pos_max);
     PyObject *result = PyTuple_New(3);
     PyTuple_SetItem(result, 0, Py_BuildValue("I", h));
@@ -469,23 +602,29 @@ static PyObject* py_find_vr_chrompos_range(PyObject *Py_UNUSED(ignored), PyObjec
 
 // --- NRVK ---
 
+// The capsule is named "mc_nrvk" to distinguish it from the RSIDVAR capsule
+// (see py_get_rsidvar_mc): the two structs have different layouts.
 static const nrvk_cols_t *py_get_nrvk_mc(PyObject *mc)
 {
     if (mc == Py_None)
     {
-        return (const nrvk_cols_t *)PyMem_Malloc(sizeof(nrvk_cols_t));
+        // None means "no nrvk columns", a supported way to call the lookup
+        // functions: the C code treats an all-zero struct as an empty table.
+        static const nrvk_cols_t empty = {0};
+        return &empty;
     }
-    return (const nrvk_cols_t *)PyCapsule_GetPointer(mc, "mc");
+    return (const nrvk_cols_t *)PyCapsule_GetPointer(mc, "mc_nrvk");
 }
 
 static void destroy_nrvk_mc(PyObject *mc)
 {
-    const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    void *cmc = PyCapsule_GetPointer(mc, "mc_nrvk");
     if (cmc == NULL)
     {
+        PyErr_Clear();
         return;
     }
-    PyMem_Free((void *)cmc);
+    PyMem_Free(cmc);
 }
 
 static PyObject* py_mmap_nrvk_file(PyObject *Py_UNUSED(ignored), PyObject *args, PyObject *keywds)
@@ -494,12 +633,25 @@ static PyObject* py_mmap_nrvk_file(PyObject *Py_UNUSED(ignored), PyObject *args,
     static char *kwlist[] = {"file", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "s", kwlist, &file))
         return NULL;
-    mmfile_t *mf = (mmfile_t *)PyMem_Malloc(sizeof(mmfile_t));
+    mmfile_t *mf = (mmfile_t *)PyMem_Calloc(1, sizeof(mmfile_t));
     nrvk_cols_t *mc = (nrvk_cols_t *)PyMem_Malloc(sizeof(nrvk_cols_t));
+    int err = 0;
+    Py_BEGIN_ALLOW_THREADS
     mmap_nrvk_file(file, mf, mc);
+    // errno is captured before releasing the GIL, which can overwrite it.
+    err = errno;
+    Py_END_ALLOW_THREADS
+    if (py_mmap_failed(mf))
+    {
+        PyMem_Free(mf);
+        PyMem_Free(mc);
+        errno = err;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, file);
+        return NULL;
+    }
     PyObject *result = PyTuple_New(3);
     PyTuple_SetItem(result, 0, PyCapsule_New(mf, "mf", destroy_mf));
-    PyTuple_SetItem(result, 1, PyCapsule_New(mc, "mc", destroy_nrvk_mc));
+    PyTuple_SetItem(result, 1, PyCapsule_New(mc, "mc_nrvk", destroy_nrvk_mc));
     PyTuple_SetItem(result, 2, Py_BuildValue("K", mc->nrows));
     return result;
 }
@@ -514,6 +666,10 @@ static PyObject* py_find_ref_alt_by_variantkey(PyObject *Py_UNUSED(ignored), PyO
     char ref[ALLELE_MAXSIZE] = "", alt[ALLELE_MAXSIZE] = "";
     size_t sizeref = 0, sizealt = 0;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     size_t len = find_ref_alt_by_variantkey(*cmc, vk, ref, &sizeref, alt, &sizealt);
     PyObject *result = PyTuple_New(5);
     PyTuple_SetItem(result, 0, Py_BuildValue("y", ref));
@@ -533,6 +689,10 @@ static PyObject* py_reverse_variantkey(PyObject *Py_UNUSED(ignored), PyObject *a
         return NULL;
     variantkey_rev_t rev = {0};
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     size_t len = reverse_variantkey(*cmc, vk, &rev);
     PyObject *result = PyTuple_New(7);
     PyTuple_SetItem(result, 0, Py_BuildValue("y", rev.chrom));
@@ -553,6 +713,10 @@ static PyObject* py_get_variantkey_ref_length(PyObject *Py_UNUSED(ignored), PyOb
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist, &mc, &vk))
         return NULL;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     size_t len = get_variantkey_ref_length(*cmc, vk);
     return Py_BuildValue("B", (uint8_t)len);
 }
@@ -565,6 +729,10 @@ static PyObject* py_get_variantkey_endpos(PyObject *Py_UNUSED(ignored), PyObject
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist, &mc, &vk))
         return NULL;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint32_t endpos = get_variantkey_endpos(*cmc, vk);
     return Py_BuildValue("I", endpos);
 }
@@ -587,6 +755,10 @@ static PyObject* py_get_variantkey_chrom_endpos(PyObject *Py_UNUSED(ignored), Py
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist, &mc, &vk))
         return NULL;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint64_t h = get_variantkey_chrom_endpos(*cmc, vk);
     return Py_BuildValue("K", h);
 }
@@ -599,7 +771,14 @@ static PyObject* py_nrvk_bin_to_tsv(PyObject *Py_UNUSED(ignored), PyObject *args
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "Os", kwlist, &mc, &tsvfile))
         return NULL;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
-    size_t len = nrvk_bin_to_tsv(*cmc, tsvfile);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
+    size_t len = 0;
+    Py_BEGIN_ALLOW_THREADS
+    len = nrvk_bin_to_tsv(*cmc, tsvfile);
+    Py_END_ALLOW_THREADS
     return Py_BuildValue("K", len);
 }
 
@@ -611,8 +790,22 @@ static PyObject* py_mmap_genoref_file(PyObject *Py_UNUSED(ignored), PyObject *ar
     static char *kwlist[] = {"file", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "s", kwlist, &file))
         return NULL;
-    mmfile_t *mf = (mmfile_t *)PyMem_Malloc(sizeof(mmfile_t));
+    mmfile_t *mf = (mmfile_t *)PyMem_Calloc(1, sizeof(mmfile_t));
+    // The GIL is released around the mmap and the TSV export, which are the only
+    // calls here that can block on I/O.
+    int err = 0;
+    Py_BEGIN_ALLOW_THREADS
     mmap_genoref_file(file, mf);
+    // errno is captured before releasing the GIL, which can overwrite it.
+    err = errno;
+    Py_END_ALLOW_THREADS
+    if (py_mmap_failed(mf))
+    {
+        PyMem_Free(mf);
+        errno = err;
+        PyErr_SetFromErrnoWithFilename(PyExc_OSError, file);
+        return NULL;
+    }
     PyObject *result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, PyCapsule_New(mf, "mf", destroy_mf));
     PyTuple_SetItem(result, 1, Py_BuildValue("K", mf->size));
@@ -628,7 +821,11 @@ static PyObject* py_get_genoref_seq(PyObject *Py_UNUSED(ignored), PyObject *args
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OBI", kwlist, &mf, &chrom, &pos))
         return NULL;
     const mmfile_t *cmf = py_get_mmfile_mf(mf);
-    char ref = get_genoref_seq(*cmf, chrom, pos);
+    if (cmf == NULL)
+    {
+        return NULL;
+    }
+    char ref = get_genoref_seq(cmf, chrom, pos);
     return Py_BuildValue("c", ref);
 }
 
@@ -643,7 +840,11 @@ static PyObject *py_check_reference(PyObject *Py_UNUSED(ignored), PyObject *args
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OBIs#", kwlist, &mf, &chrom, &pos, &ref, &sizeref))
         return NULL;
     const mmfile_t *cmf = py_get_mmfile_mf(mf);
-    int ret = check_reference(*cmf, chrom, pos, ref, (size_t)sizeref);
+    if (cmf == NULL)
+    {
+        return NULL;
+    }
+    int ret = check_reference(cmf, chrom, pos, ref, (size_t)sizeref);
     return Py_BuildValue("i", ret);
 }
 
@@ -680,7 +881,11 @@ static PyObject *py_normalize_variant(PyObject *Py_UNUSED(ignored), PyObject *ar
     strncpy(alt, calt, stalt);
     alt[stalt] = 0;
     const mmfile_t *cmf = py_get_mmfile_mf(mf);
-    int ret = normalize_variant(*cmf, chrom, &pos, ref, &stref, alt, &stalt);
+    if (cmf == NULL)
+    {
+        return NULL;
+    }
+    int ret = normalize_variant(cmf, chrom, &pos, ref, &stref, alt, &stalt);
     PyObject *result = PyTuple_New(6);
     PyTuple_SetItem(result, 0, Py_BuildValue("i", ret));
     PyTuple_SetItem(result, 1, Py_BuildValue("I", pos));
@@ -711,8 +916,12 @@ static PyObject *py_normalized_variantkey(PyObject *Py_UNUSED(ignored), PyObject
     strncpy(alt, calt, stalt);
     alt[stalt] = 0;
     const mmfile_t *cmf = py_get_mmfile_mf(mf);
+    if (cmf == NULL)
+    {
+        return NULL;
+    }
     int code = 0;
-    uint64_t vk = normalized_variantkey(*cmf, chrom, sizechrom, &pos, posindex, ref, &stref, alt, &stalt, &code);
+    uint64_t vk = normalized_variantkey(cmf, chrom, sizechrom, &pos, posindex, ref, &stref, alt, &stalt, &code);
     PyObject *result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, Py_BuildValue("K", vk));
     PyTuple_SetItem(result, 1, Py_BuildValue("i", code));
@@ -853,7 +1062,7 @@ static PyObject* py_extend_regionkey(PyObject *Py_UNUSED(ignored), PyObject *arg
 static PyObject* py_regionkey_hex(PyObject *Py_UNUSED(ignored), PyObject *args, PyObject *keywds)
 {
     uint64_t code;
-    static char *kwlist[] = {"code", NULL};
+    static char *kwlist[] = {"rk", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "K", kwlist, &code))
         return NULL;
     char str[17];
@@ -869,7 +1078,9 @@ static PyObject* py_parse_regionkey_hex(PyObject *Py_UNUSED(ignored), PyObject *
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "s#", kwlist, &rs, &sizers))
         return NULL;
     uint64_t h = 0;
-    if (sizers == 16)
+    // Only the first 16 characters are parsed, as in the C reference. A shorter
+    // string is rejected, because the C function reads 16 characters.
+    if (sizers >= 16)
     {
         h = parse_regionkey_hex(rs);
     }
@@ -937,6 +1148,10 @@ static PyObject* py_are_overlapping_variantkey_regionkey(PyObject *Py_UNUSED(ign
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OKK", kwlist, &mc, &vk, &rk))
         return NULL;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint8_t h = are_overlapping_variantkey_regionkey(*cmc, vk, rk);
     return Py_BuildValue("B", h);
 }
@@ -949,6 +1164,10 @@ static PyObject* py_variantkey_to_regionkey(PyObject *Py_UNUSED(ignored), PyObje
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "OK", kwlist, &mc, &vk))
         return NULL;
     const nrvk_cols_t *cmc = py_get_nrvk_mc(mc);
+    if (cmc == NULL)
+    {
+        return NULL;
+    }
     uint64_t h = variantkey_to_regionkey(*cmc, vk);
     return Py_BuildValue("K", h);
 }
@@ -998,7 +1217,7 @@ static PyObject* py_hash_string_id(PyObject *Py_UNUSED(ignored), PyObject *args,
 {
     const char *str;
     Py_ssize_t size;
-    static char *kwlist[] = {"str", NULL};
+    static char *kwlist[] = {"strid", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "s#", kwlist, &str, &size))
         return NULL;
     uint64_t h = hash_string_id(str, (size_t)size);

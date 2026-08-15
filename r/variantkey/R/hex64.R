@@ -48,10 +48,13 @@ as.hex64 <- function(x, ...) {
 }
 
 #' Coerce from factor to hex64.
+#'
+#' The factor is converted through its labels, because unclass() on a factor
+#' yields the integer codes rather than the hexadecimal strings it holds.
 #' @param x factor vector
 #' @export
 as.hex64.factor <- function(x, ...) {
-  return(as.hex64(unclass(x), ...))
+  return(as.hex64(as.character(x), ...))
 }
 
 #' Coerce from NULL to hex64.

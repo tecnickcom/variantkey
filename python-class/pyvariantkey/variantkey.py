@@ -77,15 +77,26 @@ class VariantKey(object):
             self.close()
 
     def close(self):
-        """Close all input files"""
-        if self.genoref_mf is not None:
-            pvk.munmap_binfile(self.genoref_mf)
-        if self.nrvk_mf is not None:
-            pvk.munmap_binfile(self.nrvk_mf)
-        if self.rsvk_mf is not None:
-            pvk.munmap_binfile(self.rsvk_mf)
-        if self.vkrs_mf is not None:
-            pvk.munmap_binfile(self.vkrs_mf)
+        """Close all input files.
+
+        Idempotent: calling it twice, or calling it and then letting __del__ run,
+        does nothing the second time.
+        """
+        for name in ("genoref_mf", "nrvk_mf", "rsvk_mf", "vkrs_mf"):
+            mf = getattr(self, name, None)
+            if mf is not None:
+                pvk.munmap_binfile(mf)
+                setattr(self, name, None)
+        self.nrvk_mc = None
+        self.rsvk_mc = None
+        self.vkrs_mc = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+        return False
 
     # BASIC VARIANTKEY FUNCTIONS
     # --------------------------
@@ -104,7 +115,7 @@ class VariantKey(object):
             CHROM code
         """
         f = np.vectorize(pvk.encode_chrom, otypes=[np.uint8])
-        return f(np.array(chrom).astype(np.string_))
+        return f(np.array(chrom).astype(np.bytes_))
 
     def decode_chrom(self, code):
         """Decode the chromosome numerical code.
@@ -141,7 +152,7 @@ class VariantKey(object):
             code
         """
         f = np.vectorize(pvk.encode_refalt, otypes=[np.uint32])
-        return f(np.array(ref).astype(np.string_), np.array(alt).astype(np.string_))
+        return f(np.array(ref).astype(np.bytes_), np.array(alt).astype(np.bytes_))
 
     def decode_refalt(self, code):
         """Decode the 32 bit REF+ALT code if reversible
@@ -279,10 +290,10 @@ class VariantKey(object):
         """
         f = np.vectorize(pvk.variantkey, otypes=[np.uint64])
         return f(
-            np.array(chrom).astype(np.string_),
+            np.array(chrom).astype(np.bytes_),
             np.array(pos).astype(np.uint32),
-            np.array(ref).astype(np.string_),
-            np.array(alt).astype(np.string_),
+            np.array(ref).astype(np.bytes_),
+            np.array(alt).astype(np.bytes_),
         )
 
     def variantkey_range(self, chrom, pos_min, pos_max):
@@ -325,7 +336,6 @@ class VariantKey(object):
         int :
             -1 if the first chromosome is smaller than the second,
             0 if they are equal and 1 if the first is greater than the second.
-        0
         """
         f = np.vectorize(pvk.compare_variantkey_chrom, otypes=[np.int_])
         return f(np.array(vka).astype(np.uint64), np.array(vkb).astype(np.uint64))
@@ -400,7 +410,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.find_rv_variantkey_by_rsid,
-            excluded=["mc", "first", "last"],
+            excluded=[0],
             otypes=[np.uint64, np.uint64],
         )
         return f(self.rsvk_mc, 0, self.rsvk_nrows, np.array(rsid).astype(np.uint32))
@@ -425,7 +435,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.get_next_rv_variantkey_by_rsid,
-            excluded=["mc", "last"],
+            excluded=[0],
             otypes=[np.uint64, np.uint64],
         )
         return f(
@@ -472,7 +482,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.find_vr_rsid_by_variantkey,
-            excluded=["mc", "first", "last"],
+            excluded=[0],
             otypes=[np.uint32, np.uint64],
         )
         return f(self.vkrs_mc, 0, self.vkrs_nrows, np.array(vk).astype(np.uint64))
@@ -497,7 +507,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.get_next_vr_rsid_by_variantkey,
-            excluded=["mc", "last"],
+            excluded=[0],
             otypes=[np.uint32, np.uint64],
         )
         return f(
@@ -549,7 +559,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.find_vr_chrompos_range,
-            excluded=["mc", "first", "last"],
+            excluded=[0],
             otypes=[np.uint32, np.uint64, np.uint64],
         )
         return f(
@@ -583,7 +593,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.find_ref_alt_by_variantkey,
-            excluded=["mc"],
+            excluded=[0],
             otypes=["|S256", "|S256", np.uint8, np.uint8, np.uint16],
         )
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
@@ -609,7 +619,7 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.reverse_variantkey,
-            excluded=["mc"],
+            excluded=[0],
             otypes=["|S2", np.uint32, "|S256", "|S256", np.uint8, np.uint8, np.uint16],
         )
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
@@ -628,7 +638,7 @@ class VariantKey(object):
             REF length or 0 if the VariantKey is not reversible and not found.
         """
         f = np.vectorize(
-            pvk.get_variantkey_ref_length, excluded=["mc"], otypes=[np.uint8]
+            pvk.get_variantkey_ref_length, excluded=[0], otypes=[np.uint8]
         )
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
@@ -645,7 +655,7 @@ class VariantKey(object):
         uint32 :
             Variant end position.
         """
-        f = np.vectorize(pvk.get_variantkey_endpos, excluded=["mc"], otypes=[np.uint32])
+        f = np.vectorize(pvk.get_variantkey_endpos, excluded=[0], otypes=[np.uint32])
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
     def get_variantkey_chrom_startpos(self, vk):
@@ -678,7 +688,7 @@ class VariantKey(object):
             CHROM + END POS encoding.
         """
         f = np.vectorize(
-            pvk.get_variantkey_chrom_endpos, excluded=["mc"], otypes=[np.uint64]
+            pvk.get_variantkey_chrom_endpos, excluded=[0], otypes=[np.uint64]
         )
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
@@ -688,7 +698,7 @@ class VariantKey(object):
 
         Parameters
         ----------
-        tsvfile : int
+        tsvfile : string
             Output file name.
 
         Returns
@@ -716,7 +726,7 @@ class VariantKey(object):
         '|S1' :
             Nucleotide letter or 0 (NULL char) in case of invalid position.
         """
-        f = np.vectorize(pvk.get_genoref_seq, excluded=["mf"], otypes=["|S1"])
+        f = np.vectorize(pvk.get_genoref_seq, excluded=[0], otypes=["|S1"])
         return f(
             self.genoref_mf,
             np.array(chrom).astype(np.uint8),
@@ -743,14 +753,14 @@ class VariantKey(object):
             1 the reference allele is inconsistent with the genome reference
             (i.e. when contains nucleotide letters other than A, C, G and T);
                -1 the reference allele don't match the reference genome;
-               -2 the reference allele is longer than the genome reference sequence.
+               -2 the chromosome is invalid or the reference allele is longer than the genome reference sequence.
         """
-        f = np.vectorize(pvk.check_reference, excluded=["mf"], otypes=[np.int_])
+        f = np.vectorize(pvk.check_reference, excluded=[0], otypes=[np.int_])
         return f(
             self.genoref_mf,
             np.array(chrom).astype(np.uint8),
             np.array(pos).astype(np.uint32),
-            np.array(ref).astype(np.string_),
+            np.array(ref).astype(np.bytes_),
         )
 
     def flip_allele(self, allele):
@@ -769,7 +779,7 @@ class VariantKey(object):
             Flipped allele.
         """
         f = np.vectorize(pvk.flip_allele, otypes=["|S256"])
-        return f(allele)
+        return f(np.array(allele).astype(np.bytes_))
 
     def normalize_variant(self, chrom, pos, ref, alt):
         """Normalize a variant."\
@@ -808,15 +818,15 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.normalize_variant,
-            excluded=["mf"],
+            excluded=[0],
             otypes=[np.int_, np.uint32, "|S256", "|S256", np.uint8, np.uint8],
         )
         return f(
             self.genoref_mf,
             np.array(chrom).astype(np.uint8),
             np.array(pos).astype(np.uint32),
-            np.array(ref).astype(np.string_),
-            np.array(alt).astype(np.string_),
+            np.array(ref).astype(np.bytes_),
+            np.array(alt).astype(np.bytes_),
         )
 
     def normalized_variantkey(self, chrom, pos, posindex, ref, alt):
@@ -845,16 +855,16 @@ class VariantKey(object):
         """
         f = np.vectorize(
             pvk.normalized_variantkey,
-            excluded=["mf, posindex"],
+            excluded=[0],
             otypes=[np.uint64, np.int_],
         )
         return f(
             self.genoref_mf,
-            np.array(chrom).astype(np.string_),
+            np.array(chrom).astype(np.bytes_),
             np.array(pos).astype(np.uint32),
             np.array(posindex).astype(np.int_),
-            np.array(ref).astype(np.string_),
-            np.array(alt).astype(np.string_),
+            np.array(ref).astype(np.bytes_),
+            np.array(alt).astype(np.bytes_),
         )
 
     # REGIONKEY
@@ -1046,7 +1056,7 @@ class VariantKey(object):
         """
         f = np.vectorize(pvk.regionkey, otypes=[np.uint64])
         return f(
-            np.array(chrom).astype(np.string_),
+            np.array(chrom).astype(np.bytes_),
             np.array(startpos).astype(np.uint32),
             np.array(endpos).astype(np.uint32),
             np.array(strand).astype(np.int16),
@@ -1067,7 +1077,7 @@ class VariantKey(object):
         uint64 :
             RegionKey 64 bit code.
         """
-        f = np.vectorize(pvk.extend_regionkey, excluded=["size"], otypes=[np.uint64])
+        f = np.vectorize(pvk.extend_regionkey, otypes=[np.uint64])
         return f(np.array(rk).astype(np.uint64), np.array(size).astype(np.uint32))
 
     def regionkey_hex(self, rk):
@@ -1100,7 +1110,7 @@ class VariantKey(object):
             A RegionKey code.
         """
         f = np.vectorize(pvk.parse_regionkey_hex, otypes=[np.uint64])
-        return f(np.array(rs).astype(np.string_))
+        return f(np.array(rs).astype(np.bytes_))
 
     def get_regionkey_chrom_startpos(self, rk):
         """Get the CHROM + START POS encoding from RegionKey.
@@ -1230,7 +1240,7 @@ class VariantKey(object):
             1 if the regions overlap, 0 otherwise.
         """
         f = np.vectorize(
-            pvk.are_overlapping_variantkey_regionkey, excluded=["mc"], otypes=[np.uint8]
+            pvk.are_overlapping_variantkey_regionkey, excluded=[0], otypes=[np.uint8]
         )
         return f(
             self.nrvk_mc, np.array(vk).astype(np.uint64), np.array(rk).astype(np.uint64)
@@ -1250,7 +1260,7 @@ class VariantKey(object):
             A RegionKey code.
         """
         f = np.vectorize(
-            pvk.variantkey_to_regionkey, excluded=["mc"], otypes=[np.uint64]
+            pvk.variantkey_to_regionkey, excluded=[0], otypes=[np.uint64]
         )
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
@@ -1264,7 +1274,7 @@ class VariantKey(object):
         Parameters
         ----------
         strid : string
-            The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.
+            The string to encode. The characters beyond the first 10 from start are ignored. It supports ASCII characters from '!' to 'z'.
         start : uint32
             First character to encode, starting from 0. To encode the last 10 characters, set this value at (size - 10).
 
@@ -1273,10 +1283,8 @@ class VariantKey(object):
         uint64 :
             Encoded string ID.
         """
-        vstrid = np.array(strid).astype(np.string_)
+        vstrid = np.array(strid).astype(np.bytes_)
         vstart = np.array(start).astype(np.uint32)
-        if (vstart.size == 1) and (vstrid.size > vstart.size):
-            start = np.repeat(start, vstrid.size)
         f = np.vectorize(pvk.encode_string_id, otypes=[np.uint64])
         return f(vstrid, vstart)
 
@@ -1289,7 +1297,7 @@ class VariantKey(object):
         Parameters
         ----------
         strid : string
-            The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.
+            The string to encode. It supports ASCII characters from '!' to 'z'.
         sep : char
             Separator character between string and number.
 
@@ -1299,7 +1307,7 @@ class VariantKey(object):
             Encoded string ID.
         """
         f = np.vectorize(pvk.encode_string_num_id, otypes=[np.uint64])
-        return f(np.array(strid).astype(np.string_), np.array(sep).astype("|S1"))
+        return f(np.array(strid).astype(np.bytes_), np.array(sep).astype("|S1"))
 
     def decode_string_id(self, esid):
         """Decode the encoded string ID.
@@ -1335,4 +1343,4 @@ class VariantKey(object):
             Hash string ID.
         """
         f = np.vectorize(pvk.hash_string_id, otypes=[np.uint64])
-        return f(np.array(strid).astype(np.string_))
+        return f(np.array(strid).astype(np.bytes_))

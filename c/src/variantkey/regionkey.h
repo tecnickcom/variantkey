@@ -9,10 +9,11 @@
 
 /**
  * @file regionkey.h
- * @brief RegionKey main functions.
+ * @brief Encoding and decoding of the 64 bit RegionKey.
  *
- * The functions provided here allows to generate and process a 64 bit Unsigned Integer Keys for Human Genomic Regions.
- * The RegionKey is sortable for chromosome and start position, and it is also fully reversible.
+ * A RegionKey packs a chromosome in 5 bit, a start position in 28 bit, an end
+ * position in 28 bit and a strand in 2 bit. Keys sort by chromosome and start
+ * position, and are fully reversible.
  */
 
 #ifndef VARIANTKEY_REGIONKEY_H
@@ -42,8 +43,7 @@
 #define RK_STRAND   ((rk & RKMASK_STRAND) >> RKSHIFT_STRAND)     //!< Extract the STRAND from RegionKey.
 
 /**
- * RegionKey struct.
- * Contains the numerically encoded RegionKey components (CHROM, STARTPOS, ENDPOS, STRAND).
+ * @brief The numerically encoded RegionKey components.
  */
 typedef struct regionkey_t
 {
@@ -54,7 +54,7 @@ typedef struct regionkey_t
 } regionkey_t;
 
 /**
- * RegionKey decoded struct
+ * @brief The decoded components of a RegionKey.
  */
 typedef struct regionkey_rev_t
 {
@@ -64,11 +64,12 @@ typedef struct regionkey_rev_t
     int8_t strand;     //!< Region strand direction (-1, 0, +1)
 } regionkey_rev_t;
 
-/** @brief Encode the strand direction (-1 > 2, 0 > 0, +1 > 1).
+/**
+ * @brief Encodes a strand direction: -1 to 2, 0 to 0, +1 to 1.
  *
  * @param strand     Strand direction (-1, 0, +1).
  *
- * @return      Strand code.
+ * @return The strand code.
  */
 static inline uint8_t encode_region_strand(int8_t strand)
 {
@@ -76,11 +77,12 @@ static inline uint8_t encode_region_strand(int8_t strand)
     return map[((uint8_t)(++strand) & 3)];
 }
 
-/** @brief Decode the strand direction code (0 > 0, 1 > +1, 2 > -1).
+/**
+ * @brief Decodes a strand code: 0 to 0, 1 to +1, 2 to -1.
  *
  * @param strand     Strand code.
  *
- * @return      Strand direction.
+ * @return The strand direction.
  */
 static inline int8_t decode_region_strand(uint8_t strand)
 {
@@ -88,21 +90,23 @@ static inline int8_t decode_region_strand(uint8_t strand)
     return map[(strand & 3)];
 }
 
-/** @brief Returns a 64 bit regionkey
+/**
+ * @brief Assembles a RegionKey from its pre-encoded components.
  *
- * @param chrom      Encoded Chromosome (see encode_chrom).
+ * @param chrom      Encoded chromosome (see encode_chrom).
  * @param startpos   Start position (zero based).
- * @param endpos     End position (startpos + region_length).
- * @param strand     Encoded Strand direction (-1 > 2, 0 > 0, +1 > 1)
+ * @param endpos     End position (startpos + region length).
+ * @param strand     Encoded strand direction (see encode_region_strand).
  *
- * @return      RegionKey 64 bit code.
+ * @return RegionKey 64 bit code.
  */
 static inline uint64_t encode_regionkey(uint8_t chrom, uint32_t startpos, uint32_t endpos, uint8_t strand)
 {
     return (((uint64_t)chrom << RKSHIFT_CHROM) | ((uint64_t)startpos << RKSHIFT_STARTPOS) | ((uint64_t)endpos << RKSHIFT_ENDPOS) | ((uint64_t)strand << RKSHIFT_STRAND));
 }
 
-/** @brief Extract the CHROM code from RegionKey.
+/**
+ * @brief Extracts the CHROM code from a RegionKey.
  *
  * @param rk RegionKey code.
  *
@@ -113,7 +117,8 @@ static inline uint8_t extract_regionkey_chrom(uint64_t rk)
     return (uint8_t)RK_CHROM;
 }
 
-/** @brief Extract the START POS code from RegionKey.
+/**
+ * @brief Extracts the START POS value from a RegionKey.
  *
  * @param rk RegionKey code.
  *
@@ -124,7 +129,8 @@ static inline uint32_t extract_regionkey_startpos(uint64_t rk)
     return (uint32_t)RK_STARTPOS;
 }
 
-/** @brief Extract the END POS code from RegionKey.
+/**
+ * @brief Extracts the END POS value from a RegionKey.
  *
  * @param rk RegionKey code.
  *
@@ -135,21 +141,23 @@ static inline uint32_t extract_regionkey_endpos(uint64_t rk)
     return (uint32_t)RK_ENDPOS;
 }
 
-/** @brief Extract the STRAND from RegionKey.
+/**
+ * @brief Extracts the STRAND code from a RegionKey.
  *
  * @param rk RegionKey code.
  *
- * @return STRAND.
+ * @return STRAND code.
  */
 static inline uint8_t extract_regionkey_strand(uint64_t rk)
 {
     return (uint8_t)RK_STRAND;
 }
 
-/** @brief Decode a RegionKey code and returns the components as regionkey_t structure.
+/**
+ * @brief Splits a RegionKey into its encoded components.
  *
  * @param code RegionKey code.
- * @param rk   Decoded regionkey structure.
+ * @param rk   Structure containing the return values.
  */
 static inline void decode_regionkey(uint64_t code, regionkey_t *rk)
 {
@@ -160,7 +168,7 @@ static inline void decode_regionkey(uint64_t code, regionkey_t *rk)
 }
 
 /**
- * Reverse a RegionKey code and returns the normalized components as regionkey_rev_t structure.
+ * @brief Reverses a RegionKey into its decoded components.
  *
  * @param rk       RegionKey code.
  * @param rev      Structure containing the return values.
@@ -173,25 +181,31 @@ static inline void reverse_regionkey(uint64_t rk, regionkey_rev_t *rev)
     rev->strand = decode_region_strand(extract_regionkey_strand(rk));
 }
 
-/** @brief Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.
+/**
+ * @brief Returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND.
  *
- * @param chrom      Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.
+ * @param chrom      Chromosome identifier, no white-space or leading zeros permitted.
  * @param sizechrom  Length of the chrom string, excluding the terminating null byte.
  * @param startpos   Start position (zero based).
- * @param endpos     End position (startpos + region_length).
- * @param strand     Strand direction (-1, 0, +1)
+ * @param endpos     End position (startpos + region length).
+ * @param strand     Strand direction (-1, 0, +1).
  *
- * @return      RegionKey 64 bit code.
+ * @return RegionKey 64 bit code.
  */
 static inline uint64_t regionkey(const char *chrom, size_t sizechrom, uint32_t startpos, uint32_t endpos, int8_t strand)
 {
     return encode_regionkey(encode_chrom(chrom, sizechrom), startpos, endpos, encode_region_strand(strand));
 }
 
-/** @brief Extend a regionkey region by a fixed amount from the start and end position.
+/**
+ * @brief Extends a RegionKey region by a fixed amount at both ends.
+ *
+ * The result is clamped to the range from 0 to RK_MAX_POS.
  *
  * @param rk   RegionKey code.
- * @param size Amount to extend the region.
+ * @param size Amount to extend the region by.
+ *
+ * @return The extended RegionKey 64 bit code.
  */
 static inline uint64_t extend_regionkey(uint64_t rk, uint32_t size)
 {
@@ -202,33 +216,33 @@ static inline uint64_t extend_regionkey(uint64_t rk, uint32_t size)
     return ((rk & RKMASK_NOPOS) | (startpos << RKSHIFT_STARTPOS) | (endpos << RKSHIFT_ENDPOS));
 }
 
-/** @brief Returns RegionKey hexadecimal string (16 characters).
+/**
+ * @brief Writes a RegionKey as a 16 character hexadecimal string.
  *
  * @param rk    RegionKey code.
  * @param str   String buffer to be returned (it must be sized 17 bytes at least).
  *
- * @return      Upon successful return, these function returns the number of characters processed
- *              (excluding the null byte used to end output to strings).
- *              If the buffer size is not sufficient, then the return value is the number of characters required for
- *              buffer string, including the terminating null byte.
+ * @return The number of characters written, excluding the terminating null byte.
  */
 static inline size_t regionkey_hex(uint64_t rk, char *str)
 {
     return hex_uint64_t(rk, str);
 }
 
-/** @brief Parses a RegionKey hexadecimal string and returns the code.
+/**
+ * @brief Parses a 16 character hexadecimal string into a RegionKey.
  *
  * @param rs    RegionKey hexadecimal string (it must contain 16 hexadecimal characters).
  *
- * @return A RegionKey code.
+ * @return RegionKey 64 bit code.
  */
 static inline uint64_t parse_regionkey_hex(const char *rs)
 {
     return parse_hex_uint64_t(rs);
 }
 
-/** @brief Get the CHROM + START POS encoding from RegionKey.
+/**
+ * @brief Returns the CHROM and START POS section of a RegionKey.
  *
  * @param rk RegionKey code.
  *
@@ -239,7 +253,8 @@ static inline uint64_t get_regionkey_chrom_startpos(uint64_t rk)
     return (rk >> RKSHIFT_STARTPOS);
 }
 
-/** @brief Get the CHROM + END POS encoding from RegionKey.
+/**
+ * @brief Returns the CHROM and END POS of a RegionKey.
  *
  * @param rk RegionKey code.
  *
@@ -250,7 +265,8 @@ static inline uint64_t get_regionkey_chrom_endpos(uint64_t rk)
     return (((rk & RKMASK_CHROM) >> RKSHIFT_STARTPOS) | extract_regionkey_endpos(rk));
 }
 
-/** @brief Check if two regions are overlapping.
+/**
+ * @brief Checks whether two regions overlap.
  *
  * @param a_chrom     Region A chromosome code.
  * @param a_startpos  Region A start position.
@@ -266,12 +282,13 @@ static inline uint8_t are_overlapping_regions(uint8_t a_chrom, uint32_t a_startp
     return (uint8_t)((a_chrom == b_chrom) && (a_startpos < b_endpos) && (a_endpos > b_startpos));
 }
 
-/** @brief Check if a region and a regionkey are overlapping.
+/**
+ * @brief Checks whether a region and a RegionKey overlap.
  *
- * @param chrom     Region A chromosome code.
- * @param startpos  Region A start position.
- * @param endpos    Region A end position (startpos + region length).
- * @param rk        RegionKey or region B.
+ * @param chrom     Region chromosome code.
+ * @param startpos  Region start position.
+ * @param endpos    Region end position (startpos + region length).
+ * @param rk        RegionKey of the other region.
  *
  * @return 1 if the regions overlap, 0 otherwise.
  */
@@ -280,7 +297,8 @@ static inline uint8_t are_overlapping_region_regionkey(uint8_t chrom, uint32_t s
     return (uint8_t)((chrom == extract_regionkey_chrom(rk)) && (startpos < extract_regionkey_endpos(rk)) && (endpos > extract_regionkey_startpos(rk)));
 }
 
-/** @brief Check if two regionkeys are overlapping.
+/**
+ * @brief Checks whether two RegionKeys overlap.
  *
  * @param rka        RegionKey A.
  * @param rkb        RegionKey B.
@@ -292,7 +310,8 @@ static inline uint8_t are_overlapping_regionkeys(uint64_t rka, uint64_t rkb)
     return (uint8_t)((extract_regionkey_chrom(rka) == extract_regionkey_chrom(rkb)) && (extract_regionkey_startpos(rka) < extract_regionkey_endpos(rkb)) && (extract_regionkey_endpos(rka) > extract_regionkey_startpos(rkb)));
 }
 
-/** @brief Check if variantkey and regionkey are overlapping.
+/**
+ * @brief Checks whether a VariantKey and a RegionKey overlap.
  *
  * @param nvc   Structure containing the pointers to the NRVK memory mapped file columns.
  * @param vk    VariantKey code.
@@ -305,12 +324,16 @@ static inline uint8_t are_overlapping_variantkey_regionkey(nrvk_cols_t nvc, uint
     return (uint8_t)((extract_variantkey_chrom(vk) == extract_regionkey_chrom(rk)) && (extract_variantkey_pos(vk) < extract_regionkey_endpos(rk)) && (get_variantkey_endpos(nvc, vk) > extract_regionkey_startpos(rk)));
 }
 
-/** @brief Get RegionKey from VariantKey.
+/**
+ * @brief Converts a VariantKey into a RegionKey.
+ *
+ * The resulting region spans from the variant position to its end position and
+ * carries no strand.
  *
  * @param nvc   Structure containing the pointers to the NRVK memory mapped file columns.
  * @param vk    VariantKey code.
  *
- * @return RegionKey.
+ * @return RegionKey 64 bit code.
  */
 static inline uint64_t variantkey_to_regionkey(nrvk_cols_t nvc, uint64_t vk)
 {

@@ -12,3 +12,15 @@ variantkey.Rcheck
 variantkey/libs
 variantkey/LICENSE
 variantkey/tests/testthat/_problems
+
+# C headers staged inside the package by the "headers" make target (they are
+# copies of c/src/variantkey/*.h, which is the single source of truth).
+variantkey/src/binsearch.h
+variantkey/src/esid.h
+variantkey/src/genoref.h
+variantkey/src/hex.h
+variantkey/src/nrvk.h
+variantkey/src/regionkey.h
+variantkey/src/rsidvar.h
+variantkey/src/set.h
+variantkey/src/variantkey.h

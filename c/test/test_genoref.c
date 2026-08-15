@@ -62,7 +62,7 @@ void benchmark_aztoupper()
         }
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%d)\n", __func__, (tend - tstart)/(uint64_t)(size*256), c);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%d)\n", __func__, (tend - tstart)/(uint64_t)(size*256), c);
 }
 
 int test_prepend_char()
@@ -74,7 +74,7 @@ int test_prepend_char()
     prepend_char('A', original, &size);
     if (size != 4)
     {
-        (void) fprintf(stderr, "%s : Expected size 4, got %lu\n", __func__, size);
+        (void) fprintf(stderr, "%s : Expected size 4, got %zu\n", __func__, size);
         ++errors;
     }
     if (strcmp(original, expected) != 0)
@@ -98,7 +98,7 @@ void benchmark_prepend_char()
         prepend_char('A', original, &len);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_swap_sizes()
@@ -131,7 +131,7 @@ int test_swap_alleles()
     return errors;
 }
 
-int test_get_genoref_seq(mmfile_t mf)
+int test_get_genoref_seq(const mmfile_t *mf)
 {
     int errors = 0;
     char ref = 0, exp = 0;
@@ -161,7 +161,7 @@ int test_get_genoref_seq(mmfile_t mf)
     return errors;
 }
 
-void benchmark_get_genoref_seq(mmfile_t mf)
+void benchmark_get_genoref_seq(const mmfile_t *mf)
 {
     uint8_t chrom = 0;
     uint64_t tstart = 0, tend = 0;
@@ -176,10 +176,10 @@ void benchmark_get_genoref_seq(mmfile_t mf)
         }
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/(uint64_t)(size*25));
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/(uint64_t)(size*25));
 }
 
-int test_check_reference(mmfile_t mf)
+int test_check_reference(const mmfile_t *mf)
 {
     int errors = 0;
     int ret = 0;
@@ -249,6 +249,91 @@ int test_check_reference(mmfile_t mf)
     return errors;
 }
 
+// Chromosome 1 of the test genome reference holds the 26 letters A to Z, so
+// every combination of allele letter and genome letter can be checked by
+// reading position (letter - 'A'). Each row of the expected matrix is indexed
+// by the allele letter and each column by the genome letter:
+// 'O' = match, 'V' = valid but inconsistent, 'I' = invalid.
+int test_check_reference_all_letters(const mmfile_t *mf)
+{
+    int errors = 0;
+    int u = 0, g = 0;
+    // Expected result of check_reference() for every uppercase letter as REF
+    // against every uppercase letter as the genome reference base. Derived from
+    // the IUPAC base sets (A=1, C=2, G=4, T=8), NOT from the implementation:
+    // 'O' = NORM_OK (identical), 'V' = NORM_VALID (the base sets intersect),
+    // 'I' = NORM_INVALID (disjoint, or one side is not one of the fifteen
+    // degenerate base symbols).
+    static const char *expected[26] =
+    {
+        "OIIVIIIVIIIIVVIIIVIIIVVIII", // A
+        "IOVVIIVVIIVIVVIIIVVVIVVIVI", // B
+        "IVOIIIIVIIIIVVIIIIVIIVIIVI", // C
+        "VVIOIIVVIIVIVVIIIVVVIVVIVI", // D
+        "IIIIOIIIIIIIIIIIIIIIIIIIII", // E
+        "IIIIIOIIIIIIIIIIIIIIIIIIII", // F
+        "IVIVIIOIIIVIIVIIIVVIIVIIII", // G
+        "VVVVIIIOIIVIVVIIIVVVIVVIVI", // H
+        "IIIIIIIIOIIIIIIIIIIIIIIIII", // I
+        "IIIIIIIIIOIIIIIIIIIIIIIIII", // J
+        "IVIVIIVVIIOIIVIIIVVVIVVIVI", // K
+        "IIIIIIIIIIIOIIIIIIIIIIIIII", // L
+        "VVVVIIIVIIIIOVIIIVVIIVVIVI", // M
+        "VVVVIIVVIIVIVOIIIVVVIVVIVI", // N
+        "IIIIIIIIIIIIIIOIIIIIIIIIII", // O
+        "IIIIIIIIIIIIIIIOIIIIIIIIII", // P
+        "IIIIIIIIIIIIIIIIOIIIIIIIII", // Q
+        "VVIVIIVVIIVIVVIIIOVIIVVIII", // R
+        "IVVVIIVVIIVIVVIIIVOIIVIIVI", // S
+        "IVIVIIIVIIVIIVIIIIIOIIVIVI", // T
+        "IIIIIIIIIIIIIIIIIIIIOIIIII", // U
+        "VVVVIIVVIIVIVVIIIVVIIOVIVI", // V
+        "VVIVIIIVIIVIVVIIIVIVIVOIVI", // W
+        "IIIIIIIIIIIIIIIIIIIIIIIOII", // X
+        "IVVVIIIVIIVIVVIIIIVVIVVIOI", // Y
+        "IIIIIIIIIIIIIIIIIIIIIIIIIO", // Z
+    };
+    for (u = 0; u < 26; u++)
+    {
+        for (g = 0; g < 26; g++)
+        {
+            static const char code[3] = {'I', 'O', 'V'}; // indexed by (return value + 1)
+            char ref = (char)('A' + u);
+            int ret = check_reference(mf, 1, (uint32_t)g, &ref, 1);
+            char got = code[ret + 1];
+            if (got != expected[u][g])
+            {
+                (void) fprintf(stderr, "%s (%c vs %c): Expected %c, got %c\n", __func__, (char)('A' + u), (char)('A' + g), expected[u][g], got);
+                ++errors;
+            }
+        }
+    }
+    return errors;
+}
+
+// There is no genome reference sequence above chromosome code 25.
+int test_genoref_invalid_chrom(const mmfile_t *mf)
+{
+    int errors = 0;
+    uint8_t chrom = 0;
+    for (chrom = (GENOREF_MAXCHROM + 1); chrom != 0; chrom = (uint8_t)(chrom + 1))
+    {
+        char ref = get_genoref_seq(mf, chrom, 0);
+        if (ref != 0)
+        {
+            (void) fprintf(stderr, "%s (%" PRIu8 "): Expected reference 0, got '%c'\n", __func__, chrom, ref);
+            ++errors;
+        }
+        int ret = check_reference(mf, chrom, 0, "A", 1);
+        if (ret != NORM_WRONGPOS)
+        {
+            (void) fprintf(stderr, "%s (%" PRIu8 "): Expected %d, got %d\n", __func__, chrom, NORM_WRONGPOS, ret);
+            ++errors;
+        }
+    }
+    return errors;
+}
+
 int test_flip_allele()
 {
     int errors = 0;
@@ -275,10 +360,10 @@ void benchmark_flip_allele()
         flip_allele(allele, 30);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/(uint64_t)(size*25));
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/(uint64_t)(size*25));
 }
 
-int test_normalize_variant(mmfile_t mf)
+int test_normalize_variant(const mmfile_t *mf)
 {
     int errors = 0;
     int ret = 0;
@@ -298,22 +383,28 @@ int test_normalize_variant(mmfile_t mf)
         char       ref[256];
         char       alt[256];
     } test_norm_t;
-    static test_norm_t test_norm[12] =
+    static test_norm_t test_norm[18] =
     {
         {-2, 1, 26, 26, 1, 1, 1, 1, "A",  "C",  "A",      "C"     },  // invalid position
+        {-2, 26, 0,  0, 1, 1, 1, 1, "A",  "C",  "A",      "C"     },  // invalid chromosome
         {-1, 1,  0,  0, 1, 1, 1, 1, "J",  "C",  "J",      "C"     },  // invalid reference
         { 4, 1,  0,  0, 1, 1, 1, 1, "A",  "C",  "T",      "G"     },  // flip
+        { 4, 1,  0,  0, 2, 1, 2, 1, "AB", "G",  "TV",     "C"     },  // flip with different allele sizes
         { 0, 1,  0,  0, 1, 1, 1, 1, "A",  "C",  "A",      "C"     },  // OK
         {32, 13, 2,  3, 3, 2, 2, 1, "DE", "D",  "CDE",    "CD"    },  // left trim
         {48, 13, 2,  3, 3, 3, 1, 1, "D",  "F",  "CDE",    "CFE"   },  // left trim + right trim
         {48, 1,  0,  2, 6, 6, 1, 1, "C",  "K",  "aBCDEF", "aBKDEF"},  // left trim + right trim
         { 0, 1,  0,  0, 1, 0, 1, 0, "A",  "",   "A",      ""      },  // OK
         { 8, 1,  3,  2, 1, 0, 2, 1, "CD", "C",  "D",      ""      },  // left extend
+        { 8, 1,  3,  2, 0, 1, 1, 2, "C",  "CD", "",       "D"     },  // left extend with an empty reference
+        { 0, 1,  2,  2, 2, 1, 2, 1, "CD", "X",  "CD",     "X"     },  // OK, single base alternate
+        {32, 1,  2,  3, 3, 3, 2, 2, "DE", "XY", "CDE",    "CXY"   },  // left trim stopped by a mismatch
         { 0, 1, 24, 24, 1, 2, 1, 2, "Y",  "CK", "Y",      "CK"    },  // OK
         { 2, 1,  0,  0, 1, 1, 1, 1, "A",  "G",  "G",      "A"     },  // swap
         { 6, 1,  0,  0, 1, 1, 1, 1, "A",  "C",  "G",      "T"     },  // swap + flip
+        { 6, 1,  0,  0, 1, 2, 2, 1, "AB", "J",  "J",      "TV"    },  // swap + flip with different allele sizes
     };
-    for (i = 0; i < 12; i++)
+    for (i = 0; i < 18; i++)
     {
         ret = normalize_variant(mf, test_norm[i].chrom, &test_norm[i].pos, test_norm[i].ref, &test_norm[i].sizeref, test_norm[i].alt, &test_norm[i].sizealt);
         if (ret != test_norm[i].exp)
@@ -328,12 +419,12 @@ int test_normalize_variant(mmfile_t mf)
         }
         if (test_norm[i].sizeref != test_norm[i].exp_sizeref)
         {
-            (void) fprintf(stderr, "%s (%d): Expected REF size %lu, got %lu\n", __func__, i, test_norm[i].exp_sizeref, test_norm[i].sizeref);
+            (void) fprintf(stderr, "%s (%d): Expected REF size %zu, got %zu\n", __func__, i, test_norm[i].exp_sizeref, test_norm[i].sizeref);
             ++errors;
         }
         if (test_norm[i].sizealt != test_norm[i].exp_sizealt)
         {
-            (void) fprintf(stderr, "%s (%d): Expected ALT size %lu, got %lu\n", __func__, i, test_norm[i].exp_sizealt, test_norm[i].sizealt);
+            (void) fprintf(stderr, "%s (%d): Expected ALT size %zu, got %zu\n", __func__, i, test_norm[i].exp_sizealt, test_norm[i].sizealt);
             ++errors;
         }
         if (strcmp(test_norm[i].ref, test_norm[i].exp_ref) != 0)
@@ -350,7 +441,7 @@ int test_normalize_variant(mmfile_t mf)
     return errors;
 }
 
-int test_normalized_variantkey(mmfile_t mf)
+int test_normalized_variantkey(const mmfile_t *mf)
 {
     int errors = 0;
     int ret = 0;
@@ -409,12 +500,12 @@ int test_normalized_variantkey(mmfile_t mf)
         }
         if (test_nvk[i].sizeref != test_nvk[i].exp_sizeref)
         {
-            (void) fprintf(stderr, "%s (%d): Expected REF size %lu, got %lu\n", __func__, i, test_nvk[i].exp_sizeref, test_nvk[i].sizeref);
+            (void) fprintf(stderr, "%s (%d): Expected REF size %zu, got %zu\n", __func__, i, test_nvk[i].exp_sizeref, test_nvk[i].sizeref);
             ++errors;
         }
         if (test_nvk[i].sizealt != test_nvk[i].exp_sizealt)
         {
-            (void) fprintf(stderr, "%s (%d): Expected ALT size %lu, got %lu\n", __func__, i, test_nvk[i].exp_sizealt, test_nvk[i].sizealt);
+            (void) fprintf(stderr, "%s (%d): Expected ALT size %zu, got %zu\n", __func__, i, test_nvk[i].exp_sizealt, test_nvk[i].sizealt);
             ++errors;
         }
         if (strcmp(test_nvk[i].ref, test_nvk[i].exp_ref) != 0)
@@ -443,15 +534,17 @@ int main()
     errors += test_prepend_char();
     errors += test_swap_sizes();
     errors += test_swap_alleles();
-    errors += test_get_genoref_seq(genoref);
-    errors += test_check_reference(genoref);
+    errors += test_get_genoref_seq(&genoref);
+    errors += test_check_reference(&genoref);
     errors += test_flip_allele();
-    errors += test_normalize_variant(genoref);
-    errors += test_normalized_variantkey(genoref);
+    errors += test_check_reference_all_letters(&genoref);
+    errors += test_genoref_invalid_chrom(&genoref);
+    errors += test_normalize_variant(&genoref);
+    errors += test_normalized_variantkey(&genoref);
 
     benchmark_aztoupper();
     benchmark_prepend_char();
-    benchmark_get_genoref_seq(genoref);
+    benchmark_get_genoref_seq(&genoref);
     benchmark_flip_allele();
 
     err = munmap_binfile(genoref);

@@ -8,7 +8,7 @@ This function can be used to convert generic string IDs to numeric IDs.}
 EncodeStringID(str, start = 0)
 }
 \arguments{
-\item{str}{The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.}
+\item{str}{The string to encode. The characters beyond the first 10 from start are ignored. It supports ASCII characters from '!' to 'z'.}
 
 \item{start}{First character to encode, starting from 0. To encode the last 10 characters, set this value at (size - 10).}
 }

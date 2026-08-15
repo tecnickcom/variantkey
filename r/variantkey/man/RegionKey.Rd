@@ -14,8 +14,6 @@ RegionKey(chrom, startpos, endpos, strand)
 \item{endpos}{End position (startpos + region_length).}
 
 \item{strand}{Strand direction (-1, 0, +1)}
-
-\item{sizechrom}{Length of the chrom string, excluding the terminating null byte.}
 }
 \description{
 Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.

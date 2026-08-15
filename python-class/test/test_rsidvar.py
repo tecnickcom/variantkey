@@ -24,7 +24,7 @@ testData = np.array([
     (7, 0x14, 0x000256c5, 0x00708000, 0x000026f5, 0xa0012b6280708000),
     (8, 0x14, 0x000256cb, 0x63256692, 0x000186a3, 0xa0012b65e3256692),
     (9, 0x14, 0x000256cf, 0x55439803, 0x00019919, 0xa0012b67d5439803),
-], dtype=np.string_)
+], dtype=np.bytes_)
 
 
 class TestFunctions(TestCase):

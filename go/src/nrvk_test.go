@@ -158,6 +158,14 @@ func TestGetVariantKeyChromEndPos(t *testing.T) {
 func TestVknrBinToTSV(t *testing.T) {
 	t.Parallel()
 
-	l := nrvk.VknrBinToTSV("nrvk.test")
+	l, err := nrvk.VknrBinToTSV("nrvk.test")
+	require.NoError(t, err)
 	require.Equal(t, uint64(305), l, "Expected file length 305, got %d", l)
+}
+
+func TestVknrBinToTSVError(t *testing.T) {
+	t.Parallel()
+
+	_, err := nrvk.VknrBinToTSV("/nonexistent-directory/nrvk.test")
+	require.Error(t, err, "Expected an error for an unwritable path")
 }

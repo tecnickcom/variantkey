@@ -2457,6 +2457,15 @@ function test_encodeRefAlt() {
         console.error("(empty) expecting - code: ", h);
         ++errors;
     }
+    // An allele longer than 10 bases is hashed even when the two alleles
+    // together fit the 11 bases of the reversible encoding.
+    var long_allele = [encodeRefAlt("ACGTACGTACG", ""), encodeRefAlt("", "ACGTACGTACG")];
+    for (i = 0; i < 2; i++) {
+        if ((long_allele[i] & 0x1) == 0) {
+            console.error("(long allele ", i, ") expecting the hash encoding, got: ", long_allele[i]);
+            ++errors;
+        }
+    }
     return errors;
 }
 
@@ -2900,11 +2909,29 @@ function test_parseHex() {
     return errors;
 }
 
+// Codes whose REF/ALT length fields are outside the reversible range must not
+// decode. Ported from the C test_decode_refalt_invalid_length, which had no
+// counterpart in any language binding.
+function test_decodeRefAlt_invalidLength() {
+    var errors = 0;
+    const codes = [0x78000000, 0x07800000, 0x55000000];
+    var i;
+    for (i = 0; i < codes.length; i++) {
+        const ra = decodeRefAlt(codes[i]);
+        if ((ra.ref !== "") || (ra.alt !== "")) {
+            console.error("(", i, "): expecting empty REF and ALT, got ", ra.ref, "/", ra.alt);
+            ++errors;
+        }
+    }
+    return errors;
+}
+
 var errors = 0;
 
 errors += test_encodeChrom();
 errors += test_decodeChrom();
 errors += test_encodeRefAlt();
+errors += test_decodeRefAlt_invalidLength();
 errors += test_encodeVariantKey();
 errors += test_extractVariantKeyChrom();
 errors += test_extractVariantKeyPos();

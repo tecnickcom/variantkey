@@ -8,15 +8,15 @@
 // @license    MIT (see LICENSE file)
 // @copyright  (c) 2017-2026 Nicola Asuni - Tecnick.com
 
-#ifdef __STDC__LIB_EXT1__
+// Annex K is optional: __STDC_LIB_EXT1__ is only defined by the standard
+// headers, so the request must come before the first include and the fallback
+// after it.
 #define __STDC_WANT_LIB_EXT1__ 1
-#else
-// Ignore clang-tidy warning for deprecated or unsafe buffer handling
-// NOLINTNEXTLINE(clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling)
-#define fprintf_s fprintf
-#endif
 
 #include <stdio.h>
+#ifndef __STDC_LIB_EXT1__
+#define fprintf_s fprintf
+#endif
 #include <stdint.h>
 #include <inttypes.h>
 #include <string.h>
@@ -51,7 +51,7 @@ int test_munmap_binfile_error()
 int test_map_file_arrow()
 {
     int errors = 0;
-    char *file = "test_data_arrow.bin"; // file containing test data
+    const char *file = "test_data_arrow.bin"; // file containing test data
     mmfile_t mf = {0};
     mf.ncols = 2;
     mf.ctbytes[0] = 4;
@@ -119,7 +119,7 @@ int test_map_file_arrow()
 int test_map_file_feather()
 {
     int errors = 0;
-    char *file = "test_data_feather.bin"; // file containing test data
+    const char *file = "test_data_feather.bin"; // file containing test data
     mmfile_t mf = {0};
     mf.ncols = 2;
     mf.ctbytes[0] = 4;
@@ -187,7 +187,7 @@ int test_map_file_feather()
 int test_map_file_binsrc()
 {
     int errors = 0;
-    char *file = "test_data_binsrc.bin"; // file containing test data
+    const char *file = "test_data_binsrc.bin"; // file containing test data
     mmfile_t mf = {0};
     mmap_binfile(file, &mf);
     if (mf.fd < 0)
@@ -252,7 +252,7 @@ int test_map_file_binsrc()
 int test_map_file_col()
 {
     int errors = 0;
-    char *file = "test_data_col.bin"; // file containing test data
+    const char *file = "test_data_col.bin"; // file containing test data
     mmfile_t mf = {0};
     mmap_binfile(file, &mf);
     if (mf.fd < 0)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/uint64.R
 \name{identical.uint64}
 \alias{identical.uint64}
-\title{Identity function for class uint64.}
+\title{Compare two uint64 vectors for exact equality.}
 \usage{
 identical.uint64(
   x,
@@ -13,6 +13,22 @@ identical.uint64(
   ignore.bytecode = TRUE
 )
 }
+\arguments{
+\item{x}{uint64 vector}
+
+\item{y}{uint64 vector}
+
+\item{num.eq}{compare numbers bitwise rather than numerically}
+
+\item{single.NA}{treat all NaN bit patterns as one value}
+
+\item{attrib.as.set}{compare attributes as an unordered set}
+
+\item{ignore.bytecode}{ignore byte code state}
+}
 \description{
-Identity function for class uint64.
+identical() is not an S3 generic, so this function has to be called
+explicitly; use all(x == y) as an alternative. num.eq defaults to FALSE so
+that the comparison is bitwise rather than numeric, which is required because
+a uint64 is the raw 64 bit pattern reinterpreted as a double.
 }

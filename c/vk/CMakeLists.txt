@@ -2,11 +2,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/cmd)
 
-# Add the binary tree directory to the search path for linking and include files
-link_directories(${PROJECT_BINARY_DIR}/src/variantkey)
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_BINARY_DIR}/src/variantkey)
-
-file(COPY DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# NOTE: variantkey is an INTERFACE library, so it propagates its own include
+# directory through target_link_libraries; there is nothing to link against and
+# nothing to copy here.
 add_executable(vk vk.c)
 target_link_libraries(vk variantkey)
 

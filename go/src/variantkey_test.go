@@ -1112,3 +1112,39 @@ func BenchmarkReverseVariantKey(b *testing.B) {
 		ReverseVariantKey(0x08027a2588b00000)
 	}
 }
+
+// TestDecodeRefAltInvalidLength checks that a REF+ALT code whose length fields
+// are outside the reversible range does not decode. Ported from the C
+// test_decode_refalt_invalid_length, which had no counterpart here; Go also had
+// no direct TestDecodeRefAlt at all, only a benchmark and an example.
+func TestDecodeRefAltInvalidLength(t *testing.T) {
+	t.Parallel()
+
+	for _, code := range []uint32{0x78000000, 0x07800000, 0x55000000} {
+		ref, alt, sizeref, sizealt, length := DecodeRefAlt(code)
+		require.Empty(t, ref, "expecting an empty REF for code 0x%08x", code)
+		require.Empty(t, alt, "expecting an empty ALT for code 0x%08x", code)
+		require.Equal(t, uint8(0), sizeref, "expecting REF size 0 for code 0x%08x", code)
+		require.Equal(t, uint8(0), sizealt, "expecting ALT size 0 for code 0x%08x", code)
+		require.Equal(t, uint8(0), length, "expecting length 0 for code 0x%08x", code)
+	}
+}
+
+// TestDecodeRefAlt covers the reversible path directly.
+func TestDecodeRefAlt(t *testing.T) {
+	t.Parallel()
+
+	ref, alt, sizeref, sizealt, length := DecodeRefAlt(0x08880000) // REF "A", ALT "C"
+	require.Equal(t, "A", ref)
+	require.Equal(t, "C", alt)
+	require.Equal(t, uint8(1), sizeref)
+	require.Equal(t, uint8(1), sizealt)
+	require.Equal(t, uint8(2), length)
+
+	ref, alt, sizeref, sizealt, length = DecodeRefAlt(286097408) // REF "AC", ALT "GT"
+	require.Equal(t, "AC", ref)
+	require.Equal(t, "GT", alt)
+	require.Equal(t, uint8(2), sizeref)
+	require.Equal(t, uint8(2), sizealt)
+	require.Equal(t, uint8(4), length)
+}

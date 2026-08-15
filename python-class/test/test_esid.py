@@ -150,12 +150,12 @@ class TestFunctions(TestCase):
 
     def test_decode_string_id(self):
         esid, elen = npvk.decode_string_id(esidTestData[:, 3])
-        np.testing.assert_array_equal(esid, esidTestData[:, 5].astype(np.string_))
+        np.testing.assert_array_equal(esid, esidTestData[:, 5].astype(np.bytes_))
         np.testing.assert_array_equal(elen, esidTestData[:, 2].astype(np.uint8))
 
     def test_decode_string_num_id(self):
         esid, elen = npvk.decode_string_id(esidNumTestData[:, 2])
-        np.testing.assert_array_equal(esid, esidNumTestData[:, 3].astype(np.string_))
+        np.testing.assert_array_equal(esid, esidNumTestData[:, 3].astype(np.bytes_))
         np.testing.assert_array_equal(elen, esidNumTestData[:, 1].astype(np.uint8))
 
     def test_hash_string_id(self):

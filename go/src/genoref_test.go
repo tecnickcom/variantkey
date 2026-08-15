@@ -40,6 +40,26 @@ func TestGetGenorefSeq(t *testing.T) {
 	}
 }
 
+// A TMMFile rebuilt from the exported fields alone, as if it was not returned
+// by MmapGenorefFile, is converted on the fly and returns the same sequence.
+func TestGetGenorefSeqExportedFields(t *testing.T) {
+	t.Parallel()
+
+	mf := TMMFile{
+		Src:     gref.Src,
+		Fd:      gref.Fd,
+		Size:    gref.Size,
+		DOffset: gref.DOffset,
+		DLength: gref.DLength,
+		NRows:   gref.NRows,
+		NCols:   gref.NCols,
+		CTBytes: gref.CTBytes,
+		Index:   gref.Index,
+	}
+
+	require.Equal(t, uint8('A'), mf.GetGenorefSeq(23, 0))
+}
+
 func BenchmarkGetGenorefSeq(b *testing.B) {
 	for b.Loop() {
 		gref.GetGenorefSeq(13, 1)

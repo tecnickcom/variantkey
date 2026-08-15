@@ -1,6 +1,7 @@
 __pycache__
 .bechmarks
 .cache
+.clangd
 .coverage*
 .env
 .idea
@@ -28,5 +29,6 @@ htmlcov
 nosetests.xml
 pip-delete-this-directory.txt
 pip-log.txt
+PLAN_*
 target
 vendor

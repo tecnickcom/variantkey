@@ -67,17 +67,17 @@ int test_find_ref_alt_by_variantkey(nrvk_cols_t nvc)
         len = find_ref_alt_by_variantkey(nvc, test_data[i].vk, ref, &sizeref, alt, &sizealt);
         if (len != (test_data[i].len - 2))
         {
-            (void) fprintf(stderr, "%s (%d) Expected len %lu, got %lu\n",  __func__, i, test_data[i].len, len);
+            (void) fprintf(stderr, "%s (%d) Expected len %" PRIu64 ", got %zu\n",  __func__, i, (test_data[i].len - 2), len);
             ++errors;
         }
         if (sizeref != test_data[i].sizeref)
         {
-            (void) fprintf(stderr, "%s (%d) Expecting REF size %lu, got %lu\n", __func__, i, test_data[i].sizeref, sizeref);
+            (void) fprintf(stderr, "%s (%d) Expecting REF size %zu, got %zu\n", __func__, i, test_data[i].sizeref, sizeref);
             ++errors;
         }
         if (sizealt != test_data[i].sizealt)
         {
-            (void) fprintf(stderr, "%s (%d) Expecting ALT size %lu, got %lu\n", __func__, i, test_data[i].sizealt, sizealt);
+            (void) fprintf(stderr, "%s (%d) Expecting ALT size %zu, got %zu\n", __func__, i, test_data[i].sizealt, sizealt);
             ++errors;
         }
         if (strcasecmp(test_data[i].ref, ref) != 0)
@@ -102,7 +102,7 @@ int test_find_ref_alt_by_variantkey_notfound(nrvk_cols_t nvc)
     len = find_ref_alt_by_variantkey(nvc, 0xffffffff, ref, &sizeref, alt, &sizealt);
     if (len != 0)
     {
-        (void) fprintf(stderr, "%s : Expected len 0, got %lu\n",  __func__, len);
+        (void) fprintf(stderr, "%s : Expected len 0, got %zu\n",  __func__, len);
         ++errors;
     }
     return errors;
@@ -121,7 +121,7 @@ void benchmark_find_ref_alt_by_variantkey(nrvk_cols_t nvc)
         find_ref_alt_by_variantkey(nvc, 0xb000c35b64690b25, ref, &sizeref, alt, &sizealt);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_reverse_variantkey(nrvk_cols_t nvc)
@@ -135,17 +135,17 @@ int test_reverse_variantkey(nrvk_cols_t nvc)
         len = reverse_variantkey(nvc, test_data[i].vk, &rev);
         if (len != (test_data[i].len - 2))
         {
-            (void) fprintf(stderr, "%s (%d) Expected len %lu, got %lu\n",  __func__, i, test_data[i].len, len);
+            (void) fprintf(stderr, "%s (%d) Expected len %" PRIu64 ", got %zu\n",  __func__, i, (test_data[i].len - 2), len);
             ++errors;
         }
         if (rev.sizeref != test_data[i].sizeref)
         {
-            (void) fprintf(stderr, "%s (%d) Expecting REF size %lu, got %lu\n", __func__, i, test_data[i].sizeref, rev.sizeref);
+            (void) fprintf(stderr, "%s (%d) Expecting REF size %zu, got %zu\n", __func__, i, test_data[i].sizeref, rev.sizeref);
             ++errors;
         }
         if (rev.sizealt != test_data[i].sizealt)
         {
-            (void) fprintf(stderr, "%s (%d) Expecting ALT size %lu, got %lu\n", __func__, i, test_data[i].sizealt, rev.sizealt);
+            (void) fprintf(stderr, "%s (%d) Expecting ALT size %zu, got %zu\n", __func__, i, test_data[i].sizealt, rev.sizealt);
             ++errors;
         }
         if (strcasecmp(test_data[i].ref, rev.ref) != 0)
@@ -184,7 +184,7 @@ void benchmark_reverse_variantkey(nrvk_cols_t nvc)
         reverse_variantkey(nvc, 0xb000c35b64690b25, &rev);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_get_variantkey_ref_length(nrvk_cols_t nvc)
@@ -197,7 +197,7 @@ int test_get_variantkey_ref_length(nrvk_cols_t nvc)
         sizeref = get_variantkey_ref_length(nvc, test_data[i].vk);
         if (sizeref != test_data[i].sizeref)
         {
-            (void) fprintf(stderr, "%s (%d) Expecting REF size %lu, got %lu\n", __func__, i, test_data[i].sizeref, sizeref);
+            (void) fprintf(stderr, "%s (%d) Expecting REF size %zu, got %zu\n", __func__, i, test_data[i].sizeref, sizeref);
             ++errors;
         }
     }
@@ -210,7 +210,7 @@ int test_get_variantkey_ref_length_reversible(nrvk_cols_t nvc)
     size_t sizeref = get_variantkey_ref_length(nvc, 0x1800925199160000);
     if (sizeref != 3)
     {
-        (void) fprintf(stderr, "%s : Expected REF size 3, got %lu\n",  __func__, sizeref);
+        (void) fprintf(stderr, "%s : Expected REF size 3, got %zu\n",  __func__, sizeref);
         ++errors;
     }
     return errors;
@@ -222,7 +222,7 @@ int test_get_variantkey_ref_length_notfound(nrvk_cols_t nvc)
     size_t sizeref = get_variantkey_ref_length(nvc, 0xffffffffffffffff);
     if (sizeref != 0)
     {
-        (void) fprintf(stderr, "%s : Expected REF size 0, got %lu\n",  __func__, sizeref);
+        (void) fprintf(stderr, "%s : Expected REF size 0, got %zu\n",  __func__, sizeref);
         ++errors;
     }
     return errors;
@@ -287,7 +287,7 @@ int test_nrvk_bin_to_tsv(nrvk_cols_t nvc)
     size_t len = nrvk_bin_to_tsv(nvc, "nrvk.test");
     if (len != 305)
     {
-        (void) fprintf(stderr, "%s Expecting file with 305 bytes, got %lu\n", __func__, len);
+        (void) fprintf(stderr, "%s Expecting file with 305 bytes, got %zu\n", __func__, len);
         ++errors;
     }
     return errors;
@@ -299,7 +299,33 @@ int test_nrvk_bin_to_tsv_error(nrvk_cols_t nvc)
     size_t len = nrvk_bin_to_tsv(nvc, "/WRONG/../../nrvk.test");
     if (len != 0)
     {
-        (void) fprintf(stderr, "%s Expecting 0 bytes, got %lu\n", __func__, len);
+        (void) fprintf(stderr, "%s Expecting 0 bytes, got %zu\n", __func__, len);
+        ++errors;
+    }
+    return errors;
+}
+
+// Without a lookup table only the reversible VariantKeys can be reversed.
+int test_reverse_variantkey_no_lookup()
+{
+    int errors = 0;
+    nrvk_cols_t nvc = {0};
+    variantkey_rev_t rev = {0};
+    size_t len = reverse_variantkey(nvc, 0xb000c35b64690b25, &rev); // non-reversible
+    if (len != 0)
+    {
+        (void) fprintf(stderr, "%s : Expected len 0, got %zu\n", __func__, len);
+        ++errors;
+    }
+    len = reverse_variantkey(nvc, variantkey("X", 1, 100, "A", 1, "CG", 2), &rev);
+    if (len != 3)
+    {
+        (void) fprintf(stderr, "%s : Expected len 3, got %zu\n", __func__, len);
+        ++errors;
+    }
+    if ((strcmp(rev.chrom, "X") != 0) || (strcmp(rev.ref, "A") != 0) || (strcmp(rev.alt, "CG") != 0) || (rev.pos != 100))
+    {
+        (void) fprintf(stderr, "%s : Expected X/100/A/CG, got %s/%" PRIu32 "/%s/%s\n", __func__, rev.chrom, rev.pos, rev.ref, rev.alt);
         ++errors;
     }
     return errors;
@@ -323,6 +349,7 @@ int main()
     errors += test_find_ref_alt_by_variantkey(nvc);
     errors += test_find_ref_alt_by_variantkey_notfound(nvc);
     errors += test_reverse_variantkey(nvc);
+    errors += test_reverse_variantkey_no_lookup();
     errors += test_get_variantkey_ref_length(nvc);
     errors += test_get_variantkey_ref_length_reversible(nvc);
     errors += test_get_variantkey_ref_length_notfound(nvc);

@@ -22,16 +22,57 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: install dependencies
-        run: sudo apt install -y lcov astyle
+        run: sudo apt install -y lcov astyle cppcheck clang-tidy
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
-        run: cd c && make version build
+        run: cd c && make clean version linter coverage sanitize build
       #- name: coverage report
       #  uses: coverallsapp/github-action@v2
       #  with:
       #    format: lcov
       #    file: c/target/test/coverage/variantkey.info
+
+  # The main "c" job builds with gcc on x86-64. The two jobs below add clang,
+  # which enables warnings gcc does not, and a 32-bit build, which catches shifts
+  # and printf formats that are only wrong where size_t is not 64 bit.
+  c-clang:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v7
+      - name: install dependencies
+        run: sudo apt install -y clang
+      - name: set RELEASE number
+        run: echo ${GITHUB_RUN_NUMBER} > RELEASE
+      - name: build and run the tests with clang
+        # "make build", not "make test": the test target captures coverage with
+        # lcov, which cannot read the .gcno files clang produces. The build
+        # target compiles with the full warning set and runs the ctest suite.
+        run: cd c && make clean build CC=clang
+
+  c-m32:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v7
+      - name: install dependencies
+        run: sudo apt install -y gcc-multilib
+      - name: compile the headers and the tests as 32 bit
+        # Compile-only check: a full 32-bit test run would need the whole
+        # toolchain multilib. It catches shift width and -Wformat mismatches on
+        # size_t and uint64_t.
+        run: |
+          cd c
+          for h in src/variantkey/*.h; do
+            gcc -m32 -std=c17 -pedantic -Wall -Wextra -Wformat -Werror -c -x c "$h" -o /dev/null
+          done
+          # test_binsearch*.c are imported verbatim from the binsearch repository
+          # and use %lu for uint64_t, which is only correct on LP64. They are
+          # excluded here because they must not be edited in this repository.
+          for t in $(ls test/test_*.c | grep -v test_binsearch); do
+            gcc -m32 -std=c17 -Wall -Wextra -Wformat -Werror -c "$t" -o /dev/null
+          done
 
   go:
     runs-on: ubuntu-latest
@@ -81,6 +122,16 @@ jobs:
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
         run: cd python && make all
+      # The C headers live outside the package and have to be staged into it, so
+      # the built tarball is installed from a scratch directory to check that the
+      # source distribution is complete.
+      - name: install from the source distribution
+        run: |
+          cd python && make build
+          cd "$(mktemp -d)"
+          python -m venv v
+          ./v/bin/pip install "$GITHUB_WORKSPACE"/python/dist/variantkey-*.tar.gz
+          ./v/bin/python -c "import variantkey as vk; assert vk.variantkey(b'X', 12345, b'AC', b'GT') == 0xb800181c910d8000"
 
   python-class:
     runs-on: ubuntu-latest
@@ -116,3 +167,7 @@ jobs:
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
         run: cd r && make build test
+      - name: install from the package tarball
+        run: |
+          mkdir -p "$HOME/rlib"
+          R CMD INSTALL -l "$HOME/rlib" r/variantkey_*.tar.gz

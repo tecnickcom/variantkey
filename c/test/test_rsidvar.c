@@ -220,6 +220,53 @@ int test_find_vr_chrompos_range(rsidvar_cols_t cvr)
     return errors;
 }
 
+// A POS range whose end does not match any stored row exactly. Rows 7 and 8 hold
+// positions 0x256C5 and 0x256CB; asking for [0x256C5, 0x256CC] must still stop
+// after row 8 and not include row 9 at 0x256CF.
+int test_find_vr_chrompos_range_inexact_end(rsidvar_cols_t cvr)
+{
+    int errors = 0;
+    uint64_t first = 0;
+    uint64_t last = cvr.nrows;
+    uint32_t rsid = find_vr_chrompos_range(cvr, &first, &last, test_data[6].chrom, test_data[7].pos, (test_data[8].pos + 1));
+    if (rsid != test_data[7].rsid)
+    {
+        (void) fprintf(stderr, "%s : Expected rsid %" PRIx32 ", got %" PRIx32 "\n", __func__, test_data[7].rsid, rsid);
+        ++errors;
+    }
+    if (first != 7)
+    {
+        (void) fprintf(stderr, "%s : Expected first 7, got %" PRIu64 "\n", __func__, first);
+        ++errors;
+    }
+    if (last != 9)
+    {
+        (void) fprintf(stderr, "%s : Expected last 9, got %" PRIu64 "\n", __func__, last);
+        ++errors;
+    }
+    return errors;
+}
+
+// When the end position is below the start position the range is empty.
+int test_find_vr_chrompos_range_no_end(rsidvar_cols_t cvr)
+{
+    int errors = 0;
+    uint64_t first = 0;
+    uint64_t last = cvr.nrows;
+    uint32_t rsid = find_vr_chrompos_range(cvr, &first, &last, test_data[7].chrom, test_data[7].pos, 0);
+    if (rsid != 0)
+    {
+        (void) fprintf(stderr, "%s : Expected rsid 0, got %" PRIx32 "\n", __func__, rsid);
+        ++errors;
+    }
+    if (first != last)
+    {
+        (void) fprintf(stderr, "%s : Expected an empty range, got first %" PRIu64 " last %" PRIu64 "\n", __func__, first, last);
+        ++errors;
+    }
+    return errors;
+}
+
 int test_find_vr_chrompos_range_notfound(rsidvar_cols_t cvr)
 {
     int errors = 0;
@@ -276,7 +323,7 @@ void benchmark_find_rv_variantkey_by_rsid(rsidvar_cols_t crv)
         find_rv_variantkey_by_rsid(crv, &first, crv.nrows, 0x2F81F575);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 void benchmark_find_vr_rsid_by_variantkey(rsidvar_cols_t cvr)
@@ -292,7 +339,7 @@ void benchmark_find_vr_rsid_by_variantkey(rsidvar_cols_t cvr)
         find_vr_rsid_by_variantkey(cvr, &first, cvr.nrows, 0X160017CCA313D0E0);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 void benchmark_find_vr_chrompos_range(rsidvar_cols_t cvr)
@@ -309,7 +356,7 @@ void benchmark_find_vr_chrompos_range(rsidvar_cols_t cvr)
         find_vr_chrompos_range(cvr, &first, &last, 0x19, 0x001AF8FD, 0x001C8F2A);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int main()
@@ -342,6 +389,8 @@ int main()
     errors += test_find_vr_rsid_by_variantkey_notfound(cvr);
     errors += test_get_next_vr_rsid_by_variantkey(cvr);
     errors += test_find_vr_chrompos_range(cvr);
+    errors += test_find_vr_chrompos_range_inexact_end(cvr);
+    errors += test_find_vr_chrompos_range_no_end(cvr);
     errors += test_find_vr_chrompos_range_notfound(cvr);
 
     benchmark_find_rv_variantkey_by_rsid(crv);

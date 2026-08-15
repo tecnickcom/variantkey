@@ -87,18 +87,26 @@ InitVariantKey <- function(genoref_file = "", nrvk_file = "", rsvk_file = "", vk
 #' This should be the last function called in order to close any open memory-mapped file.
 #' @export
 CloseVariantKey <- function() {
+  # The internal objects are reset to their initial value after unmapping, so
+  # calling this twice is a no-op and any later lookup finds no table instead of
+  # reading through the pointers of the released mapping.
   if (vk.env$genoref_$SIZE > 0) {
     MunmapBinfile(vk.env$genoref_$MF)
+    vk.env$genoref_ <- list(MF=NULL, SIZE=0)
   }
   if (vk.env$nrvk_$NROWS > 0) {
     MunmapBinfile(vk.env$nrvk_$MF)
+    vk.env$nrvk_ <- list(MF=NULL, MC=NULL, NROWS=0)
   }
   if (vk.env$rsvk_$NROWS > 0) {
     MunmapBinfile(vk.env$rsvk_$MF)
+    vk.env$rsvk_ <- list(MF=NULL, MC=NULL, NROWS=0)
   }
   if (vk.env$vkrs_$NROWS > 0) {
     MunmapBinfile(vk.env$vkrs_$MF)
+    vk.env$vkrs_ <- list(MF=NULL, MC=NULL, NROWS=0)
   }
+  invisible(NULL)
 }
 
 #' Returns chromosome encoding.
@@ -155,7 +163,7 @@ EncodeVariantKey <- function(chrom, pos, refalt) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- uint64(n)
-  return(.Call("R_encode_variantkey", as.integer(chrom), as.integer(pos), as.integer(refalt), ret))
+  return(.Call("R_encode_variantkey", as.integer(chrom), vk.env$as_uint32_bits(pos, "pos"), as.integer(refalt), ret))
 }
 
 #' Extract the CHROM code from VariantKey.
@@ -212,7 +220,7 @@ VariantKey <- function(chrom, pos, ref, alt) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- uint64(n)
-  return(.Call("R_variantkey", as.character(chrom), as.integer(pos), as.character(ref), as.character(alt), ret))
+  return(.Call("R_variantkey", as.character(chrom), vk.env$as_uint32_bits(pos, "pos"), as.character(ref), as.character(alt), ret))
 }
 
 #' Returns minimum and maximum variant keys for range searches.
@@ -228,7 +236,7 @@ VariantKeyRange <- function(chrom, pos_min, pos_max) {
   }
   min <- uint64(n)
   max <- uint64(n)
-  return(.Call("R_variantkey_range", as.integer(chrom), as.integer(pos_min), as.integer(pos_max), min, max))
+  return(.Call("R_variantkey_range", as.integer(chrom), vk.env$as_uint32_bits(pos_min, "pos_min"), vk.env$as_uint32_bits(pos_max, "pos_max"), min, max))
 }
 
 #' Compares two VariantKeys by chromosome only.
@@ -324,7 +332,7 @@ FindRvVariantKeyByRsid <- function(rsid, first=0, last=vk.env$rsvk_$NROWS, mc=vk
   vk <- uint64(n)
   rfirst <- integer(n)
   irsid <- vk.env$as_uint32_bits(rsid, "rsid")
-  return(.Call("R_find_rv_variantkey_by_rsid", mc, as.integer(first), as.integer(last), irsid, vk, rfirst))
+  return(.Call("R_find_rv_variantkey_by_rsid", mc, vk.env$as_uint32_bits(first, "first"), vk.env$as_uint32_bits(last, "last"), irsid, vk, rfirst))
 }
 
 #' Get the next VariantKey for the specified rsID in the RV file, or 0 if not found
@@ -340,7 +348,7 @@ GetNextRvVariantKeyByRsid <- function(rsid, pos, last=vk.env$rsvk_$NROWS, mc=vk.
   vk <- uint64(n)
   rpos <- integer(n)
   irsid <- vk.env$as_uint32_bits(rsid, "rsid")
-  return(.Call("R_get_next_rv_variantkey_by_rsid", mc, as.integer(pos), as.integer(last), irsid, vk, rpos))
+  return(.Call("R_get_next_rv_variantkey_by_rsid", mc, vk.env$as_uint32_bits(pos, "pos"), vk.env$as_uint32_bits(last, "last"), irsid, vk, rpos))
 }
 
 #' Search for the specified rsID and returns all the associated VariantKeys in the RV file.
@@ -355,7 +363,7 @@ GetNextRvVariantKeyByRsid <- function(rsid, pos, last=vk.env$rsvk_$NROWS, mc=vk.
 FindAllRvVariantKeyByRsid <- function(rsid, max=10, first=0, last=vk.env$rsvk_$NROWS, mc=vk.env$rsvk_$MC) {
   ret <- uint64(max)
   irsid <- vk.env$as_uint32_bits(rsid, "rsid")
-  return(.Call("R_find_all_rv_variantkey_by_rsid", mc, as.integer(first), as.integer(last), irsid, ret))
+  return(.Call("R_find_all_rv_variantkey_by_rsid", mc, vk.env$as_uint32_bits(first, "first"), vk.env$as_uint32_bits(last, "last"), irsid, ret))
 }
 
 #' Search for the specified VariantKey and returns the first occurrence of rsID in the VR file, or 0 if not found.
@@ -369,7 +377,7 @@ FindVrRsidByVariantKey <- function(vk, first=0, last=vk.env$vkrs_$NROWS, mc=vk.e
   len <- length(vk)
   rsid <- integer(len)
   rfirst <- integer(len)
-  return(.Call("R_find_vr_rsid_by_variantkey", mc, as.integer(first), as.integer(last), as.uint64(vk), rsid, rfirst))
+  return(.Call("R_find_vr_rsid_by_variantkey", mc, vk.env$as_uint32_bits(first, "first"), vk.env$as_uint32_bits(last, "last"), as.uint64(vk), rsid, rfirst))
 }
 
 #' Get the next rsID for the specified VariantKey in the VR file, or 0 if not found
@@ -384,7 +392,7 @@ GetNextVrRsidByVariantKey <- function(vk, pos, last=vk.env$vkrs_$NROWS, mc=vk.en
   n <- length(vk)
   rsid <- integer(n)
   rpos <- integer(n)
-  return(.Call("R_get_next_vr_rsid_by_variantkey", mc, as.integer(pos), as.integer(last), as.uint64(vk), rsid, rpos))
+  return(.Call("R_get_next_vr_rsid_by_variantkey", mc, vk.env$as_uint32_bits(pos, "pos"), vk.env$as_uint32_bits(last, "last"), as.uint64(vk), rsid, rpos))
 }
 
 #' Search for the specified VariantKey and returns all the associated rsIDs in the VR file.
@@ -398,7 +406,7 @@ GetNextVrRsidByVariantKey <- function(vk, pos, last=vk.env$vkrs_$NROWS, mc=vk.en
 #' @export
 FindAllVrRsidByVariantKey <- function(vk, max=10, first=0, last=vk.env$vkrs_$NROWS, mc=vk.env$vkrs_$MC) {
   ret <- integer(max)
-  return(.Call("R_find_all_vr_rsid_by_variantkey", mc, as.integer(first), as.integer(last), as.uint64(vk), ret))
+  return(.Call("R_find_all_vr_rsid_by_variantkey", mc, vk.env$as_uint32_bits(first, "first"), vk.env$as_uint32_bits(last, "last"), as.uint64(vk), ret))
 }
 
 #' Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.
@@ -421,7 +429,7 @@ FindVrChromposRange <- function(chrom, pos_min, pos_max, first=0, last=vk.env$vk
   ichrom <- vk.env$as_uint32_bits(chrom, "chrom")
   ipos_min <- vk.env$as_uint32_bits(pos_min, "pos_min")
   ipos_max <- vk.env$as_uint32_bits(pos_max, "pos_max")
-  return(.Call("R_find_vr_chrompos_range", mc, as.integer(first), as.integer(last), ichrom, ipos_min, ipos_max, rsid, rfirst, rlast))
+  return(.Call("R_find_vr_chrompos_range", mc, vk.env$as_uint32_bits(first, "first"), vk.env$as_uint32_bits(last, "last"), ichrom, ipos_min, ipos_max, rsid, rfirst, rlast))
 }
 
 # --- NRVK ---
@@ -537,7 +545,7 @@ GetGenorefSeq <- function(chrom, pos, mf=vk.env$genoref_$MF) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- integer(n)
-  return(intToUtf8(.Call("R_get_genoref_seq", mf, as.integer(chrom), as.integer(pos), ret), multiple = TRUE))
+  return(intToUtf8(.Call("R_get_genoref_seq", mf, as.integer(chrom), vk.env$as_uint32_bits(pos, "pos"), ret), multiple = TRUE))
 }
 
 #' Check if the reference allele matches the reference genome data.
@@ -558,7 +566,7 @@ CheckReference <- function(chrom, pos, ref, mf=vk.env$genoref_$MF) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- integer(n)
-  return(.Call("R_check_reference", mf, as.integer(chrom), as.integer(pos), as.character(ref), ret))
+  return(.Call("R_check_reference", mf, as.integer(chrom), vk.env$as_uint32_bits(pos, "pos"), as.character(ref), ret))
 }
 
 #' Flip the allele nucleotides (replaces each letter with its complement).
@@ -606,7 +614,7 @@ NormalizeVariant <- function(chrom, pos, ref, alt, mf=vk.env$genoref_$MF) {
   rpos <- integer(n)
   rref <- character(n)
   ralt <- character(n)
-  return(.Call("R_normalize_variant", mf, as.integer(chrom), as.integer(pos), as.character(ref), as.character(alt), rcode, rpos, rref, ralt))
+  return(.Call("R_normalize_variant", mf, as.integer(chrom), vk.env$as_uint32_bits(pos, "pos"), as.character(ref), as.character(alt), rcode, rpos, rref, ralt))
 }
 
 #' Create a normalized variantkey.
@@ -616,7 +624,7 @@ NormalizeVariant <- function(chrom, pos, ref, alt, mf=vk.env$genoref_$MF) {
 #' @param ref    Reference allele. String containing a sequence of nucleotide letters.
 #' @param alt    Alternate non-reference allele string.
 #' @param mf    Memory-mapped file object as retured by MmapGenorefFile.
-#' @useDynLib   variantkey R_normalize_variant
+#' @useDynLib   variantkey R_normalized_variantkey
 #' @export
 NormalizedVariantKey <- function(chrom, pos, posindex, ref, alt, mf=vk.env$genoref_$MF) {
   n <- length(chrom)
@@ -625,7 +633,7 @@ NormalizedVariantKey <- function(chrom, pos, posindex, ref, alt, mf=vk.env$genor
   }
   rvk <- uint64(n)
   rcode <- integer(n)
-  return(.Call("R_normalized_variantkey", mf, as.character(chrom), as.integer(pos), as.integer(posindex), as.character(ref), as.character(alt), rvk, rcode))
+  return(.Call("R_normalized_variantkey", mf, as.character(chrom), vk.env$as_uint32_bits(pos, "pos"), as.integer(posindex), as.character(ref), as.character(alt), rvk, rcode))
 }
 
 # --- REGIONKEY ---
@@ -661,7 +669,7 @@ EncodeRegionKey <- function(chrom, startpos, endpos, strand) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- uint64(n)
-  return(.Call("R_encode_regionkey", as.integer(chrom), as.integer(startpos), as.integer(endpos), as.integer(strand), ret))
+  return(.Call("R_encode_regionkey", as.integer(chrom), vk.env$as_uint32_bits(startpos, "startpos"), vk.env$as_uint32_bits(endpos, "endpos"), as.integer(strand), ret))
 }
 
 #' Extract the CHROM code from RegionKey.
@@ -728,7 +736,6 @@ ReverseRegionKey <- function(rk) {
 
 #' Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.
 #' @param chrom    Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.
-#' @param sizechrom  Length of the chrom string, excluding the terminating null byte.
 #' @param startpos   Start position (zero based).
 #' @param endpos   End position (startpos + region_length).
 #' @param strand   Strand direction (-1, 0, +1)
@@ -740,17 +747,20 @@ RegionKey <- function(chrom, startpos, endpos, strand) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- uint64(n)
-  return(.Call("R_regionkey", as.character(chrom), as.integer(startpos), as.integer(endpos), as.integer(strand), ret))
+  return(.Call("R_regionkey", as.character(chrom), vk.env$as_uint32_bits(startpos, "startpos"), vk.env$as_uint32_bits(endpos, "endpos"), as.integer(strand), ret))
 }
 
 #' Extend a regionkey region by a fixed amount from the start and end position.
 #' @param rk     RegionKey code.
 #' @param size   Amount to extend the region.
-#' @useDynLib   variantkey R_regionkey
+#' @useDynLib   variantkey R_extend_regionkey
 #' @export
 ExtendRegionKey <- function(rk, size) {
-  ret <- uint64(length(rk))
-  return(.Call("R_extend_regionkey", as.uint64(rk), as.integer(size), ret))
+  n <- length(rk)
+  ret <- uint64(n)
+  # The amount is recycled to the length of rk, so every region is extended by
+  # its own amount.
+  return(.Call("R_extend_regionkey", as.uint64(rk), rep_len(as.integer(size), n), ret))
 }
 
 #' Returns RegionKey hexadecimal string (16 characters).
@@ -805,7 +815,7 @@ AreOverlappingRegions <- function(a_chrom, a_startpos, a_endpos, b_chrom, b_star
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- integer(n)
-  return(.Call("R_are_overlapping_regions", as.integer(a_chrom), as.integer(a_startpos), as.integer(a_endpos), as.integer(b_chrom), as.integer(b_startpos), as.integer(b_endpos), ret))
+  return(.Call("R_are_overlapping_regions", as.integer(a_chrom), vk.env$as_uint32_bits(a_startpos, "a_startpos"), vk.env$as_uint32_bits(a_endpos, "a_endpos"), as.integer(b_chrom), vk.env$as_uint32_bits(b_startpos, "b_startpos"), vk.env$as_uint32_bits(b_endpos, "b_endpos"), ret))
 }
 
 #' Check if a region and a regionkey are overlapping.
@@ -822,7 +832,7 @@ AreOverlappingRegionRegionKey <- function(chrom, startpos, endpos, rk) {
     stop(vk.env$ERR_INPUT_LENGTH)
   }
   ret <- integer(n)
-  return(.Call("R_are_overlapping_region_regionkey", as.integer(chrom), as.integer(startpos), as.integer(endpos), as.uint64(rk), ret))
+  return(.Call("R_are_overlapping_region_regionkey", as.integer(chrom), vk.env$as_uint32_bits(startpos, "startpos"), vk.env$as_uint32_bits(endpos, "endpos"), as.uint64(rk), ret))
 }
 
 #' Check if two regionkeys are overlapping.
@@ -870,7 +880,7 @@ VariantToRegionkey <- function(vk, mc=vk.env$nrvk_$MC) {
 
 #' Encode maximum 10 characters of a string into a 64 bit unsigned integer.
 #' This function can be used to convert generic string IDs to numeric IDs.
-#' @param str  The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.
+#' @param str  The string to encode. The characters beyond the first 10 from start are ignored. It supports ASCII characters from '!' to 'z'.
 #' @param start  First character to encode, starting from 0. To encode the last 10 characters, set this value at (size - 10).
 #' @useDynLib   variantkey R_encode_string_id
 #' @export
@@ -888,7 +898,7 @@ EncodeStringID <- function(str, start=0) {
 #' into a 64 bit unsigned integer. For example: "ABCDE:0001234"
 #' Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
 #' If the string is 10 character or less, then the EncodeStringID() is used.
-#' @param str  The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.
+#' @param str  The string to encode. It supports ASCII characters from '!' to 'z'.
 #' @param sep  Separator character between string and number.
 #' @useDynLib   variantkey R_encode_string_num_id
 #' @export

@@ -34,7 +34,7 @@ int main()
 
     char chrom[3];
     size_t clen = decode_chrom(23, chrom);
-    (void) fprintf(stdout, "%s %lu\n", chrom, clen);
+    (void) fprintf(stdout, "%s %zu\n", chrom, clen);
     // X 1
 
     uint32_t era = encode_refalt("AC", 2, "GT", 2);
@@ -44,7 +44,7 @@ int main()
     char ref[12], alt[12];
     size_t sizeref = 0, sizealt = 0;
     size_t ldra = decode_refalt(286097408, ref, &sizeref, alt, &sizealt);
-    (void) fprintf(stdout, "%s %s %lu %lu %lu\n", ref, alt, sizeref, sizealt, ldra);
+    (void) fprintf(stdout, "%s %s %zu %zu %zu\n", ref, alt, sizeref, sizealt, ldra);
     // AC GT 2 2 4
 
     uint64_t vk = encode_variantkey(23, 12345, 286097408);
@@ -112,11 +112,11 @@ int main()
         return 1;
     }
 
-    char sref = get_genoref_seq(genoref, 23, 0);
+    char sref = get_genoref_seq(&genoref, 23, 0);
     (void) fprintf(stdout, "%c\n", sref);
     // A
 
-    int ret = check_reference(genoref, 23, 0, "A", 1);
+    int ret = check_reference(&genoref, 23, 0, "A", 1);
     (void) fprintf(stdout, "%d\n", ret);
     // 0
 
@@ -131,13 +131,13 @@ int main()
     char nalt[256] = "CFE";
     sizeref = 3;
     sizealt = 3;
-    ret = normalize_variant(genoref, 13, &pos, nref, &sizeref, nalt, &sizealt);
-    (void) fprintf(stdout, "%d %" PRIu32 " %s %s %lu %lu\n", ret, pos, nref, nalt, sizeref, sizealt);
+    ret = normalize_variant(&genoref, 13, &pos, nref, &sizeref, nalt, &sizealt);
+    (void) fprintf(stdout, "%d %" PRIu32 " %s %s %zu %zu\n", ret, pos, nref, nalt, sizeref, sizealt);
     // 48 3 D F 1 1
 
     // create a normalized variantkey
     int ncode = 0;
-    vk = normalized_variantkey(genoref, "13", 2, &pos, 0, nref, &sizeref, nalt, &sizealt, &ncode);
+    vk = normalized_variantkey(&genoref, "13", 2, &pos, 0, nref, &sizeref, nalt, &sizealt, &ncode);
     (void) fprintf(stdout, "%" PRIx64 " %d\n", vk, ncode);
     // 68000001c7868961 0
 
@@ -170,17 +170,17 @@ int main()
 
     char lref[256], lalt[256];
     size_t len = find_ref_alt_by_variantkey(nvc, 0x2000c3521f1c15ab, lref, &sizeref, lalt, &sizealt);
-    (void) fprintf(stdout, "%s %s %lu %lu %lu\n", lref, lalt, sizeref, sizealt, len);
+    (void) fprintf(stdout, "%s %s %zu %zu %zu\n", lref, lalt, sizeref, sizealt, len);
     // ACGTACGT ACGT 8 4 12
 
     // Reverse all VariantKeys, including the ones that are not directly reversible by using a lookup table.
     variantkey_rev_t rev = {0};
     len = reverse_variantkey(nvc, 0x2000c3521f1c15ab, &rev);
-    (void) fprintf(stdout, "%s %" PRIu32 " %s %s %lu %lu %lu\n", rev.chrom, rev.pos, rev.ref, rev.alt, rev.sizeref, rev.sizealt, len);
+    (void) fprintf(stdout, "%s %" PRIu32 " %s %s %zu %zu %zu\n", rev.chrom, rev.pos, rev.ref, rev.alt, rev.sizeref, rev.sizealt, len);
     // 4 100004 ACGTACGT ACGT 8 4 12
 
     len = get_variantkey_ref_length(nvc, 0x2000c3521f1c15ab);
-    (void) fprintf(stdout, "%lu\n", len);
+    (void) fprintf(stdout, "%zu\n", len);
     // 8
 
     uint32_t endpos = get_variantkey_endpos(nvc, 0x2000c3521f1c15ab);
@@ -415,7 +415,7 @@ int main()
 
     char strid[30];
     size_t stridlen = decode_string_id(0xa850850492e77999, strid);
-    (void) fprintf(stdout, "%s %lu\n", strid, stridlen);
+    (void) fprintf(stdout, "%s %zu\n", strid, stridlen);
     // A0A022YWF9 10
 
     esid = encode_string_num_id("ABC:0000123456", 14, ':');
@@ -423,7 +423,7 @@ int main()
     // d8628c002001e240
 
     stridlen = decode_string_id(esid, strid);
-    (void) fprintf(stdout, "%s %lu\n", strid, stridlen);
+    (void) fprintf(stdout, "%s %zu\n", strid, stridlen);
     // ABC:0000123456 14
 
     esid = hash_string_id("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 36);

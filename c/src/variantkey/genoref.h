@@ -9,13 +9,17 @@
 
 /**
  * @file genoref.h
- * @brief Functions to retrieve genome reference sequences from a binary FASTA file.
+ * @brief Genome reference lookup and variant normalization.
  *
- * The functions provided here allows to retrieve genome reference sequences from a binary
- * version of a genome reference FASTA file.
+ * Reads genome reference sequences from a memory mapped binary version of a
+ * genome reference FASTA file, and uses them to check and normalize variants.
  *
- * The input reference binary files can be generated from a FASTA file using the
+ * The binary file can be generated from a FASTA file with the
  * `resources/tools/fastabin.sh` script.
+ *
+ * The lookup functions take the memory mapped file as a `const mmfile_t *`
+ * rather than by value: `mmfile_t` embeds `ctbytes[256]` and `index[256]`, so
+ * it is over 2 KB and a copy per call would be required otherwise.
  */
 
 #ifndef VARIANTKEY_GENOREF_H
@@ -43,8 +47,14 @@
 #define NORM_RTRIM  (1 << 4) //!< Normalization: Alleles have been right trimmed.
 #define NORM_LTRIM  (1 << 5) //!< Normalization: Alleles have been left trimmed.
 
+#define GENOREF_MAXCHROM 25 //!< Highest chromosome code with a genome reference sequence.
+
 /**
- * Memory map the genoref binary file.
+ * @brief Memory maps the genoref binary file.
+ *
+ * The column index is shifted by one so that index[chrom] is the offset of the
+ * first byte of the sequence of the chromosome with code chrom, and index[26]
+ * is the end of the last sequence.
  *
  * @param file  Path to the file to map.
  * @param mf    Structure containing the memory mapped file.
@@ -63,13 +73,14 @@ static inline void mmap_genoref_file(const char *file, mmfile_t *mf)
 }
 
 /**
- * Returns the uppercase version of the input character.
- * Note that this is safe to be used only with a-z characters.
- * All characters above 'a' will be changed.
+ * @brief Returns the uppercase version of a lowercase letter.
+ *
+ * Every character from 'a' upwards is transformed, so this is only safe for the
+ * a to z range.
  *
  * @param c Character to uppercase.
  *
- * @return Uppercased character
+ * @return The uppercased character.
  */
 static inline int aztoupper(int c)
 {
@@ -81,11 +92,13 @@ static inline int aztoupper(int c)
 }
 
 /**
- * Prepend a character to a string.
+ * @brief Prepends a character to a null terminated string.
+ *
+ * The size is incremented in place. The buffer must have room for one more character.
  *
  * @param pre    Character to prepend.
  * @param string String to modify.
- * @param size   Input string length.
+ * @param size   Pointer to the length of the string, excluding the terminating null byte.
  */
 static inline void prepend_char(const char pre, char *string, size_t *size)
 {
@@ -95,53 +108,62 @@ static inline void prepend_char(const char pre, char *string, size_t *size)
 }
 
 /**
- * Returns the genome reference nucleotide at the specified chromosome and position.
+ * @brief Returns the genome reference nucleotide at the given chromosome and position.
  *
- * @param mf      Structure containing the memory mapped file.
- * @param chrom   Encoded Chromosome number (see encode_chrom).
- * @param pos     Position. The reference position, with the first base having position 0.
+ * @param mf      Pointer to the structure containing the memory mapped file.
+ * @param chrom   Encoded chromosome number (see encode_chrom), up to GENOREF_MAXCHROM.
+ * @param pos     Reference position, with the first base having position 0.
  *
- * @return The nucleotide letter or 0 in case of invalid position.
+ * @return The nucleotide letter, or 0 for an invalid chromosome or position.
  */
-static inline char get_genoref_seq(mmfile_t mf, uint8_t chrom, uint32_t pos)
+static inline char get_genoref_seq(const mmfile_t *mf, uint8_t chrom, uint32_t pos)
 {
-    uint64_t offset = (mf.index[chrom] + pos);
-    if (offset >= mf.index[(chrom + 1)])
+    if (chrom > GENOREF_MAXCHROM)
+    {
+        return 0; // invalid chromosome
+    }
+    uint64_t offset = (mf->index[chrom] + pos);
+    if (offset >= mf->index[(chrom + 1)])
     {
         return 0; // invalid position
     }
-    return  (char)*(mf.src + offset);
+    return  (char)*(mf->src + offset);
 }
 
 /**
- * Check if the reference allele matches the reference genome data.
+ * @brief Checks a reference allele against the genome reference data.
  *
- * @param mf      Structure containing the memory mapped file.
- * @param chrom   Encoded Chromosome number (see encode_chrom).
- * @param pos     Position. The reference position, with the first base having position 0.
+ * Degenerate base symbols are accepted when their base sets can overlap, as
+ * listed in the table inside the function body.
+ *
+ * @param mf      Pointer to the structure containing the memory mapped file.
+ * @param chrom   Encoded chromosome number (see encode_chrom), up to GENOREF_MAXCHROM.
+ * @param pos     Reference position, with the first base having position 0.
  * @param ref     Reference allele. String containing a sequence of nucleotide letters.
  * @param sizeref Length of the ref string, excluding the terminating null byte.
  *
- * @return Positive number in case of success, negative in case of error:
- *       *  0 the reference allele match the reference genome;
- *       *  1 the reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T);
- *       * -1 the reference allele don't match the reference genome;
- *       * -2 the reference allele is longer than the genome reference sequence.
+ * @return NORM_OK (0) if the allele matches the genome reference,
+ *         NORM_VALID (1) if it is compatible but contains letters other than A, C, G and T,
+ *         NORM_INVALID (-1) if it does not match,
+ *         NORM_WRONGPOS (-2) if the chromosome is invalid or the allele extends beyond the sequence.
  */
-static inline int check_reference(mmfile_t mf, uint8_t chrom, uint32_t pos, const char *ref, size_t sizeref)
+static inline int check_reference(const mmfile_t *mf, uint8_t chrom, uint32_t pos, const char *ref, size_t sizeref)
 {
-    uint64_t offset = (mf.index[chrom] + pos);
-    if ((offset + sizeref - 1) >= mf.index[(chrom + 1)])
+    if (chrom > GENOREF_MAXCHROM)
+    {
+        return NORM_WRONGPOS;
+    }
+    uint64_t offset = (mf->index[chrom] + pos);
+    if ((offset + sizeref) > mf->index[(chrom + 1)])
     {
         return NORM_WRONGPOS;
     }
     size_t i = 0;
-    char uref = 0, gref = 0;
     int ret = 0; // return value
     for (i = 0; i < sizeref; i++)
     {
-        uref = (char) aztoupper(ref[i]);
-        gref = (char) mf.src[(offset + i)];
+        char uref = (char) aztoupper(ref[i]);
+        char gref = (char) mf->src[(offset + i)];
         if (uref == gref)
         {
             continue;
@@ -153,47 +175,48 @@ static inline int check_reference(mmfile_t mf, uint8_t chrom, uint32_t pos, cons
             Nomenclature for incompletely specified bases in nucleic acid sequences: recommendations 1984.
             Nucleic Acids Research. 1985;13(9):3021-3030.
 
-            SYMBOL | DESCRIPTION                   | BASES   | COMPLEMENT
-            -------+-------------------------------+---------+-----------
-               A   | Adenine                       | A       |  T
-               C   | Cytosine                      |   C     |  G
-               G   | Guanine                       |     G   |  C
-               T   | Thymine                       |       T |  A
-               W   | Weak                          | A     T |  W
-               S   | Strong                        |   C G   |  S
-               M   | aMino                         | A C     |  K
-               K   | Keto                          |     G T |  M
-               R   | puRine                        | A   G   |  Y
-               Y   | pYrimidine                    |   C   T |  R
-               B   | not A (B comes after A)       |   C G T |  V
-               D   | not C (D comes after C)       | A   G T |  H
-               H   | not G (H comes after G)       | A C   T |  D
-               V   | not T (V comes after T and U) | A C G   |  B
-               N   | aNy base (not a gap)          | A C G T |  N
-            -------+-------------------------------+---------+----------
+            SYMBOL | DESCRIPTION                   | BASES   | COMPLEMENT | SET
+            -------+-------------------------------+---------+------------+-----
+               A   | Adenine                       | A       |  T         |  1
+               C   | Cytosine                      |   C     |  G         |  2
+               G   | Guanine                       |     G   |  C         |  4
+               T   | Thymine                       |       T |  A         |  8
+               W   | Weak                          | A     T |  W         |  9
+               S   | Strong                        |   C G   |  S         |  6
+               M   | aMino                         | A C     |  K         |  3
+               K   | Keto                          |     G T |  M         | 12
+               R   | puRine                        | A   G   |  Y         |  5
+               Y   | pYrimidine                    |   C   T |  R         | 10
+               B   | not A (B comes after A)       |   C G T |  V         | 14
+               D   | not C (D comes after C)       | A   G T |  H         | 13
+               H   | not G (H comes after G)       | A C   T |  D         | 11
+               V   | not T (V comes after T and U) | A C G   |  B         |  7
+               N   | aNy base (not a gap)          | A C G T |  N         | 15
+            -------+-------------------------------+---------+------------+-----
+
+            Two symbols are compatible when their base sets intersect. The SET
+            column above encodes each set as a 4 bit mask (A=1, C=2, G=4, T=8),
+            so the whole test is a table lookup and a bitwise AND.
+
+            Any symbol outside the fifteen listed above maps to the empty set and
+            intersects with nothing. There is no U row: U is treated as an
+            ordinary letter.
         */
-        if ((uref == 'N')
-                || (gref == 'N')
-                || ((uref == 'B') && (gref != 'A'))
-                || ((gref == 'B') && (uref != 'A'))
-                || ((uref == 'D') && (gref != 'C'))
-                || ((gref == 'D') && (uref != 'C'))
-                || ((uref == 'H') && (gref != 'G'))
-                || ((gref == 'H') && (uref != 'G'))
-                || ((uref == 'V') && (gref != 'T'))
-                || ((gref == 'V') && (uref != 'T'))
-                || ((uref == 'W') && ((gref == 'A') || (gref == 'T')))
-                || ((gref == 'W') && ((uref == 'A') || (uref == 'T')))
-                || ((uref == 'S') && ((gref == 'C') || (gref == 'G')))
-                || ((gref == 'S') && ((uref == 'C') || (uref == 'G')))
-                || ((uref == 'M') && ((gref == 'A') || (gref == 'C')))
-                || ((gref == 'M') && ((uref == 'A') || (uref == 'C')))
-                || ((uref == 'K') && ((gref == 'G') || (gref == 'T')))
-                || ((gref == 'K') && ((uref == 'G') || (uref == 'T')))
-                || ((uref == 'R') && ((gref == 'A') || (gref == 'G')))
-                || ((gref == 'R') && ((uref == 'A') || (uref == 'G')))
-                || ((uref == 'Y') && ((gref == 'C') || (gref == 'T')))
-                || ((gref == 'Y') && ((uref == 'C') || (uref == 'T'))))
+        // *INDENT-OFF*
+        static const uint8_t baseset[256] =
+        {
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+            /*   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z */
+             0,  1, 14,  2, 13,  0,  0,  4, 11,  0,  0, 12,  0,  3, 15,  0,  0,  0,  5,  6,  8,  0,  7,  9,  0, 10,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+             0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        };
+        // *INDENT-ON*
+        if ((baseset[(uint8_t)uref] & baseset[(uint8_t)gref]) != 0)
         {
             ret = NORM_VALID; // valid but not consistent
             continue;
@@ -204,12 +227,13 @@ static inline int check_reference(mmfile_t mf, uint8_t chrom, uint32_t pos, cons
 }
 
 /**
- * Flip the allele nucleotides (replaces each letter with its complement).
- * The resulting string is always in uppercase.
- * Support extended nucleotide letters.
+ * @brief Replaces each nucleotide of an allele with its complement.
  *
- * @param allele  Allele. String containing a sequence of nucleotide letters.
- * @param size    Length of the allele string.
+ * The result is always uppercase and null terminated. Degenerate base symbols
+ * are supported; any other character becomes '0'.
+ *
+ * @param allele  Allele string to modify.
+ * @param size    Length of the allele string, excluding the terminating null byte.
  */
 static inline void flip_allele(char *allele, size_t size)
 {
@@ -248,9 +272,7 @@ static inline void flip_allele(char *allele, size_t size)
 }
 
 /**
- * Swap two sizes.
- * The first size is copied to a temporary variable, then the second size is copied to the first,
- * and finally the temporary variable is copied to the second size.
+ * @brief Swaps two sizes.
  *
  * @param first  Pointer to the first size.
  * @param second Pointer to the second size.
@@ -263,10 +285,9 @@ static inline void swap_sizes(size_t *first, size_t *second)
 }
 
 /**
- * Swap two alleles.
- * The first allele is copied to a temporary buffer, then the second allele is copied to the first,
- * and finally the temporary buffer is copied to the second allele.
- * The sizes of the alleles are also swapped.
+ * @brief Swaps two alleles and their sizes.
+ *
+ * Both buffers must be ALLELE_MAXSIZE bytes.
  *
  * @param first       First allele string.
  * @param sizefirst   Pointer to the length of the first allele string, excluding the terminating null byte.
@@ -285,35 +306,34 @@ static inline void swap_alleles(char *first, size_t *sizefirst, char *second, si
 }
 
 /**
- * Normalize a variant.
- * Flip alleles if required and apply the normalization algorithm described at:
- * https://genome.sph.umich.edu/wiki/Variant_Normalization
+ * @brief Normalizes a variant in place against the genome reference.
  *
- * @param mf         Structure containing the memory mapped file.
- * @param chrom      Chromosome encoded number.
- * @param pos        Position. The reference position, with the first base having position 0.
+ * Swaps and flips the alleles when that makes the reference match, then applies
+ * the algorithm described at https://genome.sph.umich.edu/wiki/Variant_Normalization
+ * The position, the alleles and their sizes are updated in place. Both allele
+ * buffers must be ALLELE_MAXSIZE bytes.
+ *
+ * @param mf         Pointer to the structure containing the memory mapped file.
+ * @param chrom      Encoded chromosome number, up to GENOREF_MAXCHROM.
+ * @param pos        Pointer to the reference position, with the first base having position 0.
  * @param ref        Reference allele. String containing a sequence of nucleotide letters.
- * @param sizeref    Length of the ref string, excluding the terminating null byte.
+ * @param sizeref    Pointer to the length of the ref string, excluding the terminating null byte.
  * @param alt        Alternate non-reference allele string.
- * @param sizealt    Length of the alt string, excluding the terminating null byte.
+ * @param sizealt    Pointer to the length of the alt string, excluding the terminating null byte.
  *
- * @return Positive bitmask number in case of success, negative number in case of error.
- *         When positive, each bit has a different meaning when set, has defined by the NORM_* defines:
- *         - bit 0 (NORM_VALID) : The reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
- *         - bit 1 (NORM_SWAP)  : The alleles have been swapped.
- *         - bit 2 (NORM_FLIP)  : The alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
- *         - bit 3 (NORM_LEXT)  : Alleles have been left extended.
- *         - bit 4 (NORM_RTRIM) : Alleles have been right trimmed.
- *         - bit 5 (NORM_LTRIM) : Alleles have been left trimmed.
+ * @return NORM_WRONGPOS (-2) or NORM_INVALID (-1) on error, otherwise a bitmask
+ *         of the applied transformations:
+ *         - bit 0 (NORM_VALID) : the reference allele contains letters other than A, C, G and T.
+ *         - bit 1 (NORM_SWAP)  : the alleles have been swapped.
+ *         - bit 2 (NORM_FLIP)  : the alleles have been replaced with their complement.
+ *         - bit 3 (NORM_LEXT)  : the alleles have been left extended.
+ *         - bit 4 (NORM_RTRIM) : the alleles have been right trimmed.
+ *         - bit 5 (NORM_LTRIM) : the alleles have been left trimmed.
  */
-static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, char *ref, size_t *sizeref, char *alt, size_t *sizealt)
+static inline int normalize_variant(const mmfile_t *mf, uint8_t chrom, uint32_t *pos, char *ref, size_t *sizeref, char *alt, size_t *sizealt)
 {
-    char left = 0;
-    char fref[ALLELE_MAXSIZE];
-    char falt[ALLELE_MAXSIZE];
-    int status = 0;
-    status = check_reference(mf, chrom, *pos, ref, *sizeref);
-    if (status == -2)
+    int status = check_reference(mf, chrom, *pos, ref, *sizeref);
+    if (status == NORM_WRONGPOS)
     {
         return status; // invalid position
     }
@@ -327,24 +347,29 @@ static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, c
         }
         else
         {
-            strncpy(fref, ref, *sizeref);
+            char fref[ALLELE_MAXSIZE];
+            memcpy(fref, ref, *sizeref);
             flip_allele(fref, *sizeref);
             status = check_reference(mf, chrom, *pos, fref, *sizeref);
             if (status >= 0)
             {
-                strncpy(ref, fref, *sizealt);
+                memcpy(ref, fref, *sizeref);
+                ref[*sizeref] = 0;
                 flip_allele(alt, *sizealt);
                 status |= NORM_FLIP;
             }
             else
             {
-                strncpy(falt, alt, *sizealt);
+                char falt[ALLELE_MAXSIZE];
+                memcpy(falt, alt, *sizealt);
                 flip_allele(falt, *sizealt);
                 status = check_reference(mf, chrom, *pos, falt, *sizealt);
                 if (status >= 0)
                 {
-                    strncpy(ref, falt, *sizealt);
-                    strncpy(alt, fref, *sizeref);
+                    memcpy(ref, falt, *sizealt);
+                    ref[*sizealt] = 0;
+                    memcpy(alt, fref, *sizeref);
+                    alt[*sizeref] = 0;
                     swap_sizes(sizeref, sizealt);
                     status |= NORM_SWAP + NORM_FLIP;
                 }
@@ -365,7 +390,7 @@ static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, c
         if (((*sizealt == 0) || (*sizeref == 0)) && (*pos > 0))
         {
             (*pos)--;
-            left = (char)mf.src[(mf.index[chrom] + *pos)];
+            char left = (char)mf->src[(mf->index[chrom] + *pos)];
             prepend_char(left, alt, sizealt);
             prepend_char(left, ref, sizeref);
             status |= NORM_LEXT;
@@ -386,8 +411,8 @@ static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, c
         }
     }
     // left trim
-    uint8_t offset = 0;
-    while ((offset < (*sizealt - 1)) && (offset < (*sizeref - 1)) && (aztoupper(alt[offset]) == aztoupper(ref[offset])))
+    size_t offset = 0;
+    while (((offset + 1) < *sizealt) && ((offset + 1) < *sizeref) && (aztoupper(alt[offset]) == aztoupper(ref[offset])))
     {
         offset++;
     }
@@ -405,29 +430,26 @@ static inline int normalize_variant(mmfile_t mf, uint8_t chrom, uint32_t *pos, c
     return status;
 }
 
-/** @brief Returns a normalized 64 bit variant key based on CHROM, POS, REF, ALT.
+/**
+ * @brief Normalizes a variant and returns its VariantKey.
  *
- * This function normalizes the variant using the genome reference data
- * from the memory mapped binary fasta file and returns a 64 bit code
- * representing the normalized variant.
+ * The position, the alleles and their sizes are updated in place. Both allele
+ * buffers must be ALLELE_MAXSIZE bytes.
  *
- * @param mf         Structure containing the memory mapped binary fasta file.
- * @param chrom      Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.
+ * @param mf         Pointer to the structure containing the memory mapped file.
+ * @param chrom      Chromosome identifier, no white-space or leading zeros permitted.
  * @param sizechrom  Length of the chrom string, excluding the terminating null byte.
- * @param pos        Position. The reference position.
+ * @param pos        Pointer to the reference position.
  * @param posindex   Position index: 0 for 0-based, 1 for 1-based.
- * @param ref        Reference allele. String containing a sequence of nucleotide letters.
- *                   The value in the pos field refers to the position of the first nucleotide in the String.
- *                   Characters must be A-Z, a-z or *.
- * @param sizeref    Length of the ref string, excluding the terminating null byte.
- * @param alt        Alternate non-reference allele string.
- *                   Characters must be A-Z, a-z or *.
- * @param sizealt    Length of the alt string, excluding the terminating null byte.
- * @param ret        Normalization return value (see: normalize_variant).
+ * @param ref        Reference allele. Characters must be A-Z, a-z or *.
+ * @param sizeref    Pointer to the length of the ref string, excluding the terminating null byte.
+ * @param alt        Alternate non-reference allele. Characters must be A-Z, a-z or *.
+ * @param sizealt    Pointer to the length of the alt string, excluding the terminating null byte.
+ * @param ret        Pointer to the normalization return value (see normalize_variant).
  *
- * @return      Normalized VariantKey 64 bit code.
+ * @return The normalized VariantKey 64 bit code.
  */
-static inline uint64_t normalized_variantkey(mmfile_t mf, const char *chrom, size_t sizechrom, uint32_t *pos, uint8_t posindex, char *ref, size_t *sizeref, char *alt, size_t *sizealt, int *ret)
+static inline uint64_t normalized_variantkey(const mmfile_t *mf, const char *chrom, size_t sizechrom, uint32_t *pos, uint8_t posindex, char *ref, size_t *sizeref, char *alt, size_t *sizealt, int *ret)
 {
     uint8_t echrom = encode_chrom(chrom, sizechrom);
     (*pos) -= posindex;

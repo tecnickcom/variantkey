@@ -27,6 +27,8 @@ const {
     areOverlappingRegionKeys,
     areOverlappingVariantKeyRegionKey,
     variantKeyToRegionKey,
+    variantKey,
+    variantKeyString,
 } = require(process.argv[2]);
 
 const k_test_size = 10;
@@ -260,6 +262,49 @@ function test_regionKeyString() {
     return errors;
 }
 
+// REF length and END POS of hash-mode (non-reversible) VariantKeys. The expected
+// values are produced by the C reference (get_variantkey_endpos and
+// variantkey_to_regionkey with an empty NRVK table). For a hash-mode key bits
+// 27-30 hold hash data, not a REF length, so the END POS equals the START POS.
+// 0       1     2      3      4                  5(endpos) 6(regionkey)
+// chrom,  pos,  ref,   alt,   variantkey,        endpos,   regionkey
+const test_endpos = [
+    ["15", 53695, "GCTGTGCAAGCA", "AT",           {"hi": 0x780068df, "lo": 0x86239d47}, 53695, "780068df80068df8"],
+    [ "6", 52247, "CAAATAGATG",   "CGACCGATTTAA", {"hi": 0x3000660b, "lo": 0xf160ba2b}, 52247, "3000660b800660b8"],
+    [ "5", 53827, "GGACG",        "TGCTTTGATCG",  {"hi": 0x28006921, "lo": 0x81ae904d}, 53827, "2800692180069218"],
+    ["19", 29608, "GTG",          "A",            {"hi": 0x980039d4, "lo": 0x18dc0000}, 29611, "980039d400039d58"],
+    ["21", 30210, "AACAGGCCT",    "T",            {"hi": 0xa8003b01, "lo": 0x488252f8}, 30219, "a8003b010003b058"],
+    ["10", 85315, "T",            "GCACG",        {"hi": 0x5000a6a1, "lo": 0x8af23000}, 85316, "5000a6a1800a6a20"],
+];
+const k_test_endpos_size = test_endpos.length;
+
+function test_getVariantKeyEndPos_modes() {
+    var errors = 0;
+    var i;
+    for (i = 0; i < k_test_endpos_size; i++) {
+        var vk = variantKey(test_endpos[i][0], test_endpos[i][1], test_endpos[i][2], test_endpos[i][3]);
+        var vks = variantKeyString(vk);
+        var evks = variantKeyString(test_endpos[i][4]);
+        if (vks !== evks) {
+            console.error("(", i, "): Unexpected variantkey: expected ", evks, ", got ", vks);
+            ++errors;
+            continue;
+        }
+        var ep = getVariantKeyEndPos(vk);
+        if (ep !== test_endpos[i][5]) {
+            console.error("(", i, "): Expected endpos ", test_endpos[i][5], ", got ", ep);
+            ++errors;
+        }
+        var rk = variantKeyToRegionKey(vk);
+        var rks = regionKeyString(rk);
+        if (rks !== test_endpos[i][6]) {
+            console.error("(", i, "): Expected regionkey ", test_endpos[i][6], ", got ", rks);
+            ++errors;
+        }
+    }
+    return errors;
+}
+
 function test_getVariantKeyEndPos() {
     var errors = 0;
     var h;
@@ -359,6 +404,7 @@ errors += test_regionKey();
 errors += test_extendRegionKey();
 errors += test_regionKeyString();
 errors += test_getVariantKeyEndPos();
+errors += test_getVariantKeyEndPos_modes();
 errors += test_areOverlappingRegions();
 errors += test_areOverlappingRegionRegionKey();
 errors += test_areOverlappingRegionKeys();

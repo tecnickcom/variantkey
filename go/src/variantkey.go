@@ -25,6 +25,25 @@ import (
 // maxcols is the maximum number of indexable columns as in binsearch.h file.
 const maxcols = 256
 
+// alleleMaxSize is the allele buffer size, as ALLELE_MAXSIZE in nrvk.h.
+const alleleMaxSize = 256
+
+// chromMaxSize is the CHROM buffer size required by decode_chrom in variantkey.h,
+// including the terminating null byte.
+const chromMaxSize = 4
+
+// refaltMaxSize is the REF or ALT buffer size required by decode_refalt in
+// variantkey.h, as VKMAX_ALLELE_LEN + 1.
+const refaltMaxSize = 12
+
+// hexMaxSize is the buffer size of a 16 digit hexadecimal string, as
+// HEX_UINT64_LEN + 1 in hex.h.
+const hexMaxSize = 17
+
+// esidMaxSize is the buffer size required to decode any encoded string ID,
+// as ESID_MAXSTRLEN in esid.h.
+const esidMaxSize = 23
+
 // TVariantKey contains a representation of a genetic variant key.
 type TVariantKey struct {
 	Chrom  uint8  `json:"chrom"`
@@ -107,13 +126,11 @@ func EncodeChrom(chrom string) uint8 {
 
 // DecodeChrom decode chrom to string.
 func DecodeChrom(c uint8) string {
-	cstr := C.malloc(4)
+	var buf [chromMaxSize]byte
 
-	defer C.free(cstr) // #nosec
+	ln := C.decode_chrom(C.uint8_t(c), (*C.char)(unsafe.Pointer(&buf[0]))) // #nosec
 
-	ln := C.decode_chrom(C.uint8_t(c), (*C.char)(cstr))
-
-	return C.GoStringN((*C.char)(cstr), C.int(ln))
+	return string(buf[:ln])
 }
 
 // EncodeRefAlt returns reference+alternate code.
@@ -130,19 +147,16 @@ func EncodeRefAlt(ref string, alt string) uint32 {
 
 // DecodeRefAlt decode Ref+Alt code if reversible.
 func DecodeRefAlt(c uint32) (string, string, uint8, uint8, uint8) {
-	cref := C.malloc(12)
+	var (
+		bref, balt         [refaltMaxSize]byte
+		csizeref, csizealt C.size_t
+	)
 
-	defer C.free(cref) // #nosec
+	pref := unsafe.Pointer(&bref[0]) // #nosec
+	palt := unsafe.Pointer(&balt[0]) // #nosec
+	ln := C.decode_refalt(C.uint32_t(c), (*C.char)(pref), &csizeref, (*C.char)(palt), &csizealt)
 
-	calt := C.malloc(12)
-
-	defer C.free(calt) // #nosec
-
-	csizeref := C.size_t(0)
-	csizealt := C.size_t(0)
-	ln := C.decode_refalt(C.uint32_t(c), (*C.char)(cref), &csizeref, (*C.char)(calt), &csizealt)
-
-	return C.GoStringN((*C.char)(cref), C.int(csizeref)), C.GoStringN((*C.char)(calt), C.int(csizealt)), uint8(csizeref), uint8(csizealt), uint8(ln)
+	return string(bref[:csizeref]), string(balt[:csizealt]), uint8(csizeref), uint8(csizealt), uint8(ln)
 }
 
 // EncodeVariantKey returns a Genetic Variant Key based on pre-encoded CHROM, POS (0-base), REF+ALT.
@@ -210,13 +224,11 @@ func CompareVariantKeyChromPos(va, vb uint64) int {
 
 // Hex provides a 16 digits hexadecimal string representation of a 64bit unsigned number.
 func Hex(v uint64) string {
-	cstr := C.malloc(17)
+	var buf [hexMaxSize]byte
 
-	defer C.free(cstr) // #nosec
+	ln := C.variantkey_hex(C.uint64_t(v), (*C.char)(unsafe.Pointer(&buf[0]))) // #nosec
 
-	C.variantkey_hex(C.uint64_t(v), (*C.char)(cstr))
-
-	return C.GoStringN((*C.char)(cstr), C.int(16))
+	return string(buf[:ln])
 }
 
 // ParseHex parses a 16 digit HEX string and returns the 64 bit unsigned number.
@@ -258,6 +270,13 @@ type TMMFile struct {
 	NCols   uint8          // Number of columns.
 	CTBytes []uint8        // Number of bytes per column type (i.e. 1 for uint8_t, 2 for uint16_t, 4 for uint32_t, 8 for uint64_t)
 	Index   []uint64       // Index of the offsets to the beginning of each column.
+
+	// cmf is the C copy of the fields above, built once when the file is
+	// mapped. The C mmfile_t is more than 2 KB, so rebuilding it at every call
+	// would cost more than the lookup itself. It is nil when the structure was
+	// not returned by one of the Mmap* functions, in which case the exported
+	// fields are converted on the fly.
+	cmf *C.mmfile_t
 }
 
 // castCTMMFileToGo convert C.mmfile_t to GO TMMFile.
@@ -273,6 +292,9 @@ func castCTMMFileToGo(mf C.mmfile_t) TMMFile {
 		index[i] = uint64(mf.index[i])
 	}
 
+	cmf := new(C.mmfile_t)
+	*cmf = mf
+
 	return TMMFile{
 		Src:     unsafe.Pointer(mf.src), // #nosec
 		Fd:      int(mf.fd),
@@ -283,6 +305,7 @@ func castCTMMFileToGo(mf C.mmfile_t) TMMFile {
 		NCols:   ncols,
 		CTBytes: ctbytes,
 		Index:   index,
+		cmf:     cmf,
 	}
 }
 
@@ -306,9 +329,20 @@ func castGoTMMFileToC(mf TMMFile) C.mmfile_t {
 	return cmf
 }
 
+// cmmfile returns the C mmfile_t, reusing the copy built when the file was mapped.
+func cmmfile(mf TMMFile) *C.mmfile_t {
+	if mf.cmf != nil {
+		return mf.cmf
+	}
+
+	cmf := castGoTMMFileToC(mf)
+
+	return &cmf
+}
+
 // Close Unmap and close the memory-mapped file.
 func (mf TMMFile) Close() error {
-	e := int(C.munmap_binfile(castGoTMMFileToC(mf)))
+	e := int(C.munmap_binfile(*cmmfile(mf)))
 	if e != 0 {
 		return fmt.Errorf("got %d error while unmapping the file", e)
 	}
@@ -549,19 +583,16 @@ func MmapNRVKFile(file string) (TMMFile, NRVKCols, error) {
 
 // FindRefAltByVariantKey retrieve the REF and ALT strings for the specified VariantKey.
 func (nr NRVKCols) FindRefAltByVariantKey(vk uint64) (string, string, uint8, uint8, uint32) {
-	cref := C.malloc(maxcols)
+	var (
+		bref, balt         [alleleMaxSize]byte
+		csizeref, csizealt C.size_t
+	)
 
-	defer C.free(cref) // #nosec
+	pref := unsafe.Pointer(&bref[0]) // #nosec
+	palt := unsafe.Pointer(&balt[0]) // #nosec
+	ln := C.find_ref_alt_by_variantkey(castGoNRVKColsToC(nr), C.uint64_t(vk), (*C.char)(pref), &csizeref, (*C.char)(palt), &csizealt)
 
-	calt := C.malloc(maxcols)
-
-	defer C.free(calt) // #nosec
-
-	csizeref := C.size_t(0)
-	csizealt := C.size_t(0)
-	ln := C.find_ref_alt_by_variantkey(castGoNRVKColsToC(nr), C.uint64_t(vk), (*C.char)(cref), &csizeref, (*C.char)(calt), &csizealt)
-
-	return C.GoStringN((*C.char)(cref), C.int(csizeref)), C.GoStringN((*C.char)(calt), C.int(csizealt)), uint8(csizeref), uint8(csizealt), uint32(ln)
+	return string(bref[:csizeref]), string(balt[:csizealt]), uint8(csizeref), uint8(csizealt), uint32(ln)
 }
 
 // ReverseVariantKey reverse a VariantKey code and returns the normalized components.
@@ -594,11 +625,18 @@ func (nr NRVKCols) GetVariantKeyChromEndPos(vk uint64) uint64 {
 }
 
 // VknrBinToTSV converts a vrnr.bin file to a simple TSV. For the reverse operation see the resources/tools/nrvk.sh script.
-func (nr NRVKCols) VknrBinToTSV(tsvfile string) uint64 {
+// It returns the number of bytes written, or an error if the file cannot be
+// opened. The C function signals failure by returning 0.
+func (nr NRVKCols) VknrBinToTSV(tsvfile string) (uint64, error) {
 	file := StringToNTBytes(tsvfile)
 	pfile := unsafe.Pointer(&file[0]) // #nosec
 
-	return uint64(C.nrvk_bin_to_tsv(castGoNRVKColsToC(nr), (*C.char)(pfile)))
+	n := uint64(C.nrvk_bin_to_tsv(castGoNRVKColsToC(nr), (*C.char)(pfile)))
+	if n == 0 {
+		return 0, fmt.Errorf("unable to write the TSV file: %s", tsvfile)
+	}
+
+	return n, nil
 }
 
 // --- GENOREF ---
@@ -638,21 +676,21 @@ func FlipAllele(allele string) string {
 
 // GetGenorefSeq returns the nucleotide at the specified chromosome and position.
 func (mf TMMFile) GetGenorefSeq(chrom uint8, pos uint32) byte {
-	return byte(C.get_genoref_seq(castGoTMMFileToC(mf), C.uint8_t(chrom), C.uint32_t(pos))) // #nosec
+	return byte(C.get_genoref_seq(cmmfile(mf), C.uint8_t(chrom), C.uint32_t(pos)))
 }
 
 // CheckReference checks if the reference allele matches the reference genome data.
 func (mf TMMFile) CheckReference(chrom uint8, pos uint32, ref string) int {
 	bref := StringToNTBytes(ref)
-	pref := unsafe.Pointer(&bref[0])
-	// #nosec
-	return int(C.check_reference(castGoTMMFileToC(mf), C.uint8_t(chrom), C.uint32_t(pos), (*C.char)(pref), C.size_t(len(ref)))) // #nosec
+	pref := unsafe.Pointer(&bref[0]) // #nosec
+
+	return int(C.check_reference(cmmfile(mf), C.uint8_t(chrom), C.uint32_t(pos), (*C.char)(pref), C.size_t(len(ref))))
 }
 
 // NormalizeVariant flips alleles if required and apply the normalization algorithm described at: https://genome.sph.umich.edu/wiki/Variant_Normalization
 func (mf TMMFile) NormalizeVariant(chrom uint8, pos uint32, ref string, alt string) (int, uint32, string, string, uint8, uint8) {
-	bref := StringToNTBytesN(ref, maxcols)
-	balt := StringToNTBytesN(alt, maxcols)
+	bref := StringToNTBytesN(ref, alleleMaxSize)
+	balt := StringToNTBytesN(alt, alleleMaxSize)
 	sizeref := len(ref)
 	sizealt := len(alt)
 	pref := unsafe.Pointer(&bref[0]) // #nosec
@@ -660,10 +698,10 @@ func (mf TMMFile) NormalizeVariant(chrom uint8, pos uint32, ref string, alt stri
 	cpos := C.uint32_t(pos)
 	csizeref := C.size_t(sizeref)
 	csizealt := C.size_t(sizealt)
-	code := int(C.normalize_variant(castGoTMMFileToC(mf), C.uint8_t(chrom), &cpos, (*C.char)(pref), &csizeref, (*C.char)(palt), &csizealt)) // #nosec
+	code := int(C.normalize_variant(cmmfile(mf), C.uint8_t(chrom), &cpos, (*C.char)(pref), &csizeref, (*C.char)(palt), &csizealt))
 	npos := uint32(cpos)
-	nref := C.GoString((*C.char)(pref))
-	nalt := C.GoString((*C.char)(palt))
+	nref := string(bref[:csizeref])
+	nalt := string(balt[:csizealt])
 	nsizeref := uint8(csizeref)
 	nsizealt := uint8(csizealt)
 
@@ -672,11 +710,9 @@ func (mf TMMFile) NormalizeVariant(chrom uint8, pos uint32, ref string, alt stri
 
 // NormalizedVariantKey returns a normalized Genetic Variant Key based on CHROM, POS, REF, ALT.
 func (mf TMMFile) NormalizedVariantKey(chrom string, pos uint32, posindex uint8, ref string, alt string) (uint64, int) {
-	var code int
-
 	bchrom := StringToNTBytes(chrom)
-	bref := StringToNTBytesN(ref, maxcols)
-	balt := StringToNTBytesN(alt, maxcols)
+	bref := StringToNTBytesN(ref, alleleMaxSize)
+	balt := StringToNTBytesN(alt, alleleMaxSize)
 	sizeref := len(ref)
 	sizealt := len(alt)
 	pchrom := unsafe.Pointer(&bchrom[0]) // #nosec
@@ -685,11 +721,10 @@ func (mf TMMFile) NormalizedVariantKey(chrom string, pos uint32, posindex uint8,
 	cpos := C.uint32_t(pos)
 	csizeref := C.size_t(sizeref)
 	csizealt := C.size_t(sizealt)
-	ccode := C.int(code)
-	vk := uint64(C.normalized_variantkey(castGoTMMFileToC(mf), (*C.char)(pchrom), C.size_t(len(chrom)), &cpos, C.uint8_t(posindex), (*C.char)(pref), &csizeref, (*C.char)(palt), &csizealt, &ccode)) // #nosec
-	code = int(ccode)
+	ccode := C.int(0)
+	vk := uint64(C.normalized_variantkey(cmmfile(mf), (*C.char)(pchrom), C.size_t(len(chrom)), &cpos, C.uint8_t(posindex), (*C.char)(pref), &csizeref, (*C.char)(palt), &csizealt, &ccode))
 
-	return vk, code
+	return vk, int(ccode)
 }
 
 // --- REGIONKEY ---
@@ -854,13 +889,11 @@ func EncodeStringNumID(s string, sep byte) uint64 {
 
 // DecodeStringID decode the encoded string ID.
 func DecodeStringID(esid uint64) string {
-	cstr := C.malloc(23)
+	var buf [esidMaxSize]byte
 
-	defer C.free(cstr) // #nosec
+	ln := C.decode_string_id(C.uint64_t(esid), (*C.char)(unsafe.Pointer(&buf[0]))) // #nosec
 
-	ln := C.decode_string_id(C.uint64_t(esid), (*C.char)(cstr))
-
-	return C.GoStringN((*C.char)(cstr), C.int(ln))
+	return string(buf[:ln])
 }
 
 // HashStringID hash the input string into a 64 bit unsigned integer.

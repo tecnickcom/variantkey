@@ -2,7 +2,7 @@
 % Please edit documentation in R/uint64.R
 \name{unique.uint64}
 \alias{unique.uint64}
-\title{Eliminates all but the first element from every consecutive group of equal values.}
+\title{Removes duplicated values from a uint64 vector.}
 \usage{
 \method{unique}{uint64}(x, ...)
 }
@@ -10,5 +10,6 @@
 \item{x}{uint64 vector}
 }
 \description{
-Eliminates all but the first element from every consecutive group of equal values.
+The vector is sorted first, because the underlying C unique_uint64_t() only
+collapses consecutive runs of equal values. The result is in ascending order.
 }

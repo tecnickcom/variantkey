@@ -10,14 +10,17 @@
 #include <R.h>
 #include <Rdefines.h>
 #include <stdlib.h>
-#include "../../../c/src/variantkey/binsearch.h"
-#include "../../../c/src/variantkey/esid.h"
-#include "../../../c/src/variantkey/genoref.h"
-#include "../../../c/src/variantkey/hex.h"
-#include "../../../c/src/variantkey/nrvk.h"
-#include "../../../c/src/variantkey/regionkey.h"
-#include "../../../c/src/variantkey/rsidvar.h"
-#include "../../../c/src/variantkey/variantkey.h"
+// The variantkey headers are staged into this directory by the "headers" target
+// of the parent Makefile, so they resolve both in a git checkout and inside a
+// built package tarball.
+#include "binsearch.h"
+#include "esid.h"
+#include "genoref.h"
+#include "hex.h"
+#include "nrvk.h"
+#include "regionkey.h"
+#include "rsidvar.h"
+#include "variantkey.h"
 #include "uint64.h"
 
 #define ALLELE_BUFFSIZE 12
@@ -244,30 +247,47 @@ SEXP R_parse_variantkey_hex(SEXP hex, SEXP ret)
 
 static const mmfile_t *get_mmfile_mf(SEXP mf)
 {
-    if (R_ExternalPtrAddr(mf) == NULL)
+    if ((TYPEOF(mf) != EXTPTRSXP) || (R_ExternalPtrAddr(mf) == NULL))
     {
-        return (const mmfile_t *)R_Calloc(1, mmfile_t);
+        // An all-zero struct means "no table" to the C code, so a shared static
+        // is returned when the table was never loaded or was already released.
+        static const mmfile_t empty = {0};
+        return &empty;
     }
     return (const mmfile_t *)R_ExternalPtrAddr(mf);
 }
 
-static void destroy_mf(SEXP mf)
+// Unmap and release a memory mapped file, at most once. The struct is freed and
+// the external pointer cleared, so any further call is a no-op.
+static int vk_release_mf(SEXP mf)
 {
-    const mmfile_t *cmf = get_mmfile_mf(mf);
+    mmfile_t *cmf = ((TYPEOF(mf) == EXTPTRSXP) ? (mmfile_t *)R_ExternalPtrAddr(mf) : NULL);
     if (cmf == NULL)
     {
-        return;
+        return 0; // already released
+    }
+    int ret = 0;
+    // A failed mapping is marked with MAP_FAILED, not NULL.
+    if ((cmf->src != NULL) && (cmf->src != (uint8_t *)MAP_FAILED))
+    {
+        ret = munmap_binfile(*cmf);
     }
     R_Free(cmf);
     R_ClearExternalPtr(mf);
+    return ret;
+}
+
+// Finalizer: unmaps and frees a mapping collected by the garbage collector.
+static void destroy_mf(SEXP mf)
+{
+    (void) vk_release_mf(mf);
 }
 
 SEXP R_munmap_binfile(SEXP mf)
 {
-    const mmfile_t *cmf = get_mmfile_mf(mf);
     SEXP res;
     PROTECT(res = NEW_INTEGER(1));
-    INTEGER(res)[0] = munmap_binfile(*cmf);
+    INTEGER(res)[0] = vk_release_mf(mf);
     UNPROTECT(1);
     return res;
 }
@@ -276,16 +296,22 @@ SEXP R_munmap_binfile(SEXP mf)
 
 static const rsidvar_cols_t *get_rsidvar_mc(SEXP mc)
 {
-    if (R_ExternalPtrAddr(mc) == NULL)
+    if ((TYPEOF(mc) != EXTPTRSXP) || (R_ExternalPtrAddr(mc) == NULL))
     {
-        return (const rsidvar_cols_t *)R_Calloc(1, rsidvar_cols_t);
+        // An all-zero struct means "no table" to the C code, so a shared static
+        // is returned when the table was never loaded or was already released.
+        static const rsidvar_cols_t empty = {0};
+        return &empty;
     }
     return (const rsidvar_cols_t *)R_ExternalPtrAddr(mc);
 }
 
 static void destroy_rsidvar_mc(SEXP mc)
 {
-    const rsidvar_cols_t *cmc = get_rsidvar_mc(mc);
+    // The external pointer is read directly: the getter would return the shared
+    // static "empty" struct when the pointer is NULL, and R_Free on a static is
+    // undefined.
+    void *cmc = ((TYPEOF(mc) == EXTPTRSXP) ? R_ExternalPtrAddr(mc) : NULL);
     if (cmc == NULL)
     {
         return;
@@ -510,16 +536,22 @@ SEXP R_find_vr_chrompos_range(SEXP mc, SEXP first, SEXP last, SEXP chrom, SEXP p
 
 static const nrvk_cols_t *get_nrvk_mc(SEXP mc)
 {
-    if (R_ExternalPtrAddr(mc) == NULL)
+    if ((TYPEOF(mc) != EXTPTRSXP) || (R_ExternalPtrAddr(mc) == NULL))
     {
-        return (const nrvk_cols_t *)R_Calloc(1, nrvk_cols_t);
+        // An all-zero struct means "no table" to the C code, so a shared static
+        // is returned when the table was never loaded or was already released.
+        static const nrvk_cols_t empty = {0};
+        return &empty;
     }
     return (const nrvk_cols_t *)R_ExternalPtrAddr(mc);
 }
 
 static void destroy_nrvk_mc(SEXP mc)
 {
-    const nrvk_cols_t *cmc = get_nrvk_mc(mc);
+    // The external pointer is read directly: the getter would return the shared
+    // static "empty" struct when the pointer is NULL, and R_Free on a static is
+    // undefined.
+    void *cmc = ((TYPEOF(mc) == EXTPTRSXP) ? R_ExternalPtrAddr(mc) : NULL);
     if (cmc == NULL)
     {
         return;
@@ -672,7 +704,9 @@ SEXP R_mmap_genoref_file(SEXP file)
     const char *names[] = {"MF", "SIZE", ""};
     SEXP res = PROTECT(mkNamed(VECSXP, names));
     SET_VECTOR_ELT(res, 0, emf);
-    SET_VECTOR_ELT(res, 1, ScalarInteger(mf->size));
+    // The file size is returned as a double: a real genome reference is larger
+    // than the 2 GB an R integer can hold.
+    SET_VECTOR_ELT(res, 1, ScalarReal((double)mf->size));
     UNPROTECT(2);
     return res;
 }
@@ -686,7 +720,7 @@ SEXP R_get_genoref_seq(SEXP mf, SEXP chrom, SEXP pos, SEXP ret)
     const mmfile_t *cmf = get_mmfile_mf(mf);
     for(i = 0; i < n; i++)
     {
-        res[i] = get_genoref_seq(*cmf, (uint8_t)(pchrom[i]), ppos[i]);
+        res[i] = get_genoref_seq(cmf, (uint8_t)(pchrom[i]), ppos[i]);
     }
     return ret;
 }
@@ -701,7 +735,7 @@ SEXP R_check_reference(SEXP mf, SEXP chrom, SEXP pos, SEXP ref, SEXP ret)
     for(i = 0; i < n; i++)
     {
         const char *pref = CHAR(STRING_ELT(ref, i));
-        res[i] = check_reference(*cmf, (uint8_t)(pchrom[i]), ppos[i], pref, strlen(pref));
+        res[i] = check_reference(cmf, (uint8_t)(pchrom[i]), ppos[i], pref, strlen(pref));
     }
     return ret;
 }
@@ -739,7 +773,7 @@ SEXP R_normalize_variant(SEXP mf, SEXP chrom, SEXP pos, SEXP ref, SEXP alt, SEXP
         sizeref = strlen(r);
         sizealt = strlen(a);
         tpos = ipos[i];
-        code[i] = normalize_variant(*cmf, (uint8_t)(ichrom[i]), &tpos, r, &sizeref, a, &sizealt);
+        code[i] = normalize_variant(cmf, (uint8_t)(ichrom[i]), &tpos, r, &sizeref, a, &sizealt);
         ppos[i] = tpos;
         SET_STRING_ELT(rref, i, mkChar(r));
         SET_STRING_ELT(ralt, i, mkChar(a));
@@ -777,7 +811,7 @@ SEXP R_normalized_variantkey(SEXP mf, SEXP chrom, SEXP pos, SEXP posindex, SEXP 
         sizealt = strlen(a);
         tpos = ppos[i];
         rc = (int)(code[i]);
-        vk[i] = normalized_variantkey(*cmf, c, strlen(c), &tpos, pposindex, r, &sizeref, a, &sizealt, &rc);
+        vk[i] = normalized_variantkey(cmf, c, strlen(c), &tpos, pposindex, r, &sizeref, a, &sizealt, &rc);
         code[i] = (int32_t)rc;
     }
     const char *names[] = {"VK", "RET", ""};
@@ -958,10 +992,10 @@ SEXP R_extend_regionkey(SEXP rk, SEXP size, SEXP ret)
     uint64_t i, n = LENGTH(ret);
     uint64_t *res = (uint64_t *)REAL(ret);
     uint64_t *prk = (uint64_t *)REAL(rk);
-    uint32_t psize = (uint32_t)asInteger(size);
+    uint32_t *psize = (uint32_t *)INTEGER(size);
     for(i = 0; i < n; i++)
     {
-        res[i] = extend_regionkey(prk[i], psize);
+        res[i] = extend_regionkey(prk[i], psize[i]);
     }
     return ret;
 }

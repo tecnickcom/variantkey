@@ -9,9 +9,12 @@
 
 /**
  * @file esid.h
- * @brief Utility functions to encode strings.
+ * @brief Encoding and decoding of string IDs as 64 bit unsigned integers.
  *
- * Utility functions to encode strings.
+ * Strings of up to ESID_MAXLEN characters are encoded reversibly at 6 bit per
+ * character. Longer strings made of a character section, a separator and a
+ * numerical section are encoded reversibly by encode_string_num_id. Any other
+ * string can be reduced to a non-reversible hash by hash_string_id.
  */
 
 #ifndef VARIANTKEY_ESID_H
@@ -20,43 +23,51 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #define ESID_MAXLEN   10 //!< Maximum number of characters that can be encoded
 #define ESID_SHIFT    32 //!< Number used to translate ASCII character values
 #define ESID_SHIFTPOS 60 //!< Encoded string ID LEN LSB position from LSB [ ----0000 00111111 22222233 33334444 44555555 66666677 77778888 88999999 ]
 #define ESID_CHARBIT  6  //!< Number of bit used to encode a char
-#define ESID_NUMPOS   27 //!< Number of bit used to encode a number in the srting_num encoding
+#define ESID_NUMPOS   27 //!< Number of bit used to encode a number in the string_num encoding
 #define ESID_MAXPAD   7  //!< Max number of padding zero digits
+#define ESID_MAXSTRLEN 23 //!< Size in bytes of the buffer required to decode any encoded string ID, including the terminating null byte
 
 /**
- * Encode a single character into a 64 bit unsigned integer.
- * This function can be used to convert generic string IDs to numeric IDs.
+ * @brief Encodes a single character into a 6 bit value.
  *
- * @param c    The character to encode. It must be an ASCII character from '!' to 'z'.
+ * Lowercase letters are folded to uppercase and any character below '!' is
+ * encoded as '_'.
  *
- * @return Encoded character ID.
+ * @param c    Character to encode. It must be an ASCII character from '!' to 'z'.
+ *
+ * @return The encoded character.
  */
 static inline uint64_t esid_encode_char(int c)
 {
-    if (c < '!')
+    // 256 byte lookup table indexed by (uint8_t)c, so the result does not depend
+    // on the signedness of plain char.
+    static const uint8_t map[256] =
     {
-        return (uint64_t)('_' - ESID_SHIFT);
-    }
-    if (c > '_')
-    {
-        return (uint64_t)(c - ('a' - 'A' + ESID_SHIFT));
-    }
-    return (uint64_t)(c - ESID_SHIFT);
+        63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63,
+        63,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+        32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+        63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63,
+        63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63,
+        63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63,
+        63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63,
+    };
+    return (uint64_t)map[(uint8_t)c];
 }
 
 /**
- * Decode a single character from a 64 bit unsigned integer.
- * This function can be used to convert generic string IDs to numeric IDs.
+ * @brief Decodes the character stored at the given bit position of an encoded string ID.
  *
- * @param esid  Encoded character ID.
- * @param pos   Position of the character in the encoded string ID.
+ * @param esid  Encoded string ID.
+ * @param pos   Bit position of the character.
  *
- * @return Decoded character.
+ * @return The decoded character.
  */
 static inline char esid_decode_char(uint64_t esid, size_t pos)
 {
@@ -64,56 +75,63 @@ static inline char esid_decode_char(uint64_t esid, size_t pos)
 }
 
 /**
- * Encode maximum 10 characters of a string into a 64 bit unsigned integer.
- * This function can be used to convert generic string IDs to numeric IDs.
+ * @brief Encodes up to ESID_MAXLEN characters of a string into a 64 bit unsigned integer.
  *
- * @param str    The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.
+ * Characters beyond the first ESID_MAXLEN from start are ignored.
+ *
+ * @param str    String to encode. Supports ASCII characters from '!' to 'z'.
  * @param size   Length of the string, excluding the terminating null byte.
- * @param start  First character to encode, starting from 0. To encode the last 10 characters, set this value at (size - 10).
+ * @param start  First character to encode, counting from 0. To encode the last ESID_MAXLEN characters, set this to (size - ESID_MAXLEN).
  *
- * @return Encoded string ID.
+ * @return The encoded string ID, or 0 if start is greater than size.
  */
 static inline uint64_t encode_string_id(const char *str, size_t size, size_t start)
 {
+    if (start > size)
+    {
+        return 0;
+    }
     size -= start;
     if (size > ESID_MAXLEN)
     {
         size = ESID_MAXLEN;
     }
     str += start;
-    const char *pos = (str + size - 1);
-    uint64_t h = (size << ESID_SHIFTPOS);
+    const char *pos = (str + size);
+    // NOTE: the cast is required because size_t is 32 bit wide on ILP32
+    // platforms, where shifting it by ESID_SHIFTPOS would be undefined.
+    uint64_t h = ((uint64_t)size << ESID_SHIFTPOS);
     switch (size)
     {
     case 10:
-        h |= esid_encode_char(*pos--);
+        h |= esid_encode_char(*(--pos));
     // fall through
     case 9:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 1);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 1);
     // fall through
     case 8:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 2);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 2);
     // fall through
     case 7:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 3);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 3);
     // fall through
     case 6:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 4);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 4);
     // fall through
     case 5:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 5);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 5);
     // fall through
     case 4:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 6);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 6);
     // fall through
     case 3:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 7);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 7);
     // fall through
     case 2:
-        h |= esid_encode_char(*pos--) << (size_t)(ESID_CHARBIT * 8);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 8);
     // fall through
     case 1:
-        h |= esid_encode_char(*pos) << (size_t)(ESID_CHARBIT * 9);
+        h |= esid_encode_char(*(--pos)) << (size_t)(ESID_CHARBIT * 9);
     default:
         break;
     }
@@ -121,16 +139,18 @@ static inline uint64_t encode_string_id(const char *str, size_t size, size_t sta
 }
 
 /**
- * Encode a string composed by a character section followed by a separator character and a numerical section
- * into a 64 bit unsigned integer. For example: "ABCDE:0001234".
- * Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
- * If the string is 10 character or less, then the encode_string_id() is used.
+ * @brief Encodes a string made of a character section, a separator and a numerical section.
  *
- * @param str    The string to encode. Support ASCII characters from '!' to 'z'.
+ * For example "ABCDE:0001234". Up to 5 characters, up to ESID_MAXPAD leading
+ * zeros and a number below 2^27 are encoded. Strings of ESID_MAXLEN characters
+ * or less are passed to encode_string_id instead. When no separator is found
+ * within size the numerical section is left empty.
+ *
+ * @param str    String to encode. It must be null terminated and supports ASCII characters from '!' to 'z'.
  * @param size   Length of the string, excluding the terminating null byte.
- * @param sep    Separator character between string and number.
+ * @param sep    Separator character between the two sections.
  *
- * @return Encoded string ID.
+ * @return The encoded string ID.
  */
 static inline uint64_t encode_string_num_id(const char *str, size_t size, char sep)
 {
@@ -157,6 +177,10 @@ static inline uint64_t encode_string_num_id(const char *str, size_t size, char s
         }
     }
     h |= ((uint64_t)(nchr + ESID_MAXLEN) << ESID_SHIFTPOS); // 4 bit for string length
+    if (c == 0)
+    {
+        return h; // the string ended before the separator: there is no numerical section
+    }
     while (((c = (unsigned char) *str++) == '0') && (npad < ESID_MAXPAD) && (size--))
     {
         npad++;
@@ -172,15 +196,15 @@ static inline uint64_t encode_string_num_id(const char *str, size_t size, char s
 }
 
 /**
- * Decode the encoded string ID.
- * This function is the reverse of encode_string_id.
- * The string is always returned in uppercase mode.
+ * @brief Decodes the character section of an encoded string ID.
  *
- * @param size   Size of the string to decode, excluding the terminating null byte.
- * @param esid   Encoded string ID code.
- * @param str    String buffer to be returned. Its size should be enough to contain the results (at least 11 bytes).
+ * The string is always returned in uppercase.
  *
- * @return The total number of characters excluding the null-character appended at the end of the string.
+ * @param size   Number of characters to decode, from 0 to ESID_MAXLEN.
+ * @param esid   Encoded string ID.
+ * @param str    String buffer to be returned (it must be sized ESID_MAXLEN + 1 bytes at least).
+ *
+ * @return The number of characters written, excluding the terminating null byte.
  */
 static inline size_t esid_decode_string_id(size_t size, uint64_t esid, char *str)
 {
@@ -223,15 +247,16 @@ static inline size_t esid_decode_string_id(size_t size, uint64_t esid, char *str
 }
 
 /**
- * Decode the encoded string ID with a number.
- * This function is the reverse of encode_string_num_id.
- * The string is always returned in uppercase mode.
+ * @brief Decodes an encoded string ID that carries a numerical section.
  *
- * @param size   Size of the string to decode, excluding the terminating null byte.
- * @param esid   Encoded string ID code.
- * @param str    String buffer to be returned. Its size should be enough to contain the results (at least 11 bytes).
+ * This is the reverse of encode_string_num_id. The string is always returned in
+ * uppercase and the separator is always a colon.
  *
- * @return The total number of characters excluding the null-character appended at the end of the string.
+ * @param size   Number of characters of the character section.
+ * @param esid   Encoded string ID.
+ * @param str    String buffer to be returned (it must be sized ESID_MAXSTRLEN bytes at least).
+ *
+ * @return The number of characters written, excluding the terminating null byte.
  */
 static inline size_t esid_decode_string_num_id(size_t size, uint64_t esid, char *str)
 {
@@ -245,22 +270,23 @@ static inline size_t esid_decode_string_num_id(size_t size, uint64_t esid, char 
     uint64_t num = (esid & 0x7FFFFFF);
     if (num > 0)
     {
-        char *ptr = (str + size);
-        size += sprintf(ptr, "%" PRIu64, num);
+        size += (size_t)snprintf((str + size), (ESID_MAXSTRLEN - size), "%" PRIu64, num);
     }
     str[size] = 0;
     return size;
 }
 
 /**
- * Decode the encoded string ID.
- * This function is the reverse of encode_string_id.
- * The string is always returned in uppercase mode.
+ * @brief Decodes an encoded string ID.
  *
- * @param esid   Encoded string ID code.
- * @param str    String buffer to be returned. Its size should be enough to contain the results (at least 11 bytes).
+ * This is the reverse of encode_string_id and encode_string_num_id: the length
+ * field of the code selects which of the two forms is decoded. The string is
+ * always returned in uppercase.
  *
- * @return The total number of characters excluding the null-character appended at the end of the string.
+ * @param esid   Encoded string ID.
+ * @param str    String buffer to be returned (it must be sized ESID_MAXSTRLEN bytes at least).
+ *
+ * @return The number of characters written, excluding the terminating null byte.
  */
 static inline size_t decode_string_id(uint64_t esid, char *str)
 {
@@ -273,12 +299,10 @@ static inline size_t decode_string_id(uint64_t esid, char *str)
 }
 
 /**
- * Mix two 64 bit hash numbers using a MurmurHash3-like algorithm.
- * This function is used to combine hash values in a way that
- * ensures a good distribution of the resulting hash.
+ * @brief Mixes a 64 bit key into a 64 bit hash with the MurmurHash3 round function.
  *
- * @param k    The key to mix.
- * @param h    The hash value to mix with the key.
+ * @param k    Key to mix.
+ * @param h    Hash to mix the key into.
  *
  * @return The mixed hash value.
  */
@@ -293,24 +317,34 @@ static inline uint64_t muxhash64(uint64_t k, uint64_t h)
 }
 
 /**
- * Hash the input string into a 64 bit unsigned integer.
- * This function can be used to convert long string IDs into non-reversible numeric IDs.
+ * @brief Hashes a string into a non-reversible 64 bit string ID.
  *
- * @param str    The string to encode.
+ * The most significant bit of the result is always set to mark the hash mode.
+ * The 8-byte blocks are read in the byte order of the host, so the result is
+ * endianness dependent.
+ *
+ * @param str    String to hash.
  * @param size   Length of the string, excluding the terminating null byte.
  *
- * @return Hash string ID.
+ * @return The hashed string ID.
  */
 static inline uint64_t hash_string_id(const char *str, size_t size)
 {
-    const uint64_t *pos = (const uint64_t *)str; // NOTE endianness
-    const uint64_t *end = pos + (size / 8);
+    // NOTE: the 8-byte blocks are read in the byte order of the host,
+    // so the returned value is endianness dependent.
+    // The memcpy of a compile-time constant size is subject to neither the
+    // alignment nor the strict-aliasing rules of a pointer cast.
+    const uint8_t *pos = (const uint8_t *)str;
+    const uint8_t *end = (pos + ((size / 8) * 8));
     uint64_t h = 0;
+    uint64_t b = 0;
     while (pos < end)
     {
-        h = muxhash64(*pos++, h);
+        memcpy(&b, pos, sizeof(b));
+        h = muxhash64(b, h);
+        pos += sizeof(b);
     }
-    const uint8_t *tail = (const uint8_t *)pos;
+    const uint8_t *tail = pos;
     uint64_t v = 0;
     switch (size & 7)
     {

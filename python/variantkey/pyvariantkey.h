@@ -485,7 +485,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "\n"\
 "Returns\n"\
 "-------\n"\
-"tuple : int\n"\
+"list : int\n"\
 "    - VariantKey(s)."
 
 #define PYFINDVRRSIDBYVARIANTKEY_DOCSTRING "Search for the specified VariantKey and returns the first occurrence of rsID in the VR file.\n"\
@@ -543,7 +543,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "\n"\
 "Returns\n"\
 "-------\n"\
-"tuple : int\n"\
+"list : int\n"\
 "    - rsID(s)."
 
 #define PYFINDVRCHROMPOSRANGE_DOCSTRING "Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.\n"\
@@ -580,14 +580,13 @@ PyMODINIT_FUNC initvariantkey(void);
 "----------\n"\
 "file : str\n"\
 "    Path to the file to map.\n"\
-"ctbytes : int array\n"\
-"    Array containing the number of bytes for each column type (i.e. 1 for uint8, 2 for uint16, 4 for uint32, 8 for uint64).\n"\
 "\n"\
 "Returns\n"\
 "-------\n"\
 "tuple :\n"\
 "    - Pointer to the memory map object.\n"\
-"    - Pointer to the memory mapped columns object."
+"    - Pointer to the memory mapped columns object.\n"\
+"    - Number of rows."
 
 #define PYFINDREFALTBYVARIANTKEY_DOCSTRING "Retrieve the REF and ALT strings for the specified VariantKey.\n"\
 "\n"\
@@ -706,8 +705,6 @@ PyMODINIT_FUNC initvariantkey(void);
 "----------\n"\
 "file : str\n"\
 "    Path to the file to map.\n"\
-"ctbytes : int array\n"\
-"    Array containing the number of bytes for each column type (i.e. 1 for uint8, 2 for uint16, 4 for uint32, 8 for uint64).\n"\
 "\n"\
 "Returns\n"\
 "-------\n"\
@@ -752,7 +749,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "        0 the reference allele match the reference genome;\n"\
 "        1 the reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T);\n"\
 "       -1 the reference allele don't match the reference genome;\n"\
-"       -2 the reference allele is longer than the genome reference sequence."
+"       -2 the chromosome is invalid or the reference allele is longer than the genome reference sequence."
 
 #define PYFLIPALLELE_DOCSTRING "Flip the allele nucleotides (replaces each letter with its complement).\n"\
 " The resulting string is always in uppercase."\
@@ -966,14 +963,14 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    RegionKey 64 bit code."
 
-#define PYEXTENDREGIONKEY_DOCSTRING "Extend a regionkey region by a fixed amount from the start and end position..\n"\
+#define PYEXTENDREGIONKEY_DOCSTRING "Extend a regionkey region by a fixed amount from the start and end position.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "rk : int\n"\
 "    RegionKey code.\n"\
 "size : int\n"\
-"    Amount to extend the region..\n"\
+"    Amount to extend the region.\n"\
 "\n"\
 "Returns\n"\
 "-------\n"\
@@ -1121,7 +1118,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "Parameters\n"\
 "----------\n"\
 "strid : str or bytes\n"\
-"    The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.\n"\
+"    The string to encode. The characters beyond the first 10 from start are ignored. It supports ASCII characters from '!' to 'z'.\n"\
 "start : int\n"\
 "    First character to encode, starting from 0. To encode the last 10 characters, set this value at (size - 10).\n"\
 "\n"\
@@ -1137,8 +1134,8 @@ PyMODINIT_FUNC initvariantkey(void);
 "Parameters\n"\
 "----------\n"\
 "strid : str or bytes\n"\
-"    The string to encode. It must be maximum 10 characters long and support ASCII characters from '!' to 'z'.\n"\
-"sep : str or byte\n"\
+"    The string to encode. It supports ASCII characters from '!' to 'z'.\n"\
+"sep : bytes\n"\
 "    Separator character between string and number.\n"\
 "\n"\
 "Returns\n"\

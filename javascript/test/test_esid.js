@@ -12,6 +12,7 @@ const {
     encodeStringID,
     encodeStringNumID,
     decodeStringID,
+    hashStringID,
 } = require(process.argv[2]);
 
 const k_test_size = 36;
@@ -136,6 +137,22 @@ function test_encodeStringID() {
     return errors;
 }
 
+// A start position beyond the end of the string encodes to zero.
+function test_encodeStringIDStartBeyondSize() {
+    var errors = 0;
+    var i;
+    var h;
+    const tdata = [["ABC", 5], ["ABC", 4], ["", 1]];
+    for (i = 0; i < tdata.length; i++) {
+        h = encodeStringID(tdata[i][0], tdata[i][1]);
+        if ((h.hi != 0) || (h.lo != 0)) {
+            console.error("(", i, "): Expected 0, got ", h);
+            ++errors;
+        }
+    }
+    return errors;
+}
+
 function test_encodeStringNumID() {
     var errors = 0;
     var i;
@@ -178,12 +195,32 @@ function test_decodeStringNumID() {
     return errors;
 }
 
+// The hsid column of test_data has always been present but was never checked,
+// because hashStringID did not exist in the Javascript port.
+function test_hashStringID() {
+    var errors = 0;
+    var i;
+    for (i = 0; i < k_test_size; i++) {
+        const h = hashStringID(test_data[i][6]);
+        const exp = test_data[i][4];
+        if ((h.hi !== exp.hi) || (h.lo !== exp.lo)) {
+            console.error("(", i, "): Expected hsid ",
+                exp.hi.toString(16) + exp.lo.toString(16), ", got ",
+                h.hi.toString(16) + h.lo.toString(16));
+            ++errors;
+        }
+    }
+    return errors;
+}
+
 var errors = 0;
 
 errors += test_encodeStringID();
+errors += test_encodeStringIDStartBeyondSize();
 errors += test_encodeStringNumID();
 errors += test_decodeStringID();
 errors += test_decodeStringNumID();
+errors += test_hashStringID();
 
 if (errors > 0) {
     console.log("FAILED: " + errors);

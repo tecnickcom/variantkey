@@ -49,7 +49,7 @@ void benchmark_hex_uint64_t()
         hex_uint64_t(size, s);
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op\n", __func__, (tend - tstart)/size);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op\n", __func__, (tend - tstart)/size);
 }
 
 int test_parse_hex_uint64_t()
@@ -77,7 +77,7 @@ void benchmark_parse_hex_uint64_t()
         k = parse_hex_uint64_t("1234567890AbCdEf");
     }
     tend = get_time();
-    (void) fprintf(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, k);
+    (void) fprintf(stdout, " * %s : %" PRIu64 " ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/size, k);
 }
 
 int main()

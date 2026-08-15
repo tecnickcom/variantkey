@@ -600,6 +600,22 @@ test_that("DecodeRefAlt", {
     expect_that(res$ALT, equals(unlist(x[,"ralt"])))
 })
 
+# An allele longer than 10 bases is hashed even when the two alleles together
+# fit the 11 bases of the reversible encoding.
+# Ported from the C test_encode_refalt_long_allele.
+test_that("EncodeRefAltLongAllele", {
+    res <- EncodeRefAlt(c("ACGTACGTACG", ""), c("", "ACGTACGTACG"))
+    expect_that(bitwAnd(res, 1), equals(c(1, 1)))
+})
+
+# Codes whose REF/ALT length fields are outside the reversible range must not
+# decode. Ported from the C test_decode_refalt_invalid_length.
+test_that("DecodeRefAltInvalidLength", {
+    res <- DecodeRefAlt(c(0x78000000, 0x07800000, 0x55000000))
+    expect_that(res$REF, equals(c("", "", "")))
+    expect_that(res$ALT, equals(c("", "", "")))
+})
+
 test_that("EncodeVariantKey", {
     res <- EncodeVariantKey(unlist(x[,"kchrom"]), unlist(x[,"pos"]), unlist(x[,"refalt"]))
     expect_identical(res, as.uint64(as.hex64(unlist(x[,"vk"]))))

@@ -116,6 +116,28 @@ test_that("orderUint64", {
     expect_that(res[10], equals(3))
 })
 
+# xtfrm must return the rank of each element, which is what order() and
+# sort.list() apply, not the ordering permutation itself.
+test_that("xtfrmUint64", {
+    u <- as.uint64(c("30", "10", "20"))
+    expect_that(xtfrm(u), equals(c(3L, 1L, 2L)))
+    expect_that(order(u), equals(c(2L, 3L, 1L)))
+    expect_that(sort.list(u), equals(c(2L, 3L, 1L)))
+})
+
+# A comparison with a zero-length operand returns a zero-length result: there is
+# nothing to recycle.
+test_that("compareUint64ZeroLength", {
+    a <- as.uint64(character(0))
+    b <- as.uint64(c("1", "2", "3"))
+    expect_length((a == b), 0)
+    expect_length((b != a), 0)
+    expect_length((a < b), 0)
+    expect_length((b > a), 0)
+    expect_length((a <= b), 0)
+    expect_length((b >= a), 0)
+})
+
 test_that("uniqueUint64", {
     u <- as.uint64(c("1085102592571150095", "1085102592571150095"))
     res <- unique(u)

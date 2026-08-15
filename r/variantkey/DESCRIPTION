@@ -1,6 +1,6 @@
 Package: variantkey
 Title: Genetic VariantKey
-Version: 5.7.30.0
+Version: 5.8.0.0
 Authors@R: person("Nicola", "Asuni", email = "info@tecnick.com", role = c("aut", "cre"))
 Description: Tools to generate and process a 64 bit Unsigned Integer Keys for Human Genetic Variants.
     The VariantKey is sortable for chromosome and position,
@@ -20,4 +20,4 @@ Suggests:
     roxygen2,
     stringi,
     testthat
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

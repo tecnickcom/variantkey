@@ -101,7 +101,7 @@ The list of make targets can be obtained by typing ```make```
 The base Docker building environment is defined in the following Dockerfile:
 
 ```
-resources/Docker/Dockerfile.dev
+resources/docker/Dockerfile.dev
 ```
 
 To build and test only a specific language version, `cd` into the language directory and use the `make` command.
@@ -665,7 +665,7 @@ Use the "`make python`" command to test the Python wrapper and generate reports.
 
 The python class module is a wrapper for the low-level Python library and it is located in the `python-class` directory.
 All methods of this class are vectorized, so they also accept lists or numpy arrays as input.
-Use the "`make python`" command to test the Python class and generate reports.
+Use the "`make python-class`" command to test the Python class and generate reports.
 
 
 <a name="rlib"></a>

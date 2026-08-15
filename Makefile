@@ -58,6 +58,11 @@ all: c go javascript python python-class r
 c:
 	cd c && make all
 
+## Import the binsearch header, tests and test data from the upstream repository
+.PHONY: binsearch
+binsearch:
+	cd c && make binsearch
+
 ## Build and test the GO version
 .PHONY: go
 go:
@@ -82,6 +87,19 @@ python-class:
 .PHONY: r
 r:
 	cd r && make all
+
+## Run the unit tests of every language version
+.PHONY: test
+test:
+	# NOTE: the python, python-class and r versions need their environment to be
+	# provisioned first ("make venv" / renv::restore), which is what the
+	# per-language "all" targets do. Use "make all" for a cold checkout.
+	cd c && make test
+	cd go && make test
+	cd javascript && make test
+	cd python && make test
+	cd python-class && make test
+	cd r && make test
 
 ## Remove any build artifact
 .PHONY: clean

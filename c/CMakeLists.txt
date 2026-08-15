@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
+# CMake 4.0 removed the compatibility with "cmake_minimum_required" values below
+# 3.5; 3.10 keeps the project buildable with both CMake 3.x and 4.x.
+cmake_minimum_required(VERSION 3.10)
 project(variantkey)
 
 set(CMAKE_VERBOSE_MAKEFILE on)
@@ -23,35 +25,27 @@ set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT
 message(STATUS "PROJECT_VERSION='${PROJECT_VERSION}'")
 message(STATUS "Generator - ${CMAKE_GENERATOR}")
 
-option(BUILD_DOXYGEN "Build Doxygen" OFF)
-option(BUILD_SHARED_LIB "Build a shared library" ON)
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-if(CMAKE_COMPILER_IS_GNUCC)
-    message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-    execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D VERSION='\"${PROJECT_VERSION}\"' -s -pedantic -std=c2x -Wall -Wextra -Wno-strict-prototypes -Wcast-align -Wundef -Wformat -Wformat-security")
+# The language standard is set by CMAKE_C_STANDARD above and must not be
+# repeated here: CMake appends its own "-std=" flag after CMAKE_C_FLAGS.
+#
+# These warning and optimisation flags are understood by both gcc and clang, so
+# they are not gated on the compiler.
+#
+# "-Wno-strict-prototypes" is required for clang, which enables that check under
+# -Wextra while gcc does not. It only fires in the test files imported from the
+# binsearch repository, which must not be edited here.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D VERSION='\"${PROJECT_VERSION}\"' -pedantic -Wall -Wextra -Wno-strict-prototypes -Wcast-align -Wundef -Wformat -Wformat-security -Wshadow")
 
-    if (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wshadow")
-        set(CMAKE_C_FLAGS_ASAN "-fsanitize=address")
-    else (GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8)
-        message(STATUS "GCC 4.8 required to run address sanitizer - please upgrade your installation")
-    endif(GCC_VERSION VERSION_GREATER 4.8 OR GCC_VERSION VERSION_EQUAL 4.8)
+# "-s" strips the symbols, so it belongs to the Release build only.
+set(CMAKE_C_FLAGS_RELEASE   "-O3 -s -DNDEBUG")
+set(CMAKE_C_FLAGS_DEBUG     "-O0 -g3")
+set(CMAKE_C_FLAGS_COVERAGE  "-O0 -g3 --coverage")
 
-    set(CMAKE_C_FLAGS_RELEASE   "-O3")
-    set(CMAKE_C_FLAGS_DEBUG     "-O0 -g3")
-    set(CMAKE_C_FLAGS_COVERAGE  "-O0 -pg -g3 --coverage")
-    set(CMAKE_C_FLAGS_CHECK     "-O2 -Werror")
-    set(CMAKE_C_FLAGS_CHECKFULL "${CMAKE_C_FLAGS_CHECK} -Wcast-qual")
-endif(CMAKE_COMPILER_IS_GNUCC)
-
-if (BUILD_SHARED_LIB)
-    set(BUILD_SHARED_LIBS ON)
-endif (BUILD_SHARED_LIB)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Coverage")
-    set(CMAKE_SHARED_LINKER_FLAGS "--coverage")
-endif(CMAKE_BUILD_TYPE STREQUAL "Coverage")
+# variantkey is header-only (see src/variantkey/CMakeLists.txt), so there is no
+# shared object to link with "--coverage". Coverage instrumentation reaches the
+# headers through each test executable's own CMAKE_C_FLAGS_COVERAGE.
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    # Mac OS X specific code
@@ -92,7 +86,9 @@ add_subdirectory(test)
 add_subdirectory(vk)
 add_subdirectory(test/rsidvar_bench)
 
-# Build Documentation
+# Build Documentation.
+# The doc target is defined when Doxygen is installed. Whether the docs are
+# generated is decided by the VH_BUILD_DOXYGEN switch in the Makefile.
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
     add_subdirectory(doc)

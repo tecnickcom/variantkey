@@ -11,8 +11,9 @@
 #include <R.h>
 #include <Rdefines.h>
 #include <stdlib.h>
-#include "../../../c/src/variantkey/hex.h"
-#include "../../../c/src/variantkey/set.h"
+// Staged into this directory by the "headers" make target, as in variantkey.c.
+#include "hex.h"
+#include "set.h"
 
 #define MAX_UINT64_DEC_CHARS 21
 

@@ -6,6 +6,7 @@
 
 # Use bash as shell (Note: Ubuntu now uses dash which doesn't support PIPESTATUS).
 SHELL=/bin/bash
+.SHELLFLAGS=-o pipefail -c
 
 # CVS path (path to the parent dir containing the project)
 CVSPATH=github.com/tecnickcom
@@ -55,6 +56,49 @@ ifeq ($(shell uname -s),Darwin)
 	SEDINPLACE=-i ''
 endif
 
+# Optional cmake settings.
+# Each option is only passed when the corresponding variable is set: passing an
+# empty value (e.g. -DCMAKE_INSTALL_PREFIX=) clobbers the CMake default instead
+# of leaving it alone. Values are quoted to survive paths containing spaces.
+CMAKEOPTS=\
+$(if $(CMAKE_C_FLAGS),-DCMAKE_C_FLAGS="$(CMAKE_C_FLAGS)") \
+$(if $(CMAKE_TOOLCHAIN_FILE),-DCMAKE_TOOLCHAIN_FILE="$(CMAKE_TOOLCHAIN_FILE)") \
+$(if $(CMAKE_INSTALL_PATH),-DCMAKE_INSTALL_PREFIX="$(CMAKE_INSTALL_PATH)")
+
+# lcov options: branch coverage is required by the coverage gate.
+LCOVOPTS=--rc branch_coverage=1
+
+# clang-tidy check list, shared by the tidy and linter targets.
+TIDYCHECKS=*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-hicpp-use-nullptr,-modernize-use-nullptr,-misc-include-cleaner,-clang-analyzer-alpha.*
+
+# Extra clang-tidy exclusions for the test files imported from the binsearch
+# repository: upstream only runs clang-tidy on the header, so its tests are not
+# written against this check list and they must not be edited here, otherwise
+# the next "make binsearch" would revert the changes.
+VENDORTIDYCHECKS=-bugprone-reserved-identifier,-cert-dcl37-c,-cert-dcl51-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-bugprone-not-null-terminated-result,-android-cloexec-fopen
+
+# Test files imported from the binsearch repository.
+VENDORTESTS=$(wildcard test/test_binsearch*.c)
+
+# Test files owned by this repository.
+OWNTESTS=$(filter-out $(VENDORTESTS),$(wildcard test/*.c))
+
+# Git tag, branch or commit of the imported binsearch code.
+BINSEARCHVERSION=v9.5.0
+
+# Base URL of the raw binsearch files at the selected version.
+BINSEARCHURL=https://raw.githubusercontent.com/tecnickcom/binsearch/$(BINSEARCHVERSION)
+
+# Test files to import from the binsearch repository (the list must be extended
+# when a new test file is added upstream; the build registers them by glob).
+BINSEARCHTESTS=test_binsearch.c test_binsearch_col.c test_binsearch_file.c test_binsearch_mmap.c test_binsearch_range.c
+
+# Test data files to import from the binsearch repository.
+BINSEARCHDATA=test_data.bin test_data.hex test_data_arrow.bin test_data_binsrc.bin test_data_binsrc.hex test_data_col.bin test_data_col.hex test_data_feather.bin
+
+# Temporary directory for the downloaded binsearch files.
+BINSEARCHDIR=target/binsearch
+
 # --- MAKE TARGETS ---
 
 .PHONY: help
@@ -66,65 +110,94 @@ help:
 	@awk '/^## /{desc=substr($$0,4)} /^\.PHONY:/{if(NF>1) {target=$$2; if(desc) printf "  make %-15s: %s\n",target,desc; desc=""}}' Makefile
 	@echo ""
 
-all: clean version format test tidy build rpm deb package_vk doc
+all: clean version format test coverage sanitize linter build rpm deb package_vk doc
 
 ## Test C code compatibility with C++
 .PHONY: testcpp
 testcpp:
-	find ./src/variantkey -type f -name '*.h' -exec gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++23 -x c++ -o /dev/null {} \;
+	# xargs is required to propagate the compiler exit status: with
+	# "find -exec ... \;" find always exits 0.
+	find ./src/variantkey -type f -name '*.h' -print0 | xargs -0 -n 1 gcc -c -pedantic -Werror -Wall -Wextra -Wcast-align -Wundef -Wformat-security -std=c++23 -x c++ -o /dev/null
 
 ## Build and run the unit tests
 .PHONY: test
 test: testcpp
-	@mkdir -p target/test/test
 	@echo -e "\n\n*** BUILD TEST ***\n"
-	rm -rf target/test/*
+	rm -rf target/test
 	mkdir -p target/test/coverage
 	cd target/test && \
-	cmake -DCMAKE_C_FLAGS=$(CMAKE_C_FLAGS) \
-	-DCMAKE_TOOLCHAIN_FILE=$(CMAKE_TOOLCHAIN_FILE) \
+	cmake $(CMAKEOPTS) \
 	-DCMAKE_BUILD_TYPE=Coverage \
-	-DCMAKE_INSTALL_PREFIX=$(CMAKE_INSTALL_PATH) \
-	-DBUILD_SHARED_LIB=$(VH_BUILD_SHARED_LIB) \
-	-DBUILD_DOXYGEN=$(VH_BUILD_DOXYGEN) \
 	../.. | tee cmake.log ; test $${PIPESTATUS[0]} -eq 0 && \
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ && \
+	export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:./ && \
 	make | tee make.log ; test $${PIPESTATUS[0]} -eq 0 && \
 	lcov --zerocounters --directory . && \
-	lcov --capture --initial --directory . --output-file coverage/variantkey.cov && \
+	lcov $(LCOVOPTS) --capture --initial --directory . --output-file coverage/variantkey.cov && \
 	env CTEST_OUTPUT_ON_FAILURE=1 make test | tee test.log ; test $${PIPESTATUS[0]} -eq 0 && \
-	lcov --no-checksum --directory . --capture --output-file coverage/variantkey.info && \
-	lcov --remove coverage/variantkey.info '*/test/*' '*/usr/include/x86_64-linux-gnu/bits*' --output-file coverage/variantkey.info && \
-	genhtml -o coverage -t "VariantKey Test Coverage" coverage/variantkey.info
+	lcov $(LCOVOPTS) --no-checksum --directory . --capture --output-file coverage/variantkey.info && \
+	lcov $(LCOVOPTS) --ignore-errors unused --remove coverage/variantkey.info '*/test/*' '/usr/include/*' --output-file coverage/variantkey.info && \
+	genhtml $(LCOVOPTS) -o coverage -t "VariantKey Test Coverage" coverage/variantkey.info
 ifeq ($(VH_BUILD_DOXYGEN),ON)
 	cd target && \
 	make doc | tee doc.log ; test $${PIPESTATUS[0]} -eq 0
 endif
 
+## Check that the lcov line, function and branch coverage from the test target is 100%
+.PHONY: coverage
+coverage: test
+	@summary=$$(lcov $(LCOVOPTS) --summary target/test/coverage/variantkey.info 2>&1); \
+	for metric in lines functions branches; do \
+		value=$$(echo "$$summary" | grep -oE "$$metric[.]*: [0-9]+\.[0-9]+%" | grep -oE '[0-9]+\.[0-9]+' | head -1); \
+		echo "$$metric coverage: $$value%"; \
+		if [ "$$value" != "100.0" ]; then echo "ERROR: $$metric coverage '$$value%' is below 100%"; exit 1; fi; \
+	done
+
+## Build and run the unit tests under the Address and Undefined Behaviour sanitizers
+.PHONY: sanitize
+sanitize:
+	@mkdir -p target/sanitize
+	for src in test/test_*.c; do \
+		name=$$(basename "$$src" .c); \
+		$(CC) -std=c17 -pedantic -Wall -Wextra -Wcast-align -Wundef -Wformat -Wformat-security -Wshadow \
+		-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
+		-o "target/sanitize/$$name" "$$src" || exit 1; \
+	done
+	cp test/data/*.bin target/sanitize/
+	cd target/sanitize && for src in ../../test/test_*.c; do \
+		name=$$(basename "$$src" .c); \
+		echo "*** $$name ***"; \
+		"./$$name" || exit 1; \
+	done
+
 ## Tidy the code via clang-tidy
 .PHONY: tidy
 tidy:
-	clang-tidy -checks='*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-clang-analyzer-alpha.*' -header-filter=.* -p . src/variantkey/*.h vk/*.c 
-	clang-tidy -checks='*,-concurrency-mt-unsafe,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-clang-analyzer-alpha.*' -header-filter=.* -p . test/*.c test/rsidvar_bench/*.c
+	# The compile flags are passed after "--", so clang-tidy analyses the headers
+	# with the right language and standard. --warnings-as-errors makes the target
+	# fail on any reported warning.
+	clang-tidy src/variantkey/*.h vk/vk.c --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS)' -checks='$(TIDYCHECKS)' -- -x c -std=c17 -I src/variantkey
+	clang-tidy $(OWNTESTS) test/rsidvar_bench/*.c --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS),-concurrency-mt-unsafe' -checks='$(TIDYCHECKS),-concurrency-mt-unsafe' -- -x c -std=c17 -I src/variantkey
+	clang-tidy $(VENDORTESTS) --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS),-concurrency-mt-unsafe,$(VENDORTIDYCHECKS)' -checks='$(TIDYCHECKS),-concurrency-mt-unsafe,$(VENDORTIDYCHECKS)' -- -x c -std=c17 -I src/variantkey
+
+## Check the code via cppcheck and clang-tidy
+.PHONY: linter
+linter: tidy
+	cppcheck --enable=warning,style,performance,portability --check-level=exhaustive --error-exitcode=1 --inline-suppr --std=c17 -I src/variantkey src/variantkey/*.h vk/vk.c
 
 ## Build the library
 .PHONY: build
 build:
-	@mkdir -p target/build
 	@echo -e "\n\n*** BUILD RELEASE ***\n"
-	rm -rf target/build/*
+	rm -rf target/build
+	mkdir -p target/build
 	cd target/build && \
-	cmake -DCMAKE_C_FLAGS=$(CMAKE_C_FLAGS) \
-	-DCMAKE_TOOLCHAIN_FILE=$(CMAKE_TOOLCHAIN_FILE) \
+	cmake $(CMAKEOPTS) \
 	-DCMAKE_BUILD_TYPE=Release \
-	-DCMAKE_INSTALL_PREFIX=$(CMAKE_INSTALL_PATH) \
-	-DBUILD_SHARED_LIB=$(VH_BUILD_SHARED_LIB) \
-	-DBUILD_DOXYGEN=$(VH_BUILD_DOXYGEN) \
 	../.. | tee cmake.log ; test $${PIPESTATUS[0]} -eq 0 && \
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ && \
+	export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:./ && \
 	make | tee make.log ; test $${PIPESTATUS[0]} -eq 0
 	cd target/build && \
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ && \
+	export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:./ && \
 	env CTEST_OUTPUT_ON_FAILURE=1 make test | tee build.log ; test $${PIPESTATUS[0]} -eq 0
 
 ## Package vk tool
@@ -142,6 +215,36 @@ version:
 doc:
 	cd target/build && \
 	make doc | tee doc.log ; test $${PIPESTATUS[0]} -eq 0
+
+## Import the binsearch header, tests and test data from the upstream repository
+.PHONY: binsearch
+binsearch:
+	rm -rf "$(BINSEARCHDIR)"
+	mkdir -p "$(BINSEARCHDIR)"
+	# Every file is downloaded before anything is replaced, so that a failed
+	# download cannot leave a partially updated source tree. The -f option makes
+	# curl fail on a HTTP error instead of saving the error page.
+	curl -sSLf -o "$(BINSEARCHDIR)/binsearch.h" "$(BINSEARCHURL)/c/src/binsearch/binsearch.h"
+	for file in $(BINSEARCHTESTS); do \
+		curl -sSLf -o "$(BINSEARCHDIR)/$$file" "$(BINSEARCHURL)/c/test/$$file" || exit 1; \
+	done
+	for file in $(BINSEARCHDATA); do \
+		curl -sSLf -o "$(BINSEARCHDIR)/$$file" "$(BINSEARCHURL)/c/test/data/$$file" || exit 1; \
+	done
+	# The header is installed with the variantkey ones, so the include guard and
+	# the include path used by the tests are renamed. This is the only change
+	# applied to the imported files: anything else must be fixed upstream.
+	sed -e 's|BINSEARCH_BINSEARCH_H|VARIANTKEY_BINSEARCH_H|g' \
+	"$(BINSEARCHDIR)/binsearch.h" > src/variantkey/binsearch.h
+	rm -f test/test_binsearch*.c
+	for file in $(BINSEARCHTESTS); do \
+		sed -e 's|\.\./src/binsearch/binsearch\.h|../src/variantkey/binsearch.h|' "$(BINSEARCHDIR)/$$file" > "test/$$file" || exit 1; \
+	done
+	for file in $(BINSEARCHDATA); do \
+		cp -f "$(BINSEARCHDIR)/$$file" "test/data/$$file" || exit 1; \
+	done
+	rm -rf "$(BINSEARCHDIR)"
+	@echo -e "\nImported binsearch $(BINSEARCHVERSION) from $(BINSEARCHURL)\n"
 
 ## Format the source code
 .PHONY: format
