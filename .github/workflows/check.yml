@@ -9,8 +9,8 @@ on:
       - 'main'
 
 env:
-  NODE_VERSION: '22'
-  PYTHON_VERSION: '3.13'
+  NODE_VERSION: '24'
+  PYTHON_VERSION: '3.14'
 
 permissions:
   contents: read
@@ -80,7 +80,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: setup go build environment
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'go.mod'
           check-latest: true
@@ -111,7 +111,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: setup python build environment
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
@@ -139,7 +139,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: setup python build environment
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
