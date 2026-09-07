@@ -162,8 +162,8 @@ updateall: updatego updatelint updatemod
 .PHONY: updatego
 updatego:
 	$(eval LAST_GO_TOOLCHAIN=$(shell curl -s https://go.dev/dl/ | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+\.linux-amd64\.tar\.gz' | head -n 1 | grep -oE 'go[0-9]+\.[0-9]+\.[0-9]+'))
-	$(eval LAST_GO_VERSION=$(shell echo ${LAST_GO_TOOLCHAIN} | grep -oE '[0-9]+\.[0-9]+'))
-	sed $(SEDINPLACE) "s|^go [0-9]*\.[0-9]*$$|go ${LAST_GO_VERSION}|g" ../go.mod
+# The `go` directive is the minimum version a consumer needs and is set
+# deliberately: it is not bumped here. Only the toolchain is updated.
 	sed $(SEDINPLACE) "s|^toolchain go[0-9]*\.[0-9]*\.[0-9]*$$|toolchain ${LAST_GO_TOOLCHAIN}|g" ../go.mod
 
 ## Update linter version
