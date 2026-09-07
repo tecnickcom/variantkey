@@ -76,18 +76,25 @@ jobs:
 
   go:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Latest patch release of each supported Go minor version.
+        go: ['1.24.x', '1.27.x']
     steps:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: setup go build environment
         uses: actions/setup-go@v7
         with:
-          go-version-file: 'go.mod'
+          go-version: ${{ matrix.go }}
           check-latest: true
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
         run: cd go && make mod deps linter test GOPATH=$(go env GOPATH)
+      - name: go.mod and go.sum are tidy
+        run: cd go && make modcheck GOPATH=$(go env GOPATH)
 
   javascript:
     runs-on: ubuntu-latest

@@ -34,6 +34,11 @@ TARGETDIR=target
 # Directory where to store binary utility tools
 BINUTIL=$(TARGETDIR)/binutil
 
+# Directory of the separate module declaring the build tools.
+# The tools are kept out of the root go.mod so that consumers of this library
+# do not carry them in their module graph.
+GOTOOLSDIR=$(CURDIR)/resources/tools
+
 # sed argument for in-place substitutions
 SEDINPLACE=-i
 ifeq ($(shell uname -s),Darwin)
@@ -46,17 +51,21 @@ ifeq ($(GOPATH),)
 	GOPATH=$(shell echo "$(CURDIR)" | sed 's|/src/.*||')
 endif
 
-# Add the GO binary dir in the PATH
-export PATH := $(GOPATH)/bin:$(PATH)
+# Add the GO binary dir and the local tool dir in the PATH
+export PATH := $(CURDIR)/$(BINUTIL):$(GOPATH)/bin:$(PATH)
 
 # Common commands
-GO=GOPATH="$(GOPATH)" GOPRIVATE=$(CVSPATH) $(shell which go)
+GO=GOPATH="$(GOPATH)" $(shell which go)
+# Commands for the tools module. It may require a newer Go than this module, so
+# it selects its own toolchain regardless of the GOTOOLCHAIN in the environment.
+GOTOOLSMOD=GOTOOLCHAIN=auto $(GO) -C "$(GOTOOLSDIR)"
 GOVERSION=${shell go version | grep -Eo '(go[0-9]+.[0-9]+)'}
 GOFMT=$(shell which gofmt)
 GOTEST=$(GO) test
 GODOC=GOPATH="$(GOPATH)" $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
 GOLANGCILINTVERSION=v2.13.2
+GOJUNITREPORT=$(BINUTIL)/go-junit-report
 
 # Directory containing the source code
 SRCDIR=./src
@@ -65,7 +74,7 @@ SRCDIR=./src
 ifeq ($(strip $(DEVMODE)),LOCAL)
 	TESTEXTRACMD=&& $(GO) tool cover -func=$(TARGETDIR)/report/coverage.out
 else
-	TESTEXTRACMD=2>&1 | tee >(PATH="$(GOPATH)/bin:$(PATH)" go-junit-report > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
+	TESTEXTRACMD=2>&1 | tee >($(GOJUNITREPORT) > $(TARGETDIR)/test/report.xml); test $${PIPESTATUS[0]} -eq 0
 endif
 
 # --- MAKE TARGETS ---
@@ -128,7 +137,18 @@ linter:
 ## Download mod dependencies
 .PHONY: mod
 mod: gotools
-	$(GO) mod download all
+# Without arguments this downloads the modules required to build and test this
+# module. The "all" pattern additionally walks the module graph and writes
+# go.sum entries for modules no package here reaches.
+	$(GO) mod download
+
+## Check that go.mod and go.sum are tidy
+.PHONY: modcheck
+modcheck:
+# Reports what "go mod tidy" would change and fails if anything would, without
+# writing to go.mod or go.sum.
+	$(GO) mod tidy -diff -compat=$(shell sed -n -E 's/^go ([0-9]+\.[0-9]+).*/\1/p' ../go.mod)
+	$(GOTOOLSMOD) mod tidy -diff
 
 ## Run all tests and static analysis tools
 .PHONY: qa
@@ -151,8 +171,8 @@ test: ensuretarget
 
 ## Get the go tools
 .PHONY: gotools
-gotools:
-	$(GO) install github.com/jstemmer/go-junit-report/v2@latest
+gotools: ensuretarget
+	GOBIN="$(CURDIR)/$(BINUTIL)" $(GOTOOLSMOD) install tool
 
 ## Update everything
 .PHONY: updateall
@@ -177,3 +197,5 @@ updatelint:
 updatemod: mod
 	$(GO) get -t -u ./... && \
 	$(GO) mod tidy -compat=$(shell sed -n -E 's/^go ([0-9]+\.[0-9]+).*/\1/p' ../go.mod)
+	$(GOTOOLSMOD) get -u tool && \
+	$(GOTOOLSMOD) mod tidy
