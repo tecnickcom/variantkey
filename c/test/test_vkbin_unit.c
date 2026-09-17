@@ -190,7 +190,7 @@ static int tst_snprintf(char *str, size_t size, const char *format, ...)
     }
     va_list args;
     va_start(args, format);
-    const int rv = vsnprintf(str, size, format, args);
+    const int rv = vsnprintf(str, size, format, args); // NOLINT(clang-analyzer-valist.Uninitialized)
     va_end(args);
     return rv;
 }

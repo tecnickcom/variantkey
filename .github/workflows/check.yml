@@ -22,7 +22,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: install dependencies
-        run: sudo apt install -y lcov astyle cppcheck clang-tidy
+        run: sudo apt-get update && sudo apt-get install -y lcov astyle cppcheck clang-tidy
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: test
@@ -42,7 +42,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: install dependencies
-        run: sudo apt install -y clang
+        run: sudo apt-get update && sudo apt-get install -y clang
       - name: set RELEASE number
         run: echo ${GITHUB_RUN_NUMBER} > RELEASE
       - name: build and run the tests with clang
@@ -57,7 +57,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v7
       - name: install dependencies
-        run: sudo apt install -y gcc-multilib
+        run: sudo apt-get update && sudo apt-get install -y gcc-multilib
       - name: compile the headers and the tests as 32 bit
         # Compile-only check: a full 32-bit test run would need the whole
         # toolchain multilib. It catches shift width and -Wformat mismatches on
