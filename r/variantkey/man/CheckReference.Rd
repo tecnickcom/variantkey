@@ -2,12 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{CheckReference}
 \alias{CheckReference}
-\title{Check if the reference allele matches the reference genome data.
-Return Positive number in case of success, negative in case of error:
-  *  0 the reference allele match the reference genome;
-  *  1 the reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T);
-  * -1 the reference allele don't match the reference genome;
-  * -2 the reference allele is longer than the genome reference sequence.}
+\title{Checks a reference allele against the genome reference data.}
 \usage{
 CheckReference(chrom, pos, ref, mf = vk.env$genoref_$MF)
 }
@@ -18,13 +13,15 @@ CheckReference(chrom, pos, ref, mf = vk.env$genoref_$MF)
 
 \item{ref}{Reference allele. String containing a sequence of nucleotide letters.}
 
-\item{mf}{Memory-mapped file object as retured by MmapGenorefFile.}
+\item{mf}{Memory-mapped file object as returned by MmapGenorefFile.}
+}
+\value{
+Positive number in case of success, negative in case of error:
+  *  0 the reference allele matches the reference genome;
+  *  1 the reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T);
+  * -1 the reference allele does not match the reference genome;
+  * -2 the reference allele is longer than the genome reference sequence.
 }
 \description{
-Check if the reference allele matches the reference genome data.
-Return Positive number in case of success, negative in case of error:
-  *  0 the reference allele match the reference genome;
-  *  1 the reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T);
-  * -1 the reference allele don't match the reference genome;
-  * -2 the reference allele is longer than the genome reference sequence.
+Checks a reference allele against the genome reference data.
 }

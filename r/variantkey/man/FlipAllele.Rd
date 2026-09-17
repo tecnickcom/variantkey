@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{FlipAllele}
 \alias{FlipAllele}
-\title{Flip the allele nucleotides (replaces each letter with its complement).
+\title{Replaces each nucleotide of an allele with its complement.
 The resulting string is always in uppercase.
 Support extended nucleotide letters.}
 \usage{
@@ -14,7 +14,7 @@ FlipAllele(allele)
 \item{size}{Length of the allele string.}
 }
 \description{
-Flip the allele nucleotides (replaces each letter with its complement).
+Replaces each nucleotide of an allele with its complement.
 The resulting string is always in uppercase.
 Support extended nucleotide letters.
 }

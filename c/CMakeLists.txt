@@ -82,8 +82,11 @@ set(CPACK_DEB_COMPONENT_INSTALL TRUE)
 
 # Add subdirectories
 add_subdirectory(src/variantkey)
-add_subdirectory(test)
+# vk and vkbin are declared before the tests because test_vkbin refers to the
+# vkbin target.
 add_subdirectory(vk)
+add_subdirectory(vkbin)
+add_subdirectory(test)
 add_subdirectory(test/rsidvar_bench)
 
 # Build Documentation.

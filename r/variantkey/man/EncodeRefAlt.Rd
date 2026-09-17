@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeRefAlt}
 \alias{EncodeRefAlt}
-\title{Returns reference+alternate encoding.}
+\title{Encodes a REF+ALT pair into a 31 bit code.}
 \usage{
 EncodeRefAlt(ref, alt)
 }
@@ -12,5 +12,5 @@ EncodeRefAlt(ref, alt)
 \item{alt}{Alternate non-reference allele string.}
 }
 \description{
-Returns reference+alternate encoding.
+Encodes a REF+ALT pair into a 31 bit code.
 }

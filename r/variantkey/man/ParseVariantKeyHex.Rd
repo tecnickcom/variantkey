@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ParseVariantKeyHex}
 \alias{ParseVariantKeyHex}
-\title{Parses a VariantKey hexadecimal string and returns the code.}
+\title{Parses a 16 character hexadecimal string into a VariantKey.}
 \usage{
 ParseVariantKeyHex(hex)
 }
@@ -10,5 +10,5 @@ ParseVariantKeyHex(hex)
 \item{hex}{VariantKey hexadecimal string (it must contain 16 hexadecimal characters).}
 }
 \description{
-Parses a VariantKey hexadecimal string and returns the code.
+Parses a 16 character hexadecimal string into a VariantKey.
 }

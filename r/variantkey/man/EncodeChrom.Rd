@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeChrom}
 \alias{EncodeChrom}
-\title{Returns chromosome encoding.}
+\title{Encodes a chromosome identifier into a numerical code.}
 \usage{
 EncodeChrom(chrom)
 }
@@ -10,5 +10,5 @@ EncodeChrom(chrom)
 \item{chrom}{Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.}
 }
 \description{
-Returns chromosome encoding.
+Encodes a chromosome identifier into a numerical code.
 }

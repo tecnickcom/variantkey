@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{MunmapBinfile}
 \alias{MunmapBinfile}
-\title{Unmap and close the memory-mapped file.
+\title{Unmaps and closes a memory mapped file.
 On success, munmap() returns 0, on failure -1.}
 \usage{
 MunmapBinfile(mf)
@@ -11,6 +11,6 @@ MunmapBinfile(mf)
 \item{mf}{Descriptor of memory-mapped file.}
 }
 \description{
-Unmap and close the memory-mapped file.
+Unmaps and closes a memory mapped file.
 On success, munmap() returns 0, on failure -1.
 }

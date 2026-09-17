@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{RegionKey}
 \alias{RegionKey}
-\title{Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.}
+\title{Returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND.}
 \usage{
 RegionKey(chrom, startpos, endpos, strand)
 }
@@ -16,5 +16,5 @@ RegionKey(chrom, startpos, endpos, strand)
 \item{strand}{Strand direction (-1, 0, +1)}
 }
 \description{
-Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.
+Returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND.
 }

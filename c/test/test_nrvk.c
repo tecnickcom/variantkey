@@ -362,7 +362,7 @@ int main()
     benchmark_find_ref_alt_by_variantkey(nvc);
     benchmark_reverse_variantkey(nvc);
 
-    err = munmap_binfile(nrvk);
+    err = munmap_binfile(&nrvk);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the nrvk file\n", err);

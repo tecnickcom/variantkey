@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtendRegionKey}
 \alias{ExtendRegionKey}
-\title{Extend a regionkey region by a fixed amount from the start and end position.}
+\title{Extends a RegionKey region by a fixed amount at both ends.}
 \usage{
 ExtendRegionKey(rk, size)
 }
@@ -12,5 +12,5 @@ ExtendRegionKey(rk, size)
 \item{size}{Amount to extend the region.}
 }
 \description{
-Extend a regionkey region by a fixed amount from the start and end position.
+Extends a RegionKey region by a fixed amount at both ends.
 }

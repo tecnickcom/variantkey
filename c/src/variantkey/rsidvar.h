@@ -70,6 +70,24 @@ static inline void mmap_rsvk_file(const char *file, mmfile_t *mf, rsidvar_cols_t
 }
 
 /**
+ * @brief Limits the end of a search range to the rows the file holds.
+ *
+ * The search functions read every row of the range without checking it, so a
+ * "last" that is above the number of rows reads past the end of the mapping.
+ * The bindings take that argument from their caller, so it is clamped here
+ * rather than in each of them.
+ *
+ * @param crv   Structure containing the pointers to the memory mapped file columns.
+ * @param last  Row where to end the search, up to but not including.
+ *
+ * @return The end of the range, at most the number of rows.
+ */
+static inline uint64_t rsidvar_clamp_last(rsidvar_cols_t crv, uint64_t last)
+{
+    return ((last > crv.nrows) ? crv.nrows : last);
+}
+
+/**
  * @brief Returns the first VariantKey associated with an rsID.
  *
  * @param crv       Structure containing the pointers to the RSVK memory mapped file columns.
@@ -81,8 +99,9 @@ static inline void mmap_rsvk_file(const char *file, mmfile_t *mf, rsidvar_cols_t
  */
 static inline uint64_t find_rv_variantkey_by_rsid(rsidvar_cols_t crv, uint64_t *first, uint64_t last, uint32_t rsid)
 {
+    last = rsidvar_clamp_last(crv, last);
     uint64_t max = last;
-    uint64_t found = col_find_first_uint32_t(crv.rs, first, &max, rsid);
+    uint64_t found = col_find_first_le_uint32_t(crv.rs, first, &max, rsid);
     if (found >= last)
     {
         return 0;
@@ -106,7 +125,8 @@ static inline uint64_t find_rv_variantkey_by_rsid(rsidvar_cols_t crv, uint64_t *
  */
 static inline uint64_t get_next_rv_variantkey_by_rsid(rsidvar_cols_t crv, uint64_t *pos, uint64_t last, uint32_t rsid)
 {
-    if (col_has_next_uint32_t(crv.rs, pos, last, rsid))
+    last = rsidvar_clamp_last(crv, last);
+    if (col_has_next_le_uint32_t(crv.rs, pos, last, rsid))
     {
         return *(crv.vk + *pos);
     }
@@ -125,8 +145,9 @@ static inline uint64_t get_next_rv_variantkey_by_rsid(rsidvar_cols_t crv, uint64
  */
 static inline uint32_t find_vr_rsid_by_variantkey(rsidvar_cols_t cvr, uint64_t *first, uint64_t last, uint64_t vk)
 {
+    last = rsidvar_clamp_last(cvr, last);
     uint64_t max = last;
-    uint64_t found = col_find_first_uint64_t(cvr.vk, first, &max, vk);
+    uint64_t found = col_find_first_le_uint64_t(cvr.vk, first, &max, vk);
     if (found >= last)
     {
         return 0; // not found
@@ -150,42 +171,12 @@ static inline uint32_t find_vr_rsid_by_variantkey(rsidvar_cols_t cvr, uint64_t *
  */
 static inline uint32_t get_next_vr_rsid_by_variantkey(rsidvar_cols_t cvr, uint64_t *pos, uint64_t last, uint64_t vk)
 {
-    if (col_has_next_uint64_t(cvr.vk, pos, last, vk))
+    last = rsidvar_clamp_last(cvr, last);
+    if (col_has_next_le_uint64_t(cvr.vk, pos, last, vk))
     {
         return *(cvr.rs + *pos);
     }
     return 0;
-}
-
-/**
- * @brief Returns the row past the last one whose CHROM+POS is not above the given key.
- *
- * Plain upper-bound binary search on the CHROM+POS prefix of the VariantKey
- * column. Unlike col_find_last_sub_uint64_t, which returns the initial value of
- * "last" when the searched value is absent, this always returns a real bound.
- *
- * @param vk     Pointer to the VariantKey column.
- * @param first  First row of the search range.
- * @param last   Row past the last one of the search range.
- * @param key    CHROM+POS key to bound.
- *
- * @return The row past the last one whose CHROM+POS is less than or equal to key.
- */
-static inline uint64_t rsidvar_upper_bound_chrompos(const uint64_t *vk, uint64_t first, uint64_t last, uint64_t key)
-{
-    while (first < last)
-    {
-        uint64_t middle = (first + ((last - first) >> 1));
-        if ((vk[middle] >> 31) <= key)
-        {
-            first = (middle + 1);
-        }
-        else
-        {
-            last = middle;
-        }
-    }
-    return first;
 }
 
 /**
@@ -204,17 +195,22 @@ static inline uint64_t rsidvar_upper_bound_chrompos(const uint64_t *vk, uint64_t
  */
 static inline uint32_t find_vr_chrompos_range(rsidvar_cols_t cvr, uint64_t *first, uint64_t *last, uint8_t chrom, uint32_t pos_min, uint32_t pos_max)
 {
-    uint64_t ckey = ((uint64_t)chrom << 59);
+    const uint64_t ckey = ((uint64_t)chrom << 59);
+    *last = rsidvar_clamp_last(cvr, *last);
     uint64_t min = *first;
     uint64_t max = *last;
-    *first = col_find_first_sub_uint64_t(cvr.vk, 0, 32, &min, &max, (ckey | ((uint64_t)pos_min << 31)) >> 31);
+    *first = col_find_first_sub_le_uint64_t(cvr.vk, 0, 32, &min, &max, (ckey | ((uint64_t)pos_min << 31)) >> 31);
     if (*first >= *last)
     {
         return 0;
     }
-    // rsidvar_upper_bound_chrompos returns the position of the first row above
-    // pos_max, so the range ends at pos_max even when no row matches it exactly.
-    *last = rsidvar_upper_bound_chrompos(cvr.vk, *first, *last, ((ckey | ((uint64_t)pos_max << 31)) >> 31));
+    // A find_last converges to the row past the last one that is not above the
+    // key and writes it to "last" whether or not the key itself is present, so
+    // the range ends at pos_max even when no row matches it exactly.
+    min = *first;
+    max = *last;
+    (void)col_find_last_sub_le_uint64_t(cvr.vk, 0, 32, &min, &max, ((ckey | ((uint64_t)pos_max << 31)) >> 31));
+    *last = max;
     if (*first >= *last)
     {
         return 0; // the range is empty

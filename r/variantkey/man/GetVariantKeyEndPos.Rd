@@ -2,17 +2,18 @@
 % Please edit documentation in R/variantkey.R
 \name{GetVariantKeyEndPos}
 \alias{GetVariantKeyEndPos}
-\title{Get the VariantKey end position (POS + REF length).
-Return variant end position.}
+\title{Returns the end position of a VariantKey (POS + REF length).}
 \usage{
 GetVariantKeyEndPos(vk, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{vk}{VariantKey.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
+}
+\value{
+Variant end position.
 }
 \description{
-Get the VariantKey end position (POS + REF length).
-Return variant end position.
+Returns the end position of a VariantKey (POS + REF length).
 }

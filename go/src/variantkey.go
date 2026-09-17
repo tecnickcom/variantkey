@@ -1,5 +1,5 @@
-// Package variantkey is a Go wrapper for the variantkey C software library.
-// 64 bit Encoding for Human Genetic Variants.
+// Package variantkey is a Go wrapper for the variantkey C library: a reversible
+// 64 bit encoding of human genetic variants, genomic regions and string IDs.
 package variantkey
 
 /*
@@ -23,7 +23,7 @@ import (
 )
 
 // maxcols is the maximum number of indexable columns as in binsearch.h file.
-const maxcols = 256
+const maxcols = 255
 
 // alleleMaxSize is the allele buffer size, as ALLELE_MAXSIZE in nrvk.h.
 const alleleMaxSize = 256
@@ -51,7 +51,7 @@ type TVariantKey struct {
 	RefAlt uint32 `json:"refalt"`
 }
 
-// TVariantKeyRev contains a genetic variant components.
+// TVariantKeyRev contains the components of a genetic variant.
 type TVariantKeyRev struct {
 	Chrom   string `json:"chrom"`
 	Pos     uint32 `json:"pos"`
@@ -67,7 +67,7 @@ type TVKRange struct {
 	Max uint64 `json:"max"`
 }
 
-// castCVariantKey convert C variantkey_t to GO TVariantKey.
+// castCVariantKey converts a C variantkey_t to a Go TVariantKey.
 func castCVariantKey(vk C.variantkey_t) TVariantKey {
 	return TVariantKey{
 		Chrom:  uint8(vk.chrom),
@@ -76,7 +76,7 @@ func castCVariantKey(vk C.variantkey_t) TVariantKey {
 	}
 }
 
-// castCVariantKeyRev convert C variantkey_t to GO TVariantKey.
+// castCVariantKeyRev converts a C variantkey_rev_t to a Go TVariantKeyRev.
 func castCVariantKeyRev(vk C.variantkey_rev_t) TVariantKeyRev {
 	return TVariantKeyRev{
 		Chrom:   C.GoString((*C.char)(unsafe.Pointer(&vk.chrom[0]))),
@@ -96,8 +96,8 @@ func castCVKRrange(vr C.vkrange_t) TVKRange {
 	}
 }
 
-// StringToNTBytes safely convert a string to byte array with an extra null terminator.
-// This is to ensure a correct CGO conversion to char*.
+// StringToNTBytes converts a string to a byte slice with an extra null
+// terminator, as required by the CGO conversion to char*.
 func StringToNTBytes(s string) []byte {
 	b := make([]byte, len(s)+1)
 
@@ -106,7 +106,7 @@ func StringToNTBytes(s string) []byte {
 	return b
 }
 
-// StringToNTBytesN convert a string to byte array allocating "size" bytes.
+// StringToNTBytesN converts a string to a byte slice of "size" bytes.
 func StringToNTBytesN(s string, size uint32) []byte {
 	b := make([]byte, size)
 
@@ -115,7 +115,7 @@ func StringToNTBytesN(s string, size uint32) []byte {
 	return b
 }
 
-// EncodeChrom returns chromosome encoding.
+// EncodeChrom encodes a chromosome identifier into a numerical code.
 func EncodeChrom(chrom string) uint8 {
 	bchrom := StringToNTBytes(chrom)
 	sizechrom := len(chrom)
@@ -124,7 +124,7 @@ func EncodeChrom(chrom string) uint8 {
 	return uint8(C.encode_chrom((*C.char)(pchrom), C.size_t(sizechrom)))
 }
 
-// DecodeChrom decode chrom to string.
+// DecodeChrom decodes a chromosome numerical code into its string representation.
 func DecodeChrom(c uint8) string {
 	var buf [chromMaxSize]byte
 
@@ -133,7 +133,7 @@ func DecodeChrom(c uint8) string {
 	return string(buf[:ln])
 }
 
-// EncodeRefAlt returns reference+alternate code.
+// EncodeRefAlt encodes a REF+ALT pair into a 31 bit code.
 func EncodeRefAlt(ref string, alt string) uint32 {
 	bref := StringToNTBytes(ref)
 	balt := StringToNTBytes(alt)
@@ -145,7 +145,7 @@ func EncodeRefAlt(ref string, alt string) uint32 {
 	return uint32(C.encode_refalt((*C.char)(pref), C.size_t(sizeref), (*C.char)(palt), C.size_t(sizealt)))
 }
 
-// DecodeRefAlt decode Ref+Alt code if reversible.
+// DecodeRefAlt decodes a 32 bit REF+ALT code if it was produced by the reversible encoding.
 func DecodeRefAlt(c uint32) (string, string, uint8, uint8, uint8) {
 	var (
 		bref, balt         [refaltMaxSize]byte
@@ -159,27 +159,27 @@ func DecodeRefAlt(c uint32) (string, string, uint8, uint8, uint8) {
 	return string(bref[:csizeref]), string(balt[:csizealt]), uint8(csizeref), uint8(csizealt), uint8(ln)
 }
 
-// EncodeVariantKey returns a Genetic Variant Key based on pre-encoded CHROM, POS (0-base), REF+ALT.
+// EncodeVariantKey assembles a VariantKey from the pre-encoded CHROM, POS and REF+ALT.
 func EncodeVariantKey(chrom uint8, pos, refalt uint32) uint64 {
 	return uint64(C.encode_variantkey(C.uint8_t(chrom), C.uint32_t(pos), C.uint32_t(refalt)))
 }
 
-// ExtractVariantKeyChrom extracts the CHROM code from VariantKey.
+// ExtractVariantKeyChrom extracts the CHROM code from a VariantKey.
 func ExtractVariantKeyChrom(v uint64) uint8 {
 	return uint8(C.extract_variantkey_chrom(C.uint64_t(v)))
 }
 
-// ExtractVariantKeyPos extracts the POS code from VariantKey.
+// ExtractVariantKeyPos extracts the POS value from a VariantKey.
 func ExtractVariantKeyPos(v uint64) uint32 {
 	return uint32(C.extract_variantkey_pos(C.uint64_t(v)))
 }
 
-// ExtractVariantKeyRefAlt extracts the REF+ALT code from VariantKey.
+// ExtractVariantKeyRefAlt extracts the REF+ALT code from a VariantKey.
 func ExtractVariantKeyRefAlt(v uint64) uint32 {
 	return uint32(C.extract_variantkey_refalt(C.uint64_t(v)))
 }
 
-// DecodeVariantKey parses a variant key string and returns the components as TVariantKey structure.
+// DecodeVariantKey splits a VariantKey into its CHROM, POS and REF+ALT components.
 func DecodeVariantKey(v uint64) TVariantKey {
 	var vk C.variantkey_t
 
@@ -188,7 +188,7 @@ func DecodeVariantKey(v uint64) TVariantKey {
 	return castCVariantKey(vk)
 }
 
-// VariantKey returns a Genetic Variant Key based on CHROM, POS (0-base), REF, ALT.
+// VariantKey returns a VariantKey for the given CHROM, POS (0-based), REF and ALT.
 // The variant should be already normalized (see NormalizeVariant or use NormalizedVariantkey).
 func VariantKey(chrom string, pos uint32, ref, alt string) uint64 {
 	bchrom := StringToNTBytes(chrom)
@@ -203,7 +203,7 @@ func VariantKey(chrom string, pos uint32, ref, alt string) uint64 {
 	return uint64(C.variantkey((*C.char)(pchrom), C.size_t(len(chrom)), C.uint32_t(pos), (*C.char)(pref), C.size_t(sizeref), (*C.char)(palt), C.size_t(sizealt)))
 }
 
-// Range Returns minimum and maximum variant keys for range searches.
+// Range returns the minimum and maximum VariantKey of a CHROM and POS range.
 func Range(chrom uint8, posMin, posMax uint32) TVKRange {
 	var r C.vkrange_t
 
@@ -222,7 +222,7 @@ func CompareVariantKeyChromPos(va, vb uint64) int {
 	return int(C.compare_variantkey_chrom_pos(C.uint64_t(va), C.uint64_t(vb)))
 }
 
-// Hex provides a 16 digits hexadecimal string representation of a 64bit unsigned number.
+// Hex returns the 16 character hexadecimal representation of a 64 bit unsigned number.
 func Hex(v uint64) string {
 	var buf [hexMaxSize]byte
 
@@ -231,7 +231,7 @@ func Hex(v uint64) string {
 	return string(buf[:ln])
 }
 
-// ParseHex parses a 16 digit HEX string and returns the 64 bit unsigned number.
+// ParseHex parses a 16 character hexadecimal string into a 64 bit unsigned number.
 func ParseHex(s string) uint64 {
 	b := StringToNTBytes(s)
 	p := unsafe.Pointer(&b[0]) // #nosec
@@ -239,7 +239,8 @@ func ParseHex(s string) uint64 {
 	return uint64(C.parse_variantkey_hex((*C.char)(p)))
 }
 
-// ReverseVariantKey parses a variant key string and returns the components.
+// ReverseVariantKey returns the CHROM, POS, REF and ALT components of a VariantKey.
+// REF and ALT are empty for a non-reversible key: see NRVKCols.ReverseVariantKey.
 func ReverseVariantKey(v uint64) (string, uint32, string, string, uint8, uint8) {
 	vk := DecodeVariantKey(v)
 	chrom := DecodeChrom(vk.Chrom)
@@ -279,7 +280,7 @@ type TMMFile struct {
 	cmf *C.mmfile_t
 }
 
-// castCTMMFileToGo convert C.mmfile_t to GO TMMFile.
+// castCTMMFileToGo converts a C mmfile_t to a Go TMMFile.
 func castCTMMFileToGo(mf C.mmfile_t) TMMFile {
 	ncols := uint8(mf.ncols)
 	ctbytes := make([]uint8, ncols, maxcols)
@@ -309,7 +310,7 @@ func castCTMMFileToGo(mf C.mmfile_t) TMMFile {
 	}
 }
 
-// castGoTMMFileToC convert GO TMMFile to C.mmfile_t.
+// castGoTMMFileToC converts a Go TMMFile to a C mmfile_t.
 func castGoTMMFileToC(mf TMMFile) C.mmfile_t {
 	var cmf C.mmfile_t
 
@@ -340,9 +341,9 @@ func cmmfile(mf TMMFile) *C.mmfile_t {
 	return &cmf
 }
 
-// Close Unmap and close the memory-mapped file.
+// Close unmaps and closes the memory mapped file.
 func (mf TMMFile) Close() error {
-	e := int(C.munmap_binfile(*cmmfile(mf)))
+	e := int(C.munmap_binfile(cmmfile(mf)))
 	if e != 0 {
 		return fmt.Errorf("got %d error while unmapping the file", e)
 	}
@@ -359,7 +360,7 @@ type RSIDVARCols struct {
 	NRows uint64         // Number of rows.
 }
 
-// castCRSIDVARColsToGo convert C.rsidvar_cols_t to GO RSIDVARCols.
+// castCRSIDVARColsToGo converts a C rsidvar_cols_t to a Go RSIDVARCols.
 func castCRSIDVARColsToGo(crv C.rsidvar_cols_t) RSIDVARCols {
 	return RSIDVARCols{
 		Vk:    unsafe.Pointer(crv.vk), // #nosec
@@ -368,7 +369,7 @@ func castCRSIDVARColsToGo(crv C.rsidvar_cols_t) RSIDVARCols {
 	}
 }
 
-// castGoRSIDVARColsToC convert GO RSIDVARCols to C.rsidvar_cols_t.
+// castGoRSIDVARColsToC converts a Go RSIDVARCols to a C rsidvar_cols_t.
 func castGoRSIDVARColsToC(rc RSIDVARCols) C.rsidvar_cols_t {
 	var rvc C.rsidvar_cols_t
 
@@ -379,7 +380,7 @@ func castGoRSIDVARColsToC(rc RSIDVARCols) C.rsidvar_cols_t {
 	return rvc
 }
 
-// MmapVKRSFile memory map the VKRS binary file.
+// MmapVKRSFile memory maps the VKRS binary file.
 func MmapVKRSFile(file string, ctbytes []uint8) (TMMFile, RSIDVARCols, error) {
 	bfile := StringToNTBytes(file)
 	flen := len(bfile)
@@ -409,7 +410,7 @@ func MmapVKRSFile(file string, ctbytes []uint8) (TMMFile, RSIDVARCols, error) {
 	return castCTMMFileToGo(mf), castCRSIDVARColsToGo(rc), nil
 }
 
-// MmapRSVKFile memory map the RSVK binary file.
+// MmapRSVKFile memory maps the RSVK binary file.
 func MmapRSVKFile(file string, ctbytes []uint8) (TMMFile, RSIDVARCols, error) {
 	bfile := StringToNTBytes(file)
 	flen := len(bfile)
@@ -439,7 +440,7 @@ func MmapRSVKFile(file string, ctbytes []uint8) (TMMFile, RSIDVARCols, error) {
 	return castCTMMFileToGo(mf), castCRSIDVARColsToGo(rc), nil
 }
 
-// FindRVVariantKeyByRsid search for the specified RSID and returns the first occurrence of VariantKey in the RV file.
+// FindRVVariantKeyByRsid returns the first VariantKey associated with an rsID, and its position.
 func (crv RSIDVARCols) FindRVVariantKeyByRsid(first, last uint64, rsid uint32) (uint64, uint64) {
 	cfirst := C.uint64_t(first)
 	vk := uint64(C.find_rv_variantkey_by_rsid(castGoRSIDVARColsToC(crv), &cfirst, C.uint64_t(last), C.uint32_t(rsid)))
@@ -447,8 +448,8 @@ func (crv RSIDVARCols) FindRVVariantKeyByRsid(first, last uint64, rsid uint32) (
 	return vk, uint64(cfirst)
 }
 
-// GetNextRVVariantKeyByRsid get the next VariantKey for the specified rsID in the RV file.
-// Returns the VariantKey or 0, and the position.
+// GetNextRVVariantKeyByRsid returns the next VariantKey associated with an rsID, or 0,
+// and its position.
 func (crv RSIDVARCols) GetNextRVVariantKeyByRsid(pos, last uint64, rsid uint32) (uint64, uint64) {
 	cpos := C.uint64_t(pos)
 	vk := uint64(C.get_next_rv_variantkey_by_rsid(castGoRSIDVARColsToC(crv), &cpos, C.uint64_t(last), C.uint32_t(rsid)))
@@ -456,8 +457,7 @@ func (crv RSIDVARCols) GetNextRVVariantKeyByRsid(pos, last uint64, rsid uint32) 
 	return vk, uint64(cpos)
 }
 
-// FindAllRVVariantKeyByRsid get all VariantKeys for the specified rsID in the RV file.
-// Returns a list of VariantKeys.
+// FindAllRVVariantKeyByRsid returns all the VariantKeys associated with an rsID.
 func (crv RSIDVARCols) FindAllRVVariantKeyByRsid(first, last uint64, rsid uint32) []uint64 {
 	ccr := castGoRSIDVARColsToC(crv)
 	cfirst := C.uint64_t(first)
@@ -475,7 +475,7 @@ func (crv RSIDVARCols) FindAllRVVariantKeyByRsid(first, last uint64, rsid uint32
 	return vks
 }
 
-// FindVRRsidByVariantKey search for the specified VariantKey and returns the first occurrence of RSID in the VR file.
+// FindVRRsidByVariantKey returns the first rsID associated with a VariantKey, and its position.
 func (crv RSIDVARCols) FindVRRsidByVariantKey(first uint64, last uint64, vk uint64) (uint32, uint64) {
 	cfirst := C.uint64_t(first)
 	rsid := uint32(C.find_vr_rsid_by_variantkey(castGoRSIDVARColsToC(crv), &cfirst, C.uint64_t(last), C.uint64_t(vk)))
@@ -483,8 +483,8 @@ func (crv RSIDVARCols) FindVRRsidByVariantKey(first uint64, last uint64, vk uint
 	return rsid, uint64(cfirst)
 }
 
-// GetNextVRRsidByVariantKey get the next rsID for the specified VariantKey in the VR file.
-// Returns the rsID or 0, and the position.
+// GetNextVRRsidByVariantKey returns the next rsID associated with a VariantKey, or 0,
+// and its position.
 //
 //nolint:revive
 func (cvr RSIDVARCols) GetNextVRRsidByVariantKey(pos, last uint64, vk uint64) (uint32, uint64) {
@@ -494,8 +494,7 @@ func (cvr RSIDVARCols) GetNextVRRsidByVariantKey(pos, last uint64, vk uint64) (u
 	return rsid, uint64(cpos)
 }
 
-// FindAllVRRsidByVariantKey get all rsID for the specified VariantKeys in the VR file.
-// Returns a list of rsIDs
+// FindAllVRRsidByVariantKey returns all the rsIDs associated with a VariantKey.
 //
 //nolint:revive
 func (cvr RSIDVARCols) FindAllVRRsidByVariantKey(first, last uint64, vk uint64) []uint32 {
@@ -515,7 +514,8 @@ func (cvr RSIDVARCols) FindAllVRRsidByVariantKey(first, last uint64, vk uint64) 
 	return rsids
 }
 
-// FindVRChromPosRange search for the specified CHROM-POS range and returns the first occurrence of RSID in the VR file.
+// FindVRChromPosRange returns the first rsID of a CHROM and POS range,
+// and the first and last position of the range.
 func (crv RSIDVARCols) FindVRChromPosRange(first, last uint64, chrom uint8, posMin, posMax uint32) (uint32, uint64, uint64) {
 	cfirst := C.uint64_t(first)
 	clast := C.uint64_t(last)
@@ -534,7 +534,7 @@ type NRVKCols struct {
 	NRows  uint64         // Number of rows.
 }
 
-// castCNRVKColsToGo convert C.nrvk_cols_t to GO NRVKCols.
+// castCNRVKColsToGo converts a C nrvk_cols_t to a Go NRVKCols.
 func castCNRVKColsToGo(nr C.nrvk_cols_t) NRVKCols {
 	return NRVKCols{
 		Vk:     unsafe.Pointer(nr.vk),     // #nosec
@@ -544,7 +544,7 @@ func castCNRVKColsToGo(nr C.nrvk_cols_t) NRVKCols {
 	}
 }
 
-// castGoNRVKColsToC convert GO NRVKCols to C.nrvk_cols_t.
+// castGoNRVKColsToC converts a Go NRVKCols to a C nrvk_cols_t.
 func castGoNRVKColsToC(nr NRVKCols) C.nrvk_cols_t {
 	var cnr C.nrvk_cols_t
 
@@ -556,7 +556,7 @@ func castGoNRVKColsToC(nr NRVKCols) C.nrvk_cols_t {
 	return cnr
 }
 
-// MmapNRVKFile memory map the NRVK binary file.
+// MmapNRVKFile memory maps the NRVK binary file.
 func MmapNRVKFile(file string) (TMMFile, NRVKCols, error) {
 	bfile := StringToNTBytes(file)
 	flen := len(bfile)
@@ -581,7 +581,7 @@ func MmapNRVKFile(file string) (TMMFile, NRVKCols, error) {
 	return castCTMMFileToGo(mf), castCNRVKColsToGo(rc), nil
 }
 
-// FindRefAltByVariantKey retrieve the REF and ALT strings for the specified VariantKey.
+// FindRefAltByVariantKey looks up the REF and ALT strings of a VariantKey.
 func (nr NRVKCols) FindRefAltByVariantKey(vk uint64) (string, string, uint8, uint8, uint32) {
 	var (
 		bref, balt         [alleleMaxSize]byte
@@ -595,7 +595,8 @@ func (nr NRVKCols) FindRefAltByVariantKey(vk uint64) (string, string, uint8, uin
 	return string(bref[:csizeref]), string(balt[:csizealt]), uint8(csizeref), uint8(csizealt), uint32(ln)
 }
 
-// ReverseVariantKey reverse a VariantKey code and returns the normalized components.
+// ReverseVariantKey reverses a VariantKey into its CHROM, POS, REF and ALT components,
+// reading REF and ALT from the lookup table when the key is not reversible.
 func (nr NRVKCols) ReverseVariantKey(vk uint64) (TVariantKeyRev, uint32) {
 	var rev C.variantkey_rev_t
 
@@ -604,27 +605,28 @@ func (nr NRVKCols) ReverseVariantKey(vk uint64) (TVariantKeyRev, uint32) {
 	return castCVariantKeyRev(rev), uint32(ln)
 }
 
-// GetVariantKeyRefLength retrieve the REF length for the specified VariantKey.
+// GetVariantKeyRefLength returns the REF length of a VariantKey.
 func (nr NRVKCols) GetVariantKeyRefLength(vk uint64) uint8 {
 	return uint8(C.get_variantkey_ref_length(castGoNRVKColsToC(nr), C.uint64_t(vk)))
 }
 
-// GetVariantKeyEndPos get the VariantKey end position (POS + REF length).
+// GetVariantKeyEndPos returns the end position of a VariantKey (POS + REF length).
 func (nr NRVKCols) GetVariantKeyEndPos(vk uint64) uint32 {
 	return uint32(C.get_variantkey_endpos(castGoNRVKColsToC(nr), C.uint64_t(vk)))
 }
 
-// GetVariantKeyChromStartPos get the CHROM + START POS encoding from VariantKey.
+// GetVariantKeyChromStartPos returns the CHROM and START POS section of a VariantKey.
 func GetVariantKeyChromStartPos(vk uint64) uint64 {
 	return uint64(C.get_variantkey_chrom_startpos(C.uint64_t(vk)))
 }
 
-// GetVariantKeyChromEndPos get the CHROM + END POS encoding from VariantKey.
+// GetVariantKeyChromEndPos returns the CHROM and END POS of a VariantKey.
 func (nr NRVKCols) GetVariantKeyChromEndPos(vk uint64) uint64 {
 	return uint64(C.get_variantkey_chrom_endpos(castGoNRVKColsToC(nr), C.uint64_t(vk)))
 }
 
-// VknrBinToTSV converts a vrnr.bin file to a simple TSV. For the reverse operation see the resources/tools/nrvk.sh script.
+// VknrBinToTSV writes the content of the NRVK memory mapped file as a TSV file.
+// For the reverse operation see the resources/tools/nrvk.sh script.
 // It returns the number of bytes written, or an error if the file cannot be
 // opened. The C function signals failure by returning 0.
 func (nr NRVKCols) VknrBinToTSV(tsvfile string) (uint64, error) {
@@ -641,7 +643,7 @@ func (nr NRVKCols) VknrBinToTSV(tsvfile string) (uint64, error) {
 
 // --- GENOREF ---
 
-// MmapGenorefFile maps the specified fasta file in memory.
+// MmapGenorefFile memory maps the genoref binary file.
 func MmapGenorefFile(file string) (TMMFile, error) {
 	bfile := StringToNTBytes(file)
 	flen := len(bfile)
@@ -663,7 +665,7 @@ func MmapGenorefFile(file string) (TMMFile, error) {
 	return castCTMMFileToGo(mf), nil
 }
 
-// FlipAllele flips allele nucleotides.
+// FlipAllele replaces each nucleotide of an allele with its complement.
 func FlipAllele(allele string) string {
 	ballele := StringToNTBytes(allele)
 	size := len(allele)
@@ -674,12 +676,12 @@ func FlipAllele(allele string) string {
 	return C.GoString((*C.char)(pallele))
 }
 
-// GetGenorefSeq returns the nucleotide at the specified chromosome and position.
+// GetGenorefSeq returns the genome reference nucleotide at the given chromosome and position.
 func (mf TMMFile) GetGenorefSeq(chrom uint8, pos uint32) byte {
 	return byte(C.get_genoref_seq(cmmfile(mf), C.uint8_t(chrom), C.uint32_t(pos)))
 }
 
-// CheckReference checks if the reference allele matches the reference genome data.
+// CheckReference checks a reference allele against the genome reference data.
 func (mf TMMFile) CheckReference(chrom uint8, pos uint32, ref string) int {
 	bref := StringToNTBytes(ref)
 	pref := unsafe.Pointer(&bref[0]) // #nosec
@@ -687,7 +689,8 @@ func (mf TMMFile) CheckReference(chrom uint8, pos uint32, ref string) int {
 	return int(C.check_reference(cmmfile(mf), C.uint8_t(chrom), C.uint32_t(pos), (*C.char)(pref), C.size_t(len(ref))))
 }
 
-// NormalizeVariant flips alleles if required and apply the normalization algorithm described at: https://genome.sph.umich.edu/wiki/Variant_Normalization
+// NormalizeVariant normalizes a variant against the genome reference, flipping the
+// alleles if required. See https://genome.sph.umich.edu/wiki/Variant_Normalization
 func (mf TMMFile) NormalizeVariant(chrom uint8, pos uint32, ref string, alt string) (int, uint32, string, string, uint8, uint8) {
 	bref := StringToNTBytesN(ref, alleleMaxSize)
 	balt := StringToNTBytesN(alt, alleleMaxSize)
@@ -708,7 +711,7 @@ func (mf TMMFile) NormalizeVariant(chrom uint8, pos uint32, ref string, alt stri
 	return code, npos, nref, nalt, nsizeref, nsizealt
 }
 
-// NormalizedVariantKey returns a normalized Genetic Variant Key based on CHROM, POS, REF, ALT.
+// NormalizedVariantKey normalizes a variant and returns its VariantKey, with the normalization return code.
 func (mf TMMFile) NormalizedVariantKey(chrom string, pos uint32, posindex uint8, ref string, alt string) (uint64, int) {
 	bchrom := StringToNTBytes(chrom)
 	bref := StringToNTBytesN(ref, alleleMaxSize)
@@ -737,7 +740,7 @@ type TRegionKey struct {
 	Strand   uint8  `json:"strand"`
 }
 
-// TRegionKeyRev contains a genomic region components.
+// TRegionKeyRev contains the components of a genomic region.
 type TRegionKeyRev struct {
 	Chrom    string `json:"chrom"`
 	StartPos uint32 `json:"startpos"`
@@ -745,7 +748,7 @@ type TRegionKeyRev struct {
 	Strand   int8   `json:"strand"`
 }
 
-// castCRegionKey convert C regionkey_t to GO TRegionKey.
+// castCRegionKey converts a C regionkey_t to a Go TRegionKey.
 func castCRegionKey(rk C.regionkey_t) TRegionKey {
 	return TRegionKey{
 		Chrom:    uint8(rk.chrom),
@@ -755,7 +758,7 @@ func castCRegionKey(rk C.regionkey_t) TRegionKey {
 	}
 }
 
-// castCRegionKeyRev convert C regionkey_t to GO TRegionKey.
+// castCRegionKeyRev converts a C regionkey_rev_t to a Go TRegionKeyRev.
 func castCRegionKeyRev(rk C.regionkey_rev_t) TRegionKeyRev {
 	return TRegionKeyRev{
 		Chrom:    C.GoString((*C.char)(unsafe.Pointer(&rk.chrom[0]))),
@@ -765,42 +768,42 @@ func castCRegionKeyRev(rk C.regionkey_rev_t) TRegionKeyRev {
 	}
 }
 
-// EncodeRegionStrand encode the strand direction (-1 > 2, 0 > 0, +1 > 1).
+// EncodeRegionStrand encodes a strand direction: -1 to 2, 0 to 0, +1 to 1.
 func EncodeRegionStrand(strand int8) uint8 {
 	return uint8(C.encode_region_strand(C.int8_t(strand)))
 }
 
-// DecodeRegionStrand decode the strand direction code (0 > 0, 1 > +1, 2 > -1).
+// DecodeRegionStrand decodes a strand code: 0 to 0, 1 to +1, 2 to -1.
 func DecodeRegionStrand(strand uint8) int8 {
 	return int8(C.decode_region_strand(C.uint8_t(strand)))
 }
 
-// EncodeRegionKey returns  a 64 bit regionkey.
+// EncodeRegionKey assembles a RegionKey from its pre-encoded components.
 func EncodeRegionKey(chrom uint8, startpos, endpos uint32, strand uint8) uint64 {
 	return uint64(C.encode_regionkey(C.uint8_t(chrom), C.uint32_t(startpos), C.uint32_t(endpos), C.uint8_t(strand)))
 }
 
-// ExtractRegionKeyChrom extracts the CHROM code from RegionKey.
+// ExtractRegionKeyChrom extracts the CHROM code from a RegionKey.
 func ExtractRegionKeyChrom(rk uint64) uint8 {
 	return uint8(C.extract_regionkey_chrom(C.uint64_t(rk)))
 }
 
-// ExtractRegionKeyStartPos extracts the START POS code from RegionKey.
+// ExtractRegionKeyStartPos extracts the START POS value from a RegionKey.
 func ExtractRegionKeyStartPos(rk uint64) uint32 {
 	return uint32(C.extract_regionkey_startpos(C.uint64_t(rk)))
 }
 
-// ExtractRegionKeyEndPos extracts the END POS code from RegionKey.
+// ExtractRegionKeyEndPos extracts the END POS value from a RegionKey.
 func ExtractRegionKeyEndPos(rk uint64) uint32 {
 	return uint32(C.extract_regionkey_endpos(C.uint64_t(rk)))
 }
 
-// ExtractRegionKeyStrand extract the STRAND from RegionKey.
+// ExtractRegionKeyStrand extracts the STRAND code from a RegionKey.
 func ExtractRegionKeyStrand(rk uint64) uint8 {
 	return uint8(C.extract_regionkey_strand(C.uint64_t(rk)))
 }
 
-// DecodeRegionKey parses a regionkey string and returns the components as TRegionKey structure.
+// DecodeRegionKey splits a RegionKey into its encoded components.
 func DecodeRegionKey(rk uint64) TRegionKey {
 	var drk C.regionkey_t
 
@@ -809,7 +812,7 @@ func DecodeRegionKey(rk uint64) TRegionKey {
 	return castCRegionKey(drk)
 }
 
-// ReverseRegionKey parses a regionkey string and returns the components.
+// ReverseRegionKey reverses a RegionKey into its decoded components.
 func ReverseRegionKey(rk uint64) TRegionKeyRev {
 	var rrk C.regionkey_rev_t
 
@@ -818,7 +821,7 @@ func ReverseRegionKey(rk uint64) TRegionKeyRev {
 	return castCRegionKeyRev(rrk)
 }
 
-// RegionKey returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.
+// RegionKey returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND.
 func RegionKey(chrom string, startpos, endpos uint32, strand int8) uint64 {
 	bchrom := StringToNTBytes(chrom)
 	pchrom := unsafe.Pointer(&bchrom[0]) // #nosec
@@ -826,49 +829,50 @@ func RegionKey(chrom string, startpos, endpos uint32, strand int8) uint64 {
 	return uint64(C.regionkey((*C.char)(pchrom), C.size_t(len(chrom)), C.uint32_t(startpos), C.uint32_t(endpos), C.int8_t(strand)))
 }
 
-// ExtendRegionKey extend a regionkey region by a fixed amount from the start and end position.
+// ExtendRegionKey extends a RegionKey region by a fixed amount at both ends.
 func ExtendRegionKey(rk uint64, size uint32) uint64 {
 	return uint64(C.extend_regionkey(C.uint64_t(rk), C.uint32_t(size)))
 }
 
-// GetRegionKeyChromStartPos get the CHROM + START POS encoding from RegionKey.
+// GetRegionKeyChromStartPos returns the CHROM and START POS section of a RegionKey.
 func GetRegionKeyChromStartPos(rk uint64) uint64 {
 	return uint64(C.get_regionkey_chrom_startpos(C.uint64_t(rk)))
 }
 
-// GetRegionKeyChromEndPos get the CHROM + END POS encoding from RegionKey.
+// GetRegionKeyChromEndPos returns the CHROM and END POS of a RegionKey.
 func GetRegionKeyChromEndPos(rk uint64) uint64 {
 	return uint64(C.get_regionkey_chrom_endpos(C.uint64_t(rk)))
 }
 
-// AreOverlappingRegions check if two regions are overlapping.
+// AreOverlappingRegions checks whether two regions overlap.
 func AreOverlappingRegions(chromA uint8, startposA, endposA uint32, chromB uint8, startposB, endposB uint32) bool {
 	return (uint8(C.are_overlapping_regions(C.uint8_t(chromA), C.uint32_t(startposA), C.uint32_t(endposA), C.uint8_t(chromB), C.uint32_t(startposB), C.uint32_t(endposB))) != 0)
 }
 
-// AreOverlappingRegionRegionKey check if a region and a regionkey are overlapping.
+// AreOverlappingRegionRegionKey checks whether a region and a RegionKey overlap.
 func AreOverlappingRegionRegionKey(chrom uint8, startpos, endpos uint32, rk uint64) bool {
 	return (uint8(C.are_overlapping_region_regionkey(C.uint8_t(chrom), C.uint32_t(startpos), C.uint32_t(endpos), C.uint64_t(rk))) != 0)
 }
 
-// AreOverlappingRegionKeys check if two regionkeys are overlapping.
+// AreOverlappingRegionKeys checks whether two RegionKeys overlap.
 func AreOverlappingRegionKeys(rka, rkb uint64) bool {
 	return (uint8(C.are_overlapping_regionkeys(C.uint64_t(rka), C.uint64_t(rkb))) != 0)
 }
 
-// AreOverlappingVariantKeyRegionKey check if variantkey and regionkey are overlapping.
+// AreOverlappingVariantKeyRegionKey checks whether a VariantKey and a RegionKey overlap.
 func (nr NRVKCols) AreOverlappingVariantKeyRegionKey(vk, rk uint64) bool {
 	return (uint8(C.are_overlapping_variantkey_regionkey(castGoNRVKColsToC(nr), C.uint64_t(vk), C.uint64_t(rk))) != 0)
 }
 
-// VariantToRegionkey get RegionKey from VariantKey.
+// VariantToRegionkey converts a VariantKey into a RegionKey.
 func (nr NRVKCols) VariantToRegionkey(vk uint64) uint64 {
 	return uint64(C.variantkey_to_regionkey(castGoNRVKColsToC(nr), C.uint64_t(vk)))
 }
 
 // --- ESID ---
 
-// EncodeStringID encode maximum 10 characters of a string into a 64 bit unsigned integer. The argument "start" indicate the first character to encode.
+// EncodeStringID encodes up to 10 characters of a string into a 64 bit unsigned integer.
+// The "start" argument is the index of the first character to encode.
 func EncodeStringID(s string, start uint32) uint64 {
 	bs := StringToNTBytes(s)
 	ps := unsafe.Pointer(&bs[0]) // #nosec
@@ -876,10 +880,10 @@ func EncodeStringID(s string, start uint32) uint64 {
 	return uint64(C.encode_string_id((*C.char)(ps), C.size_t(len(s)), C.size_t(start)))
 }
 
-// EncodeStringNumID cncode a string composed by a character section followed by a separator character and a
+// EncodeStringNumID encodes a string made of a character section, a separator and a
 // numerical section into a 64 bit unsigned integer. For example: "ABCDE:0001234".
-// Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
-// If the string is 10 character or less, then the encode_string_id() is used.
+// It encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
+// Strings of 10 characters or less are encoded as by EncodeStringID.
 func EncodeStringNumID(s string, sep byte) uint64 {
 	bs := StringToNTBytes(s)
 	ps := unsafe.Pointer(&bs[0]) // #nosec
@@ -887,7 +891,7 @@ func EncodeStringNumID(s string, sep byte) uint64 {
 	return uint64(C.encode_string_num_id((*C.char)(ps), C.size_t(len(s)), C.char(sep)))
 }
 
-// DecodeStringID decode the encoded string ID.
+// DecodeStringID decodes an encoded string ID.
 func DecodeStringID(esid uint64) string {
 	var buf [esidMaxSize]byte
 
@@ -896,7 +900,7 @@ func DecodeStringID(esid uint64) string {
 	return string(buf[:ln])
 }
 
-// HashStringID hash the input string into a 64 bit unsigned integer.
+// HashStringID hashes a string into a non-reversible 64 bit string ID.
 func HashStringID(s string) uint64 {
 	bs := StringToNTBytes(s)
 	ps := unsafe.Pointer(&bs[0]) // #nosec

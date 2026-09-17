@@ -2,19 +2,19 @@
 % Please edit documentation in R/variantkey.R
 \name{VknrBinToTsv}
 \alias{VknrBinToTsv}
-\title{Convert a vrnr.bin file to a simple TSV.
-Return Number of written bytes or 0 in case of error.
-For the reverse operation see the resources/tools/nrvk.sh script.}
+\title{Writes the content of the NRVK memory mapped file as a TSV file.}
 \usage{
 VknrBinToTsv(tsvfile, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{tsvfile}{Output tsv file name. Note that existing files will be replaced.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
+}
+\value{
+Number of written bytes or 0 in case of error.
+  For the reverse operation see the resources/tools/nrvk.sh script.
 }
 \description{
-Convert a vrnr.bin file to a simple TSV.
-Return Number of written bytes or 0 in case of error.
-For the reverse operation see the resources/tools/nrvk.sh script.
+Writes the content of the NRVK memory mapped file as a TSV file.
 }

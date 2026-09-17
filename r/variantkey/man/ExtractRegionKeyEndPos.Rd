@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtractRegionKeyEndPos}
 \alias{ExtractRegionKeyEndPos}
-\title{Extract the END POS code from RegionKey.}
+\title{Extracts the END POS value from a RegionKey.}
 \usage{
 ExtractRegionKeyEndPos(rk)
 }
@@ -10,5 +10,5 @@ ExtractRegionKeyEndPos(rk)
 \item{rk}{RegionKey code.}
 }
 \description{
-Extract the END POS code from RegionKey.
+Extracts the END POS value from a RegionKey.
 }

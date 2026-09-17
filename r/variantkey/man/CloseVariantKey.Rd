@@ -2,12 +2,12 @@
 % Please edit documentation in R/variantkey.R
 \name{CloseVariantKey}
 \alias{CloseVariantKey}
-\title{Unmap the memory-mapped files.
-This should be the last function called in order to close any open memory-mapped file.}
+\title{Unmaps the memory mapped files.
+This must be the last function called.}
 \usage{
 CloseVariantKey()
 }
 \description{
-Unmap the memory-mapped files.
-This should be the last function called in order to close any open memory-mapped file.
+Unmaps the memory mapped files.
+This must be the last function called.
 }

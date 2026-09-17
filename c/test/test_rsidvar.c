@@ -93,6 +93,55 @@ int test_find_rv_variantkey_by_rsid_notfound(rsidvar_cols_t crv)
     return errors;
 }
 
+/*
+ * A "last" above the number of rows would make the search read past the end of
+ * the mapping. The bindings pass that argument straight from their caller, so
+ * every entry point that takes it is checked here with a value far beyond the
+ * file: the search must stay inside it and return the same answer as the exact
+ * bound. Run under the sanitizers, this also catches the read itself.
+ */
+int test_rsidvar_last_out_of_range(rsidvar_cols_t crv, rsidvar_cols_t cvr)
+{
+    int errors = 0;
+    const uint64_t huge = (crv.nrows + 1000000);
+    uint64_t first = 0;
+    uint64_t pos = 0;
+    uint64_t last = 0;
+    const uint64_t vk = find_rv_variantkey_by_rsid(crv, &first, huge, 0x00000001);
+    if (vk != 0x08027a2580338000)
+    {
+        (void) fprintf(stderr, "%s : Expected variantkey 0x08027a2580338000, got %" PRIx64 "\n", __func__, vk);
+        ++errors;
+    }
+    pos = 0;
+    if (get_next_rv_variantkey_by_rsid(crv, &pos, huge, 0x00000001) != 0)
+    {
+        (void) fprintf(stderr, "%s : Expected no next variantkey\n", __func__);
+        ++errors;
+    }
+    first = 0;
+    if (find_vr_rsid_by_variantkey(cvr, &first, huge, 0x08027a2580338000) != 0x00000001)
+    {
+        (void) fprintf(stderr, "%s : Expected rsid 1\n", __func__);
+        ++errors;
+    }
+    pos = 0;
+    if (get_next_vr_rsid_by_variantkey(cvr, &pos, huge, 0x08027a2580338000) != 0)
+    {
+        (void) fprintf(stderr, "%s : Expected no next rsid\n", __func__);
+        ++errors;
+    }
+    first = 0;
+    last = huge;
+    (void) find_vr_chrompos_range(cvr, &first, &last, 0x19, 0x004fc32c, 0x004FC4A8);
+    if (last > cvr.nrows)
+    {
+        (void) fprintf(stderr, "%s : Expected last within %" PRIu64 ", got %" PRIu64 "\n", __func__, cvr.nrows, last);
+        ++errors;
+    }
+    return errors;
+}
+
 int test_get_next_rv_variantkey_by_rsid(rsidvar_cols_t crv)
 {
     int errors = 0;
@@ -392,19 +441,20 @@ int main()
     errors += test_find_vr_chrompos_range_inexact_end(cvr);
     errors += test_find_vr_chrompos_range_no_end(cvr);
     errors += test_find_vr_chrompos_range_notfound(cvr);
+    errors += test_rsidvar_last_out_of_range(crv, cvr);
 
     benchmark_find_rv_variantkey_by_rsid(crv);
     benchmark_find_vr_rsid_by_variantkey(cvr);
     benchmark_find_vr_chrompos_range(cvr);
 
-    err = munmap_binfile(rv);
+    err = munmap_binfile(&rv);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the rv file\n", err);
         return 1;
     }
 
-    err = munmap_binfile(vr);
+    err = munmap_binfile(&vr);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the vr file\n", err);

@@ -2,15 +2,16 @@
 % Please edit documentation in R/variantkey.R
 \name{MmapGenorefFile}
 \alias{MmapGenorefFile}
-\title{Memory map the specified genome reference binary file (fasta.bin).
-Returns the memory mapped file object, the columns object and the number of rows.}
+\title{Memory maps the genoref binary file (fasta.bin).}
 \usage{
 MmapGenorefFile(file)
 }
 \arguments{
 \item{file}{Path to the file to map.}
 }
+\value{
+The memory mapped file object, the columns object and the number of rows.
+}
 \description{
-Memory map the specified genome reference binary file (fasta.bin).
-Returns the memory mapped file object, the columns object and the number of rows.
+Memory maps the genoref binary file (fasta.bin).
 }

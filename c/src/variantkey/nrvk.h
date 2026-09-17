@@ -123,7 +123,7 @@ static inline size_t find_ref_alt_by_variantkey(nrvk_cols_t nvc, uint64_t vk, ch
 {
     uint64_t first = 0;
     uint64_t max = nvc.nrows;
-    uint64_t found = col_find_first_uint64_t(nvc.vk, &first, &max, vk);
+    uint64_t found = col_find_first_le_uint64_t(nvc.vk, &first, &max, vk);
     return get_nrvk_ref_alt_by_pos(nvc, found, ref, sizeref, alt, sizealt);
 }
 
@@ -167,7 +167,7 @@ static inline size_t get_variantkey_ref_length(nrvk_cols_t nvc, uint64_t vk)
     }
     uint64_t first = 0;
     uint64_t max = nvc.nrows;
-    uint64_t found = col_find_first_uint64_t(nvc.vk, &first, &max, vk);
+    uint64_t found = col_find_first_le_uint64_t(nvc.vk, &first, &max, vk);
     if (found >= nvc.nrows)
     {
         return 0; // not found

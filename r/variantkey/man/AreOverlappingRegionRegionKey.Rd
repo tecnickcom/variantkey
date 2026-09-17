@@ -2,8 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{AreOverlappingRegionRegionKey}
 \alias{AreOverlappingRegionRegionKey}
-\title{Check if a region and a regionkey are overlapping.
-Return 1 if the regions overlap, 0 otherwise.}
+\title{Checks whether a region and a RegionKey overlap.}
 \usage{
 AreOverlappingRegionRegionKey(chrom, startpos, endpos, rk)
 }
@@ -16,7 +15,9 @@ AreOverlappingRegionRegionKey(chrom, startpos, endpos, rk)
 
 \item{rk}{RegionKey or region B.}
 }
+\value{
+1 if the regions overlap, 0 otherwise.
+}
 \description{
-Check if a region and a regionkey are overlapping.
-Return 1 if the regions overlap, 0 otherwise.
+Checks whether a region and a RegionKey overlap.
 }

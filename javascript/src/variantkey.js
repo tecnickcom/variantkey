@@ -1,13 +1,25 @@
 /** VariantKey Javascript Library
- * 
+ *
  * variantkey.js
- * 
+ *
  * @category   Tools
  * @author     Nicola Asuni <info@tecnick.com>
  * @link       https://github.com/tecnickcom/variantkey
  * @license    MIT [LICENSE](https://raw.githubusercontent.com/tecnickcom/variantkey/main/LICENSE)
  */
 
+/**
+ * VariantKey and RegionKey encoding and decoding.
+ *
+ * A Javascript number cannot hold a 64 bit integer, so a key is represented as
+ * an object with the "hi" and "lo" properties, holding the most and least
+ * significant 32 bit halves. The string IDs of the esid functions use BigInt.
+ *
+ * This implementation covers the encoding functions only: the binary lookup
+ * tables of the C library are not ported.
+ */
+
+/** Encodes a chromosome identifier into a numerical code. */
 function encodeChrom(chrom) {
     chrom = chrom.replace(/^chr/i, '');
     const clen = chrom.length;
@@ -48,6 +60,7 @@ function encodeChrom(chrom) {
     return 0; // NA
 }
 
+/** Decodes a chromosome numerical code into its string representation. */
 function decodeChrom(code) {
     if ((code < 1) || (code > 25)) {
         return 'NA';
@@ -59,6 +72,7 @@ function decodeChrom(code) {
     return map[(code - 23)];
 }
 
+/** Encodes a nucleotide letter into a 2 bit code. */
 function encodeBase(c) {
     /*
       Encode base:
@@ -83,6 +97,7 @@ function encodeBase(c) {
     return map[c.charCodeAt(0)];
 }
 
+/** Encodes an allele into 2 bit per base, from the given bit position downwards. */
 function encodeAllele(h, bitpos, str, size) {
     var v;
     for (var i = 0; i < size; i++) {
@@ -96,6 +111,7 @@ function encodeAllele(h, bitpos, str, size) {
     return h;
 }
 
+/** Encodes a REF+ALT pair with the reversible scheme. */
 function encodeRefAltRev(ref, sizeref, alt, sizealt) {
     var h = 0 >>> 0;
     h |= (sizeref << 27); // RRRR: length of REF
@@ -111,7 +127,7 @@ function encodeRefAltRev(ref, sizeref, alt, sizealt) {
     return h >>> 0;
 }
 
-// Mix two 32 bit hash numbers using the MurmurHash3 algorithm
+/** Mixes a 32 bit key into a 32 bit hash with the MurmurHash3 round function. */
 function muxHash(k, h) {
     k = ((((k & 0xffff) * 0xcc9e2d51) + ((((k >>> 16) * 0xcc9e2d51) & 0xffff) << 16))) & 0xffffffff;
     k = ((k << 15) | (k >>> 17));
@@ -123,6 +139,7 @@ function muxHash(k, h) {
     return h >>> 0;
 }
 
+/** Encodes a letter into a 5 bit value for packing. */
 function encodePackChar(c) {
     if ((c < 65) || (c > 127)) {
         return (27 >>> 0);
@@ -133,6 +150,7 @@ function encodePackChar(c) {
     return ((c - 64) >>> 0);
 }
 
+/** Packs up to 5 characters into a 32 bit unsigned integer. */
 function packCharsTail(str, size, offset) {
     var h = (0 >>> 0);
     offset += (size - 1);
@@ -155,6 +173,7 @@ function packCharsTail(str, size, offset) {
     return h;
 }
 
+/** Packs 6 characters into a 32 bit unsigned integer. */
 function packChars(str, offset) {
     return ((encodePackChar(str.charCodeAt(offset + 5)) << 1) ^
         (encodePackChar(str.charCodeAt(offset + 4)) << 6) ^
@@ -164,7 +183,7 @@ function packChars(str, offset) {
         (encodePackChar(str.charCodeAt(offset)) << 26));
 }
 
-// Return a 32 bit hash of a nucleotide string
+/** Hashes a string into a 32 bit unsigned integer. */
 function hash32(str, size) {
     var h = 0;
     var len = 6;
@@ -180,6 +199,7 @@ function hash32(str, size) {
     return h;
 }
 
+/** Encodes a REF+ALT pair as a non-reversible 31 bit hash. */
 function encodeRefAltHash(ref, sizeref, alt, sizealt) {
     // 0x3 is the separator character between REF and ALT [00000000 00000000 00000000 00000011]
     var h = muxHash(hash32(alt, sizealt), muxHash(0x3, hash32(ref, sizeref)));
@@ -192,6 +212,7 @@ function encodeRefAltHash(ref, sizeref, alt, sizealt) {
     return ((h >>> 1) | 0x1); // 0x1 is the set bit to indicate HASH mode [00000000 00000000 00000000 00000001]
 }
 
+/** Encodes a REF+ALT pair into a 31 bit code. */
 function encodeRefAlt(ref, alt) {
     const sizeref = ref.length >>> 0;
     const sizealt = alt.length >>> 0;
@@ -207,11 +228,13 @@ function encodeRefAlt(ref, alt) {
     return encodeRefAltHash(ref, sizeref, alt, sizealt) >>> 0;
 }
 
+/** Decodes the base stored at the given bit position of a REF+ALT code. */
 function decodeBase(code, bitpos) {
     const base = ['A', 'C', 'G', 'T'];
     return base[((code >> bitpos) & 0x3)]; // 0x3 is the 2 bit mask [00000011]
 }
 
+/** Decodes a REF+ALT code produced by the reversible encoding. */
 function decodeRefAltRev(code) {
     code >>>= 0;
     const sizeref = ((code & 0x78000000) >>> 27); // [01111000 00000000 00000000 00000000]
@@ -233,6 +256,7 @@ function decodeRefAltRev(code) {
     };
 }
 
+/** Decodes a 32 bit REF+ALT code if it was produced by the reversible encoding. */
 function decodeRefAlt(code) {
     code >>>= 0;
     if (code & 0x1) // check last bit
@@ -255,6 +279,7 @@ function decodeRefAlt(code) {
     return decodeRefAltRev(code);
 }
 
+/** Assembles a VariantKey from the pre-encoded CHROM, POS and REF+ALT. */
 function encodeVariantKey(chrom, pos, refalt) {
     return {
         "hi": ((((chrom >>> 0) << 27) | (pos >>> 1)) >>> 0),
@@ -262,18 +287,22 @@ function encodeVariantKey(chrom, pos, refalt) {
     };
 }
 
+/** Extracts the CHROM code from a VariantKey. */
 function extractVariantKeyChrom(vk) {
     return ((vk.hi & 0xF8000000) >>> 27);
 }
 
+/** Extracts the POS value from a VariantKey. */
 function extractVariantKeyPos(vk) {
     return (((vk.hi & 0x07FFFFFF) << 1) | (vk.lo >>> 31)) >>> 0;
 }
 
+/** Extracts the REF+ALT code from a VariantKey. */
 function extractVariantKeyRefAlt(vk) {
     return (vk.lo & 0x7FFFFFFF) >>> 0;
 }
 
+/** Splits a VariantKey into its CHROM, POS and REF+ALT components. */
 function decodeVariantKey(vk) {
     return {
         "chrom": extractVariantKeyChrom(vk),
@@ -282,6 +311,7 @@ function decodeVariantKey(vk) {
     };
 }
 
+/** Reverses a VariantKey into its CHROM, POS, REF and ALT components. */
 function reverseVariantKey(vk) {
     var ra = decodeRefAlt(extractVariantKeyRefAlt(vk));
     return {
@@ -292,10 +322,12 @@ function reverseVariantKey(vk) {
     }
 }
 
+/** Returns a VariantKey for the given CHROM, POS (0-based), REF and ALT. */
 function variantKey(chrom, pos, ref, alt) {
     return encodeVariantKey(encodeChrom(chrom), pos, encodeRefAlt(ref, alt));
 }
 
+/** Returns the minimum and maximum VariantKey of a CHROM and POS range. */
 function variantKeyRange(chrom, pos_min, pos_max) {
     return {
         "min": {
@@ -309,14 +341,17 @@ function variantKeyRange(chrom, pos_min, pos_max) {
     };
 }
 
+/** Compares two unsigned integers. */
 function compare(a, b) {
     return ((a < b) ? -1 : ((a > b) ? 1 : 0));
 }
 
+/** Compares two VariantKeys by CHROM only. */
 function compareVariantKeyChrom(vka, vkb) {
     return compare((vka.hi >>> 27), (vkb.hi >>> 27));
 }
 
+/** Compares two VariantKeys by CHROM and POS. */
 function compareVariantKeyChromPos(vka, vkb) {
     var cmp = compare(vka.hi, vkb.hi);
     if (cmp == 0) {
@@ -325,14 +360,17 @@ function compareVariantKeyChromPos(vka, vkb) {
     return cmp;
 }
 
+/** Pads a hexadecimal string to 8 characters with leading zeros. */
 function padL08(s) {
     return ("00000000" + s).slice(-8);
 }
 
+/** Returns a VariantKey as a 16 character hexadecimal string. */
 function variantKeyString(vk) {
     return padL08(vk.hi.toString(16)) + padL08(vk.lo.toString(16));
 }
 
+/** Parses a 16 character hexadecimal string into a key. */
 function parseHex(vs) {
     return {
         "hi": parseInt(vs.substring(0, 8), 16) >>> 0,
@@ -340,16 +378,19 @@ function parseHex(vs) {
     };
 }
 
+/** Encodes a strand direction: -1 to 2, 0 to 0, +1 to 1. */
 function encodeRegionStrand(strand) {
     var map = [2, 0, 1, 0];
     return map[((++strand) & 3)];
 }
 
+/** Decodes a strand code: 0 to 0, 1 to +1, 2 to -1. */
 function decodeRegionStrand(strand) {
     var map = [0, 1, -1, 0];
     return map[(strand & 3)];
 }
 
+/** Assembles a RegionKey from its pre-encoded components. */
 function encodeRegionKey(chrom, startpos, endpos, strand) {
     return {
         "hi": ((((chrom >>> 0) << 27) | (startpos >>> 1)) >>> 0),
@@ -357,22 +398,27 @@ function encodeRegionKey(chrom, startpos, endpos, strand) {
     };
 }
 
+/** Extracts the CHROM code from a RegionKey. */
 function extractRegionKeyChrom(rk) {
     return ((rk.hi & 0xF8000000) >>> 27);
 }
 
+/** Extracts the START POS value from a RegionKey. */
 function extractRegionKeyStartPos(rk) {
     return (((rk.hi & 0x07FFFFFF) << 1) | (rk.lo >>> 31)) >>> 0;
 }
 
+/** Extracts the END POS value from a RegionKey. */
 function extractRegionKeyEndPos(rk) {
     return (rk.lo & 0x7FFFFFF8) >>> 3
 }
 
+/** Extracts the STRAND code from a RegionKey. */
 function extractRegionKeyStrand(rk) {
     return (rk.lo & 0x00000006) >>> 1;
 }
 
+/** Splits a RegionKey into its encoded components. */
 function decodeRegionKey(rk) {
     return {
         "chrom": extractRegionKeyChrom(rk),
@@ -382,6 +428,7 @@ function decodeRegionKey(rk) {
     };
 }
 
+/** Reverses a RegionKey into its decoded components. */
 function reverseRegionKey(rk) {
     return {
         "chrom": decodeChrom(extractRegionKeyChrom(rk)),
@@ -391,10 +438,12 @@ function reverseRegionKey(rk) {
     };
 }
 
+/** Returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND. */
 function regionKey(chrom, startpos, endpos, strand) {
     return encodeRegionKey(encodeChrom(chrom), startpos, endpos, encodeRegionStrand(strand));
 }
 
+/** Extends a RegionKey region by a fixed amount at both ends. */
 function extendRegionKey(rk, size) {
     const drk = decodeRegionKey(rk);
     drk.startpos = ((size >= drk.startpos) ? 0 : (drk.startpos - size));
@@ -406,16 +455,19 @@ function extendRegionKey(rk, size) {
     return out;
 }
 
+/** Returns a RegionKey as a 16 character hexadecimal string. */
 function regionKeyString(rk) {
     return padL08(rk.hi.toString(16)) + padL08(rk.lo.toString(16));
 }
 
 // Return the REF length of a VariantKey. Mirrors the C
 // get_variantkey_ref_length().
-// The length is stored in the key only when the REF+ALT pair uses the reversible
-// encoding (bit 0 clear). For a hash-mode key the C version looks the length up
-// in the NRVK binary table; that table is not ported to Javascript, so 0 is
-// always returned here.
+/**
+ * Returns the REF length of a VariantKey, or 0 for a non-reversible key.
+ *
+ * The length is stored in the key only by the reversible encoding. The C
+ * version reads it from the NRVK lookup table, which is not ported here.
+ */
 function getVariantKeyRefLength(vk) {
     if ((vk.lo & 0x1) !== 0) {
         return 0; // non-reversible encoding: the REF length is not recoverable from the key
@@ -423,26 +475,32 @@ function getVariantKeyRefLength(vk) {
     return ((vk.lo & 0x78000000) >>> 27);
 }
 
+/** Returns the end position of a VariantKey (POS + REF length). */
 function getVariantKeyEndPos(vk) {
     return extractVariantKeyPos(vk) + getVariantKeyRefLength(vk);
 }
 
+/** Checks whether two regions overlap. */
 function areOverlappingRegions(a_chrom, a_startpos, a_endpos, b_chrom, b_startpos, b_endpos) {
     return ((a_chrom == b_chrom) && (a_startpos < b_endpos) && (a_endpos > b_startpos));
 }
 
+/** Checks whether a region and a RegionKey overlap. */
 function areOverlappingRegionRegionKey(chrom, startpos, endpos, rk) {
     return ((chrom == extractRegionKeyChrom(rk)) && (startpos < extractRegionKeyEndPos(rk)) && (endpos > extractRegionKeyStartPos(rk)));
 }
 
+/** Checks whether two RegionKeys overlap. */
 function areOverlappingRegionKeys(rka, rkb) {
     return ((extractRegionKeyChrom(rka) == extractRegionKeyChrom(rkb)) && (extractRegionKeyStartPos(rka) < extractRegionKeyEndPos(rkb)) && (extractRegionKeyEndPos(rka) > extractRegionKeyStartPos(rkb)));
 }
 
+/** Checks whether a VariantKey and a RegionKey overlap. */
 function areOverlappingVariantKeyRegionKey(vk, rk) {
     return ((extractVariantKeyChrom(vk) == extractRegionKeyChrom(rk)) && (extractVariantKeyPos(vk) < extractRegionKeyEndPos(rk)) && (getVariantKeyEndPos(vk) > extractRegionKeyStartPos(rk)));
 }
 
+/** Converts a VariantKey into a RegionKey. */
 function variantKeyToRegionKey(vk) {
     return {
         "hi": vk.hi,
@@ -450,6 +508,7 @@ function variantKeyToRegionKey(vk) {
     };
 }
 
+/** Encodes a single character into a 6 bit value. */
 function esidEncodeChar(c) {
     if ((c < 33) || (c > 127)) {
         return (63 >>> 0);
@@ -460,10 +519,12 @@ function esidEncodeChar(c) {
     return ((c - 32) >>> 0);
 }
 
+/** Decodes the character stored at the given bit position of an encoded string ID. */
 function esidDecodeChar(esid, pos) {
     return String.fromCharCode(((esid >>> pos) & 63) + 32); // 63 dec = 00111111 bin
 }
 
+/** Encodes up to 10 characters of a string into a 64 bit unsigned integer. */
 function encodeStringID(str, start) {
     if (start > str.length) {
         return {
@@ -515,6 +576,7 @@ function encodeStringID(str, start) {
     };
 }
 
+/** Encodes a string made of a character section, a separator and a numerical section. */
 function encodeStringNumID(str, sep) {
     var size = str.length;
     if (size <= 10) {
@@ -558,6 +620,7 @@ function encodeStringNumID(str, sep) {
     };
 }
 
+/** Decodes the character section of an encoded string ID. */
 function esidDecodeStringID(size, esid) {
     var hi = ((esid.hi << 2) | (esid.lo >>> 30)) >>> 0;
     var str = ['', '', '', '', '', '', '', '', '', ''];
@@ -595,6 +658,7 @@ function esidDecodeStringID(size, esid) {
     return str.join('');
 }
 
+/** Decodes an encoded string ID that carries a numerical section. */
 function decodeStringNumID(size, esid) {
     const str = esidDecodeStringID(size, esid);
     const npad = (esid.lo >>> 27) & 7;
@@ -606,6 +670,7 @@ function decodeStringNumID(size, esid) {
     return str + ':' + '0'.repeat(npad) + numstr;
 }
 
+/** Decodes an encoded string ID. */
 function decodeStringID(esid) {
     const size = (esid.hi >>> 28);
     if (size > 10) {
@@ -624,6 +689,7 @@ function decodeStringID(esid) {
 // memcpy on a little-endian host, so the values are endianness dependent.
 const HSID_MASK64 = (1n << 64n) - 1n;
 
+/** Mixes a 64 bit key into a 64 bit hash with the MurmurHash3 round function. */
 function muxHash64(k, h) {
     k = (k * 0x87c37b91114253d5n) & HSID_MASK64;
     k = ((k >> 33n) | (k << 31n)) & HSID_MASK64;
@@ -633,6 +699,7 @@ function muxHash64(k, h) {
     return (((h * 5n) & HSID_MASK64) + 0x52dce729n) & HSID_MASK64;
 }
 
+/** Hashes a string into a non-reversible 64 bit string ID. */
 function hashStringID(str) {
     const size = str.length;
     const blocks = (size - (size & 7));

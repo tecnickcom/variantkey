@@ -319,7 +319,7 @@ static uint32_t lookup_columnar_payload(
     uint64_t last = nrows;
     uint64_t key = variantkey(q->chrom, q->chrom_len, q->pos, &q->ref, 1U, &q->alt, 1U);
 
-    uint64_t found = col_find_first_uint64_t(vk_col, &first, &last, key);
+    uint64_t found = col_find_first_le_uint64_t(vk_col, &first, &last, key);
     if ((found >= nrows) || (vk_col[found] != key))
     {
         return 0;
@@ -436,7 +436,7 @@ int main(int argc, char **argv)
     if (load_text_file(CSV_FILE, &csv_data, &csv_size) != 0)
     {
         (void)fprintf(stderr, "csv load error\n");
-        (void)munmap_binfile(mf);
+        (void)munmap_binfile(&mf);
         free(rows);
         free(queries);
         return 1;
@@ -505,7 +505,7 @@ int main(int argc, char **argv)
     }
 
     free(csv_data);
-    (void)munmap_binfile(mf);
+    (void)munmap_binfile(&mf);
     free(rows);
     free(queries);
 

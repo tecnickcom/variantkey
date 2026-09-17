@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{GetVariantKeyChromStartPos}
 \alias{GetVariantKeyChromStartPos}
-\title{Get the CHROM + START POS encoding from VariantKey.}
+\title{Returns the CHROM and START POS section of a VariantKey.}
 \usage{
 GetVariantKeyChromStartPos(vk)
 }
@@ -10,5 +10,5 @@ GetVariantKeyChromStartPos(vk)
 \item{vk}{VariantKey.}
 }
 \description{
-Get the CHROM + START POS encoding from VariantKey.
+Returns the CHROM and START POS section of a VariantKey.
 }

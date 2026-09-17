@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{DecodeRefAlt}
 \alias{DecodeRefAlt}
-\title{Decode the 32 bit REF+ALT code if reversible (if it has 11 or less bases in total and only contains ACGT letters).}
+\title{Decodes a 32 bit REF+ALT code if it was produced by the reversible encoding (11 or less bases in total, containing only A, C, G and T letters).}
 \usage{
 DecodeRefAlt(code)
 }
@@ -10,5 +10,5 @@ DecodeRefAlt(code)
 \item{code}{REF+ALT code}
 }
 \description{
-Decode the 32 bit REF+ALT code if reversible (if it has 11 or less bases in total and only contains ACGT letters).
+Decodes a 32 bit REF+ALT code if it was produced by the reversible encoding (11 or less bases in total, containing only A, C, G and T letters).
 }

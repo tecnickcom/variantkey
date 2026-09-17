@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{FindVrChromposRange}
 \alias{FindVrChromposRange}
-\title{Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.}
+\title{Returns the first rsID of a CHROM and POS range.}
 \usage{
 FindVrChromposRange(
   chrom,
@@ -24,8 +24,8 @@ FindVrChromposRange(
 
 \item{last}{Element (up to but not including) where to end the search (max value = nitems).}
 
-\item{mc}{Memory-mapped columns object as retured by MmapVKRSfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapVKRSfile.}
 }
 \description{
-Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.
+Returns the first rsID of a CHROM and POS range.
 }

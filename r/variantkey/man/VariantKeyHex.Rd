@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{VariantKeyHex}
 \alias{VariantKeyHex}
-\title{Returns VariantKey hexadecimal string (16 characters).}
+\title{Returns a VariantKey as a 16 character hexadecimal string.}
 \usage{
 VariantKeyHex(vk)
 }
@@ -10,5 +10,5 @@ VariantKeyHex(vk)
 \item{vk}{VariantKey code.}
 }
 \description{
-Returns VariantKey hexadecimal string (16 characters).
+Returns a VariantKey as a 16 character hexadecimal string.
 }

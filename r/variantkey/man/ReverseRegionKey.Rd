@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ReverseRegionKey}
 \alias{ReverseRegionKey}
-\title{Reverse a RegionKey code and returns the normalized components as regionkey_rev_t structure.}
+\title{Reverses a RegionKey into its decoded components.}
 \usage{
 ReverseRegionKey(rk)
 }
@@ -10,5 +10,5 @@ ReverseRegionKey(rk)
 \item{rk}{RegionKey code.}
 }
 \description{
-Reverse a RegionKey code and returns the normalized components as regionkey_rev_t structure.
+Reverses a RegionKey into its decoded components.
 }

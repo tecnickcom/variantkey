@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{NormalizedVariantKey}
 \alias{NormalizedVariantKey}
-\title{Create a normalized variantkey.}
+\title{Normalizes a variant and returns its VariantKey.}
 \usage{
 NormalizedVariantKey(chrom, pos, posindex, ref, alt, mf = vk.env$genoref_$MF)
 }
@@ -17,8 +17,8 @@ NormalizedVariantKey(chrom, pos, posindex, ref, alt, mf = vk.env$genoref_$MF)
 
 \item{alt}{Alternate non-reference allele string.}
 
-\item{mf}{Memory-mapped file object as retured by MmapGenorefFile.}
+\item{mf}{Memory-mapped file object as returned by MmapGenorefFile.}
 }
 \description{
-Create a normalized variantkey.
+Normalizes a variant and returns its VariantKey.
 }

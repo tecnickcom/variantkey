@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{DecodeVariantKey}
 \alias{DecodeVariantKey}
-\title{Decode a VariantKey code and returns the components.}
+\title{Splits a VariantKey into its CHROM, POS and REF+ALT components.}
 \usage{
 DecodeVariantKey(vk)
 }
@@ -12,5 +12,5 @@ DecodeVariantKey(vk)
 \item{code}{VariantKey code.}
 }
 \description{
-Decode a VariantKey code and returns the components.
+Splits a VariantKey into its CHROM, POS and REF+ALT components.
 }

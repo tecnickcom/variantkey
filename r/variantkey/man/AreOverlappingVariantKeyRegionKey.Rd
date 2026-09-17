@@ -2,8 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{AreOverlappingVariantKeyRegionKey}
 \alias{AreOverlappingVariantKeyRegionKey}
-\title{Check if variantkey and regionkey are overlapping.
-Return 1 if the regions overlap, 0 otherwise.}
+\title{Checks whether a VariantKey and a RegionKey overlap.}
 \usage{
 AreOverlappingVariantKeyRegionKey(vk, rk, mc = vk.env$nrvk_$MC)
 }
@@ -12,9 +11,11 @@ AreOverlappingVariantKeyRegionKey(vk, rk, mc = vk.env$nrvk_$MC)
 
 \item{rk}{RegionKey code.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
+}
+\value{
+1 if the regions overlap, 0 otherwise.
 }
 \description{
-Check if variantkey and regionkey are overlapping.
-Return 1 if the regions overlap, 0 otherwise.
+Checks whether a VariantKey and a RegionKey overlap.
 }

@@ -569,7 +569,7 @@ int main()
     benchmark_reverse_regionkey();
     benchmark_regionkey();
 
-    err = munmap_binfile(nrvk);
+    err = munmap_binfile(&nrvk);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the nrvk file\n", err);

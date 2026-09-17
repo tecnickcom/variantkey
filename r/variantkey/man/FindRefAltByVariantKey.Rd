@@ -2,17 +2,18 @@
 % Please edit documentation in R/variantkey.R
 \name{FindRefAltByVariantKey}
 \alias{FindRefAltByVariantKey}
-\title{Retrieve the REF and ALT strings for the specified VariantKey.
-Return REF+ALT length or 0 if the VariantKey is not found.}
+\title{Looks up the REF and ALT strings of a VariantKey.}
 \usage{
 FindRefAltByVariantKey(vk, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{vk}{VariantKey to search.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
+}
+\value{
+REF+ALT length or 0 if the VariantKey is not found.
 }
 \description{
-Retrieve the REF and ALT strings for the specified VariantKey.
-Return REF+ALT length or 0 if the VariantKey is not found.
+Looks up the REF and ALT strings of a VariantKey.
 }

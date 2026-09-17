@@ -2,8 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{AreOverlappingRegionKeys}
 \alias{AreOverlappingRegionKeys}
-\title{Check if two regionkeys are overlapping.
-Return 1 if the regions overlap, 0 otherwise.}
+\title{Checks whether two RegionKeys overlap.}
 \usage{
 AreOverlappingRegionKeys(rka, rkb)
 }
@@ -12,7 +11,9 @@ AreOverlappingRegionKeys(rka, rkb)
 
 \item{rkb}{RegionKey B.}
 }
+\value{
+1 if the regions overlap, 0 otherwise.
+}
 \description{
-Check if two regionkeys are overlapping.
-Return 1 if the regions overlap, 0 otherwise.
+Checks whether two RegionKeys overlap.
 }

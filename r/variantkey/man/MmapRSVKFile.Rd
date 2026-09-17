@@ -2,8 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{MmapRSVKFile}
 \alias{MmapRSVKFile}
-\title{Memory map the specified RSVK binary file (rsvk.bin).
-Returns the memory mapped file object, the columns object and the number of rows.}
+\title{Memory maps the RSVK binary file (rsvk.bin).}
 \usage{
 MmapRSVKFile(file, ctbytes)
 }
@@ -12,7 +11,9 @@ MmapRSVKFile(file, ctbytes)
 
 \item{ctbytes}{List containing the number of bytes for each column type (i.e. 1 for uint8, 2 for uint16, 4 for uint32, 8 for uint64)}
 }
+\value{
+The memory mapped file object, the columns object and the number of rows.
+}
 \description{
-Memory map the specified RSVK binary file (rsvk.bin).
-Returns the memory mapped file object, the columns object and the number of rows.
+Memory maps the RSVK binary file (rsvk.bin).
 }

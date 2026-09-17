@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{GetRegionKeyChromEndPos}
 \alias{GetRegionKeyChromEndPos}
-\title{Get the CHROM + END POS encoding from RegionKey.}
+\title{Returns the CHROM and END POS of a RegionKey.}
 \usage{
 GetRegionKeyChromEndPos(rk)
 }
@@ -10,5 +10,5 @@ GetRegionKeyChromEndPos(rk)
 \item{rk}{RegionKey code.}
 }
 \description{
-Get the CHROM + END POS encoding from RegionKey.
+Returns the CHROM and END POS of a RegionKey.
 }

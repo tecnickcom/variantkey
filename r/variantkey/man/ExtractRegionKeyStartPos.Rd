@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtractRegionKeyStartPos}
 \alias{ExtractRegionKeyStartPos}
-\title{Extract the START POS code from RegionKey.}
+\title{Extracts the START POS value from a RegionKey.}
 \usage{
 ExtractRegionKeyStartPos(rk)
 }
@@ -10,5 +10,5 @@ ExtractRegionKeyStartPos(rk)
 \item{rk}{RegionKey code.}
 }
 \description{
-Extract the START POS code from RegionKey.
+Extracts the START POS value from a RegionKey.
 }

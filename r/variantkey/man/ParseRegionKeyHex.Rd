@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ParseRegionKeyHex}
 \alias{ParseRegionKeyHex}
-\title{Parses a RegionKey hexadecimal string and returns the code.}
+\title{Parses a 16 character hexadecimal string into a RegionKey.}
 \usage{
 ParseRegionKeyHex(hex)
 }
@@ -10,5 +10,5 @@ ParseRegionKeyHex(hex)
 \item{hex}{RegionKey hexadecimal string (it must contain 16 hexadecimal characters).}
 }
 \description{
-Parses a RegionKey hexadecimal string and returns the code.
+Parses a 16 character hexadecimal string into a RegionKey.
 }

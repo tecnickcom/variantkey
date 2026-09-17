@@ -141,7 +141,7 @@ int main()
     (void) fprintf(stdout, "%" PRIx64 " %d\n", vk, ncode);
     // 68000001c7868961 0
 
-    int err = munmap_binfile(genoref);
+    int err = munmap_binfile(&genoref);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the genoref file\n", err);
@@ -195,7 +195,7 @@ int main()
     (void) fprintf(stdout, "%016" PRIx64 "\n", cep);
     // 00000000400186ac
 
-    err = munmap_binfile(nrvk);
+    err = munmap_binfile(&nrvk);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the nrvk file\n", err);
@@ -231,7 +231,7 @@ int main()
     (void) fprintf(stdout, "%" PRIu64 " %" PRIu64 "\n", vk, fpos);
     // 9223656209074749440 3
 
-    err = munmap_binfile(rv);
+    err = munmap_binfile(&rv);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the rv file\n", err);
@@ -263,7 +263,7 @@ int main()
     // 9223656316446408704
     // 9223656367992733696
 
-    err = munmap_binfile(rvm);
+    err = munmap_binfile(&rvm);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the rvm file\n", err);
@@ -300,7 +300,7 @@ int main()
     (void) fprintf(stdout, "%" PRIu32 " %" PRIu64 "\n", rsid, fpos);
     // 97 3
 
-    err = munmap_binfile(vr);
+    err = munmap_binfile(&vr);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the vr file\n", err);

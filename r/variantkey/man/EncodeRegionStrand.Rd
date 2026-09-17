@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeRegionStrand}
 \alias{EncodeRegionStrand}
-\title{Encode the strand direction (-1 > 2, 0 > 0, +1 > 1).}
+\title{Encodes a strand direction: -1 to 2, 0 to 0, +1 to 1.}
 \usage{
 EncodeRegionStrand(strand)
 }
@@ -10,5 +10,5 @@ EncodeRegionStrand(strand)
 \item{strand}{Strand direction (-1, 0, +1).}
 }
 \description{
-Encode the strand direction (-1 > 2, 0 > 0, +1 > 1).
+Encodes a strand direction: -1 to 2, 0 to 0, +1 to 1.
 }

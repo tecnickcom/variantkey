@@ -270,7 +270,7 @@ static int vk_release_mf(SEXP mf)
     // A failed mapping is marked with MAP_FAILED, not NULL.
     if ((cmf->src != NULL) && (cmf->src != (uint8_t *)MAP_FAILED))
     {
-        ret = munmap_binfile(*cmf);
+        ret = munmap_binfile(cmf);
     }
     R_Free(cmf);
     R_ClearExternalPtr(mf);

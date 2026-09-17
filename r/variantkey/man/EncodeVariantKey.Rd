@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeVariantKey}
 \alias{EncodeVariantKey}
-\title{Returns a 64 bit variant key based on pre-encoded CHROM, POS (0-base) and REF+ALT.}
+\title{Assembles a VariantKey from the pre-encoded CHROM, POS and REF+ALT.}
 \usage{
 EncodeVariantKey(chrom, pos, refalt)
 }
@@ -14,5 +14,5 @@ EncodeVariantKey(chrom, pos, refalt)
 \item{refalt}{Encoded Reference + Alternate (see EncodeRefAlt)}
 }
 \description{
-Returns a 64 bit variant key based on pre-encoded CHROM, POS (0-base) and REF+ALT.
+Assembles a VariantKey from the pre-encoded CHROM, POS and REF+ALT.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{GetGenorefSeq}
 \alias{GetGenorefSeq}
-\title{Returns the genome reference nucleotide at the specified chromosome and position.}
+\title{Returns the genome reference nucleotide at the given chromosome and position.}
 \usage{
 GetGenorefSeq(chrom, pos, mf = vk.env$genoref_$MF)
 }
@@ -11,8 +11,8 @@ GetGenorefSeq(chrom, pos, mf = vk.env$genoref_$MF)
 
 \item{pos}{Position. The reference position, with the first base having position 0.}
 
-\item{mf}{Memory-mapped file object as retured by MmapGenorefFile.}
+\item{mf}{Memory-mapped file object as returned by MmapGenorefFile.}
 }
 \description{
-Returns the genome reference nucleotide at the specified chromosome and position.
+Returns the genome reference nucleotide at the given chromosome and position.
 }

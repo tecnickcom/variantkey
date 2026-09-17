@@ -42,11 +42,17 @@ Nicola Asuni, Steven Wilder [VariantKey - A Reversible Numerical Representation 
 * **[RegionKey](#regionkey)**
     * [RegionKey Properties](#rkproperties)
 * [Encoding String IDs](#esid)
-* [Binary file formats for lookup tables](#binaryfiles)
+* [Binary files for lookup tables](#binaryfiles)
+* **[Annotation lookup tables](#annotations)**
+    * [Why convert an annotation file](#whyconvert)
+    * [The vkbin tool](#vkbintool)
+    * [Worked example: AlphaGenome AVI scores](#aviexample)
+    * [Reading the output](#readoutput)
+    * [Choosing column widths](#colwidths)
 * [C Library](#clib)
-* [GO Library](#golib)
+* [Go Library](#golib)
 * [Python Module](#pythonlib)
-* [Python Class](#pythonclass)
+* [Python Vectorized Class](#pythonclass)
 * [R Module](#rlib)
 * [Javascript library](#jslib)
 
@@ -55,21 +61,13 @@ Nicola Asuni, Steven Wilder [VariantKey - A Reversible Numerical Representation 
 <a name="description"></a>
 ## Description
 
-This software library provides:
+Human genetic variants are usually represented by four values with variable length: chromosome, position, reference and alternate alleles. There is no guarantee that these components are represented in a consistent way across different data sources, and processing variant-based data can be inefficient because four different comparison operations are needed for each variant, three of which are string comparisons. Working with strings, in contrast to numbers, poses extra challenges on computer memory allocation and data-representation. Existing variant identifiers do not typically represent every possible variant we may be interested in, and they are not directly reversible.
 
-* ***VariantKey***: a reversible numerical encoding schema for human genetic variants.
-* ***RegionKey***: a reversible numerical encoding schema for human genomic regions.
-* ***ESID***: a reversible numerical encoding schema for genetic string identifiers.
+**VariantKey**, a novel reversible numerical encoding schema for human genetic variants, overcomes these limitations by encoding each variant as a single 64 bit number that can still be searched and sorted per chromosome and position.
 
-Human genetic variants are usually represented by four values with variable length: chromosome, position, reference and alternate alleles. There is no guarantee that these components are represented in a consistent way across different data sources, and processing variant-based data can be inefficient because four different comparison operations are needed for each variant, three of which are string comparisons. Working with strings, in contrast to numbers, poses extra challenges on computer memory allocation and data-representation. Existing variant identifiers do not typically  represent every possible variant we may be interested in, nor they are directly reversible.
+The individual components of short variants (up to 11 bases between `REF` and `ALT` alleles) can be directly read back from the VariantKey, while long variants require a lookup table to retrieve the reference and alternate allele strings.
 
-**VariantKey**, a novel reversible numerical encoding schema for human genetic variants, overcomes these limitations by allowing to process variants as a single 64 bit numeric entities while preserving the ability to be searched and sorted per chromosome and position.
-
-The individual components of short variants (up to 11 bases between `REF` and `ALT` alleles) can be directly read back from the VariantKey, while long variants requires a lookup table to retrieve the reference and alternate allele strings.
-
-The [VariantKey Format](#vkformat) doesn't represent universal codes, it only encodes normalized `CHROM`, `POS`, `REF` and `ALT`, so each code is unique for a given reference genome. The direct comparisons of two VariantKeys makes sense only if they both refer to the same genome reference.
-
-This software library also provides other genetic variant-related tools.
+The [VariantKey Format](#vkformat) doesn't represent universal codes, it only encodes normalized `CHROM`, `POS`, `REF` and `ALT`, so each code is unique for a given reference genome. The direct comparison of two VariantKeys makes sense only if they both refer to the same genome reference.
 
 ----------
 
@@ -377,12 +375,12 @@ Normalized variant | 19    | 29238771                     | C   | G             
          REF+ALT binary mask (7FFFFFFF hex = 2147483647 dec)
     ```
 
-    This section allow two different type of encodings:
+    This section allows two different encodings:
 
     * **Non-reversible encoding**
 
-        If the total number of nucleotides between `REF` and `ALT` is more then 11, or if any of the alleles contains nucleotide letters other than base `A`, `C`, `G` and `T`, then the LSB (least significant bit) is set to 1 and the remaining 30 bit are filled with an hash value of the `REF` and `ALT` strings.  
-        The hash value is calulated using a custom fast non-cryptographic algorithm based on [MurmurHash3](https://github.com/aappleby/smhasher/wiki/MurmurHash3).  
+        If the total number of nucleotides between `REF` and `ALT` is more than 11, or if any of the alleles contains nucleotide letters other than base `A`, `C`, `G` and `T`, then the LSB (least significant bit) is set to 1 and the remaining 30 bit are filled with a hash value of the `REF` and `ALT` strings.  
+        The hash value is calculated using a custom fast non-cryptographic algorithm based on [MurmurHash3](https://github.com/aappleby/smhasher/wiki/MurmurHash3).  
         A lookup table is required to reverse the `REF` and `ALT` values.  
         In the normalized dbSNP VCF file GRCh37.p13.b150 there are only 0.365% (1229769 / 337162128) variants that requires this encoding. Amongst those, the maximum number of variants that share the same chromosome and position is 15. With 30 bit the probability of hash collision is approximately 10<sup>-7</sup> for 15 elements, 10<sup>-6</sup> for 46 and 10<sup>-5</sup> for 146.
         The size of the non-reversible lookup table for GRCh37.p13.b150 is only 45.7MB.
@@ -421,7 +419,7 @@ Normalized variant | 19    | 29238771                     | C   | G             
 * Each VariantKey code is unique for a given reference genome.
 * The direct comparisons of two VariantKeys makes sense only if they both refer to the same genome reference.
 * Comparing two variants by VariantKey only requires comparing two 64 bit numbers, a very well optimized operation in current computer architectures. In contrast, comparing two normalized variants in VCF format requires comparing one numbers and three strings.
-* VariantKey can be used as a main database key to index data by "variant". This simplify common searching, merging and filtering operations.
+* VariantKey can be used as a main database key to index data by "variant". This simplifies common searching, merging and filtering operations.
 * All types of database joins between two data sets (inner, left, right and full) can be easily performed using the VariantKey as index.
 * When `CHROM`, `REF` and `ALT` are the only strings in a table, replacing them with VariantKey allows to work with numeric only tables with obvious advantages. This also allows to represent the data in a compact binary format where each column uses a fixed number of bit, with the ability to perform a quick binary search on the first sorted column.
 
@@ -444,7 +442,7 @@ Normalized variant | 19    | 29238771                     | C   | G             
 
 *RegionKey* encodes a human genomic region (defined as the set of *chromosome*, *start position*, *end position* and *strand direction*) in a 64 bit unsigned integer number.
 
-RegionKey allows to repesent a region as a single entity, and provides analogous properties as the ones listed in [VariantKey Properties](#vkproperties).
+RegionKey represents a region as a single entity, and provides the same properties listed in [VariantKey Properties](#vkproperties).
 
 The encoding of the first 33 bit (CROM, STARTPOS) is the same as in VariantKey.
 
@@ -557,7 +555,7 @@ This software library provides several functions to operate with *RegionKey* and
 * Sorting by RegionKey is equivalent of sorting by CHROM and STARTPOS.
 * The 64 bit RegionKey can be exported as a single 16 character hexadecimal string.
 * Sorting the hexadecimal representation of RegionKey in alphabetical order is equivalent of sorting the RegionKey numerically.
-* RegionKey can be used as a main database key to index data by "region". This simplify common searching, merging and filtering operations.
+* RegionKey can be used as a main database key to index data by "region". This simplifies common searching, merging and filtering operations.
 
 ----------
 
@@ -566,9 +564,9 @@ This software library provides several functions to operate with *RegionKey* and
 
 This library contains extra functions to encode some string IDs to 64 bit unsigned integers:
 
-* The `encode_string_id` function encodes maximum 10 ASCII characters (from '!' to 'z') of a string into a 64 bit unsigned integer. The encoded value can be reversed into a "normalized" version of the original 10 character string using the `decode_string_id` function. The decoded string only support uppercase characters.
+* The `encode_string_id` function encodes up to 10 ASCII characters (from '!' to 'z') of a string into a 64 bit unsigned integer. The encoded value can be reversed into a "normalized" version of the original 10 character string using the `decode_string_id` function. The decoded string only supports uppercase characters.
 
-* The `encode_string_num_id` function encodes string composed by a character section followed by a separator character and a numerical section into a 64 bit unsigned integer. For example: "`ABCDE:0001234`". This function encodes up to 5 characters in uppercase, a number up to 2<sup>27</sup>, and up to 7 zero padding digits in a 64 bit unsigned integer. The encoded value can be reversed into a "normalized" version of the original 10 character string using the `decode_string_id` function.
+* The `encode_string_num_id` function encodes a string composed of a character section, a separator character and a numerical section into a 64 bit unsigned integer. For example: "`ABCDE:0001234`". This function encodes up to 5 characters in uppercase, a number up to 2<sup>27</sup>, and up to 7 zero padding digits in a 64 bit unsigned integer. The encoded value can be reversed into a "normalized" version of the original 10 character string using the `decode_string_id` function.
 
 * The `hash_string_id` function creates a 64 bit unsigned integer hash of the input string.
 
@@ -587,24 +585,24 @@ https://sourceforge.net/projects/variantkey/files/
 
 * **`fasta.bin`**
     Binary version of the reference genome sequence FASTA file.  
-    It only cntains the first 25 sequences for chromosomes 1 to 22, X, Y and MT.  
-    This binary file can be generated by the [fastabin.sh](https://github.com/tecnickcom/variantkey/blob/master/resources/tools/fastabin.sh) script from a genome reference FASTA file.
+    It only contains the first 25 sequences for chromosomes 1 to 22, X, Y and MT.  
+    This binary file can be generated by the [fastabin.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/fastabin.sh) script from a genome reference FASTA file.
     
 * **`rsvk.bin`**
     Lookup table to retrieve VariantKey from rsID.  
-    This binary file can be generated by the [rsvk.sh](https://github.com/tecnickcom/variantkey/blob/master/resources/tools/rsvk.sh) script from a normalized TSV file.
-    The VCF file can be normalized using the [vcfnorm.sh](https://github.com/tecnickcom/variantkey/blob/master/resources/tools/vcfnorm.sh) script.  
+    This binary file can be generated by the [rsvk.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/rsvk.sh) script from a normalized TSV file.
+    The VCF file can be normalized using the [vcfnorm.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/vcfnorm.sh) script.  
     This can also be in *Apache Arrow File* format with a single *RecordBatch*, or *Feather* format. The first column must contain the rsID sorted in ascending order.
     
 * **`vkrs.bin`**
     Lookup table to retrieve rsID from VariantKey.  
-    This binary file can be generated by the [vkrs.sh](https://github.com/tecnickcom/variantkey/blob/master/resources/tools/vkrs.sh) script from a normalized TSV file.
-    The VCF file can be normalized using the [vcfnorm.sh](https://github.com/tecnickcom/variantkey/blob/master/resources/tools/vcfnorm.sh) script.
+    This binary file can be generated by the [vkrs.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/vkrs.sh) script from a normalized TSV file.
+    The VCF file can be normalized using the [vcfnorm.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/vcfnorm.sh) script.
     This can also be in *Apache Arrow File* format with a single *RecordBatch*, or *Feather* format. The first column must contain the VariantKey sorted in ascending order.
     
 * **`nrvk.bin`**
     Lookup table to retrieve the original `REF` and `ALT` string for the non-reversible VariantKey.  
-    This binary file can be generated by the [nrvk.sh](https://github.com/tecnickcom/variantkey/blob/master/resources/tools/nrvk.sh) script from a TSV file with the following format:
+    This binary file can be generated by the [nrvk.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/nrvk.sh) script from a TSV file with the following format:
 
     ```
     [16 BYTE VARIANTKEY HEX]\t[REF STRING]\t[ALT STRING]\n...
@@ -614,6 +612,211 @@ https://sourceforge.net/projects/variantkey/files/
     b800c35bbcece603	AAAAAAAAGG	AG
     1800c351f61f65d3	A	AAGAAAGAAAG
     ```
+
+----------
+
+<a name="annotations"></a>
+## Annotation lookup tables
+
+Variant annotation sets, such as pathogenicity predictions, allele frequencies or
+model scores, are normally distributed as a bgzip-compressed TSV with a tabix
+index, keyed on the four `CHROM`, `POS`, `REF` and `ALT` columns.
+
+The `vkbin` tool converts any such file into a VariantKey-indexed
+[BINSRC1](#binaryfiles) binary lookup table, so that the annotation can be
+memory mapped, searched with `binsearch` and joined with other data on a single
+64 bit integer.
+
+<a name="whyconvert"></a>
+### Why convert an annotation file
+
+A tabix TSV is a good archive format and a poor working format.
+
+A single `uint64` replaces the four source columns as the join key. Joining two
+annotation sets, or an annotation set and a cohort, no longer requires matching
+a string chromosome that may or may not carry a `chr` prefix, then a position,
+then two allele strings. A columnar engine such as DuckDB, Spark or BigQuery can join
+on that key directly, and none of them reads a tabix index.
+
+Point lookups need neither decompression nor parsing. A tabix query decompresses
+a bgzip block and parses text lines to answer a single variant. A BINSRC1 file is
+fixed-width records in memory mapped pages, so a lookup is a binary search over
+integers: `O(log n)` comparisons, no allocation, no text.
+
+Storage is smaller at every compression level. Measured over ten
+million rows of the AlphaGenome AVI score file and extrapolated to its full
+9.06e9 rows:
+
+| Representation       | Uncompressed | gzip -6  | zstd -3  | zstd -12 | xz -6   |
+|----------------------|--------------|----------|----------|----------|---------|
+| BINSRC1, 16 bytes    | 145.0 GB     | 68.8 GB  | 58.0 GB  | 53.2 GB  | 40.3 GB |
+| source TSV           | 298.1 GB     | 87.6 GB  | 78.8 GB  | 62.4 GB  | 40.3 GB |
+
+That is 2.06x smaller uncompressed and 15% to 26% smaller at the usual
+compression levels. The two forms converge at `xz`, which finds the same
+structure in both. Most of the gain comes from the key column: over a dense
+variant set the sorted VariantKeys are close to an arithmetic sequence, and that
+column compresses to about 5% of its size.
+
+Values are stored exactly. Each value column is a decimal scaled to an integer,
+so a score printed with five decimals is read back with five decimals, with no
+rounding through a `float`.
+
+The trade is disk space. A tabix file is queried in place while still compressed,
+whereas a BINSRC1 file must be uncompressed to be memory mapped: at the
+extrapolated AVI sizes, 145.0 GB against the 88.5 GB of the distributed file.
+
+<a name="vkbintool"></a>
+### The vkbin tool
+
+The code inside the `c/vkbin` folder generates the `vkbin` command line tool.
+It reads a TSV on standard input and writes a BINSRC1 file:
+
+```
+Usage: vkbin -o FILE [-s N] COLSPEC...
+
+  -o FILE  Output file. Required.
+  -s N     Number of leading header lines to skip. Default 1.
+  -h       Help.
+```
+
+The first four input columns must be `CHROM`, `POS`, `REF` and `ALT`, where
+`POS` is 1-based as in VCF. Each `COLSPEC` describes one further column:
+
+```
+WIDTH:DECIMALS[:OFFSET][:NA]
+```
+
+* **`WIDTH`**    - *stored size in bytes*: 1, 2, 4 or 8.
+* **`DECIMALS`** - *decimal places to preserve*: the value is multiplied by
+    `10^DECIMALS` and rounded to an integer, half away from zero.
+* **`OFFSET`**   - *decimal added before scaling*, to shift a signed range into
+    the unsigned one. Default 0.
+* **`NA`**       - *store the largest value of `WIDTH` for a missing field*,
+    instead of stopping. A real value that reaches that largest value is then
+    rejected, so the two cannot be confused at query time.
+
+`OFFSET` and `NA` follow `DECIMALS` in any order and each may appear once.
+
+Value fields are decimal numbers, in plain or exponential notation. With `NA` a
+field is missing when it is empty or is `.`, `NA`, `N/A`, `NaN` or `null`, in
+any case.
+
+Input columns beyond the last `COLSPEC` are ignored, so one invocation keeps
+working when the source file gains columns.
+
+Decompression is left to the caller, so the tool has no dependency beyond the C
+standard library:
+
+```sh
+bgzip -dc annotations.tsv.gz | vkbin -o annotations.bin 4:5:2.0 4:5:0
+```
+
+The [annotbin.sh](https://github.com/tecnickcom/variantkey/blob/main/resources/tools/annotbin.sh)
+script in `resources/tools/` wraps that pipeline, selecting the decompressor
+from the file name:
+
+```sh
+ANNOT_INPUT_FILE=annotations.tsv.gz \
+ANNOT_OUTPUT_FILE=annotations.bin \
+ANNOT_COLUMNS="4:5:2.0 4:5:0" \
+./annotbin.sh
+```
+
+The input must already be sorted by VariantKey, as a file sorted by chromosome
+and position is. The tool stops with an error on an unsorted input, because an
+unsorted table cannot be binary searched and would fail silently at query time,
+and on a value that does not fit its declared width, rather than truncating it.
+
+<a name="aviexample"></a>
+### Worked example: AlphaGenome AVI scores
+
+Google DeepMind's AlphaGenome Atlas publishes an
+[AVI score](https://deepmind.google.com/science/alphagenome/downloads) for every
+possible single nucleotide variant in the human genome: 9.06e9 rows, 88.5 GB as
+distributed. The first rows are:
+
+```
+#CHROM  POS    REF  ALT  raw_score  PHRED
+chr1    10001  T    A    -0.03868   1.06466
+chr1    10001  T    C    -0.032     1.3114
+chr1    10001  T    G    -0.0372    1.11839
+```
+
+Both scores carry five decimals. `raw_score` is signed, spanning roughly -1.3 to
++4.6, so an offset of `2.0` shifts it into the unsigned range. `PHRED` is already
+non-negative:
+
+```sh
+bgzip -dc alphagenome_variant_impact_score_snvs.tsv.gz \
+  | vkbin -o avi.bin 4:5:2.0 4:5:0
+```
+
+The first row above is stored as:
+
+| Field       | Source          | Stored                                    |
+|-------------|-----------------|-------------------------------------------|
+| VariantKey  | chr1:10001 T>A  | `0800138808e00000`                        |
+| `raw_score` | -0.03868        | `196132`, that is `(-0.03868 + 2.0) * 1e5` |
+| `PHRED`     | 1.06466         | `106466`, that is `1.06466 * 1e5`          |
+
+<a name="readoutput"></a>
+### Reading the output
+
+Output files are ordinary BINSRC1 files, read by the library with no extra
+support. Column 0 is the VariantKey, and the value columns follow in the order
+they were given on the command line:
+
+```c
+#include "variantkey/binsearch.h"
+#include "variantkey/variantkey.h"
+
+mmfile_t mf = {0};
+mmap_binfile("avi.bin", &mf); // the header supplies nrows, ncols and index[]
+
+const uint64_t *keys   = get_src_offset_uint64_t(mf.src, mf.index[0]);
+const uint32_t *raws   = get_src_offset_uint32_t(mf.src, mf.index[1]);
+const uint32_t *phreds = get_src_offset_uint32_t(mf.src, mf.index[2]);
+
+uint64_t first = 0;
+uint64_t last = mf.nrows;
+// The VariantKey POS is 0-based, so it is one less than the POS in the file.
+uint64_t vk = variantkey("chr1", 4, 10000, "T", 1, "A", 1);
+uint64_t i = col_find_first_le_uint64_t(keys, &first, &last, vk);
+
+if (i < mf.nrows)
+{
+    uint32_t raw_q = raws[i];     // 196132
+    uint32_t phred_q = phreds[i]; // 106466
+}
+
+munmap_binfile(&mf);
+```
+
+Print a stored value by formatting the integer with its decimals. Converting it
+to a `float` first reintroduces the representation error that the fixed-point
+encoding avoids.
+
+Column 0 holds an unmodified VariantKey, so the same file can be joined directly
+against any other VariantKey-keyed data, and any row can be turned back into
+`CHROM`, `POS`, `REF` and `ALT` with `reverse_variantkey`.
+
+<a name="colwidths"></a>
+### Choosing column widths
+
+A value needs `ceil(log2(range * 10^decimals))` bits, and BINSRC1 stores columns
+of 1, 2, 4 or 8 bytes, so the requirement rounds up to the next of those sizes.
+For the AVI scores at five decimals:
+
+| Column      | Observed range   | Distinct values | Bits | Width |
+|-------------|------------------|-----------------|------|-------|
+| `raw_score` | -1.269 to +4.557 | 5.83e5          | 20   | 4 B   |
+| `PHRED`     | 0.0 to +82.9945  | 8.30e6          | 23   | 4 B   |
+
+Prefer the wider column when the choice is close: the observed range of a source
+file is a lower bound on its true range, a value that does not fit stops the
+conversion, and spare capacity costs only bytes that largely compress away. Both
+AVI columns need 20 and 23 bits and are given 4 bytes.
 
 ----------
 
@@ -631,20 +834,25 @@ All the artifacts and reports produced using this Makefile are stored in the *ta
 * To see all available options: `make help`
 * To build everything: `make all`
 
-### Example command-Line tool
+### Example command-line tool
 
-The code inside the `c/vk` folder is used to generate the `vk` command line tool.  
-This tools requires the pre-normalized positional arguments `CHROM`, `POS`, `REF`, `ALT` and returns the VariantKey in hexadecimal representation.
+The code inside the `c/vk` folder generates the `vk` command line tool.  
+It takes the pre-normalized positional arguments `CHROM`, `POS`, `REF` and `ALT`, and returns the VariantKey in hexadecimal representation.
+
+### Annotation table builder
+
+`vkbin`, in the `c/vkbin` folder, converts an annotation TSV into a VariantKey-indexed binary lookup table.
+See [Annotation lookup tables](#annotations).
 
 
 <a name="golib"></a>
 ## Go Library (golang)
 
 * [Go source code documentation](https://tecnickcom.github.io/variantkey/go/index.html)
-* [Go Usage Examples](go/example/main.go)
+* [Go Usage Examples](go/src/example_variantkey_test.go)
 
-A go wrapper is located in the `go` directory.  
-Use the "`make go`" command to test the GO wrapper and generate reports.
+The Go wrapper is located in the `go` directory.  
+Use the "`make go`" command to test it and generate reports.
 
 
 <a name="pythonlib"></a>
@@ -653,8 +861,8 @@ Use the "`make go`" command to test the GO wrapper and generate reports.
 * [Python source code documentation](https://tecnickcom.github.io/variantkey/python/variantkey.html)
 * [Python Usage Examples](python/test/example.py)
 
-The python module is located in the `python` directory.
-Use the "`make python`" command to test the Python wrapper and generate reports.
+The Python module is located in the `python` directory.
+Use the "`make python`" command to test it and generate reports.
 
 
 <a name="pythonclass"></a>
@@ -663,9 +871,9 @@ Use the "`make python`" command to test the Python wrapper and generate reports.
 * [Python vectorized class source code documentation](https://tecnickcom.github.io/variantkey/python-class/pyvariantkey.variantkey.html)
 * [Python Usage Examples](python-class/test/example.py)
 
-The python class module is a wrapper for the low-level Python library and it is located in the `python-class` directory.
+The Python class module wraps the low-level Python library and is located in the `python-class` directory.
 All methods of this class are vectorized, so they also accept lists or numpy arrays as input.
-Use the "`make python-class`" command to test the Python class and generate reports.
+Use the "`make python-class`" command to test it and generate reports.
 
 
 <a name="rlib"></a>
@@ -675,7 +883,7 @@ Use the "`make python-class`" command to test the Python class and generate repo
 * [R Usage Examples](r/example/example.R)
 
 The R module is located in the `r` directory.
-Use the "`make r`" command to test the R wrapper and generate reports.
+Use the "`make r`" command to test it and generate reports.
 
 In R the VariantKey is represented with a custom "uint64" class because there is no native support for unsigned 64 bit integers in R.
 

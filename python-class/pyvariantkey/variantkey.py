@@ -10,8 +10,7 @@ class VariantKey(object):
     def __init__(
         self, genoref_file=None, nrvk_file=None, rsvk_file=None, vkrs_file=None
     ):
-        """Instantiate a new VariantKey object.
-        Load the support files if specified.
+        """Instantiates a new VariantKey object, loading the support files if specified.
 
         Parameters
         ----------
@@ -64,7 +63,7 @@ class VariantKey(object):
                 raise Exception("Unable to load the RSVK file: {0}".format(rsvk_file))
 
         if vkrs_file is not None:
-            # Load the lookup table for VariantKey ro rsID
+            # Load the lookup table for VariantKey to rsID
             self.vkrs_mf, self.vkrs_mc, self.vkrs_nrows = pvk.mmap_vkrs_file(
                 vkrs_file, [8, 4]
             )
@@ -72,12 +71,12 @@ class VariantKey(object):
                 raise Exception("Unable to load the VKRS file: {0}".format(vkrs_file))
 
     def __del__(self):
-        """Cleanup resources"""
+        """Releases the mapped files."""
         if pvk is not None:  # pragma: no cover
             self.close()
 
     def close(self):
-        """Close all input files.
+        """Closes all the input files.
 
         Idempotent: calling it twice, or calling it and then letting __del__ run,
         does nothing the second time.
@@ -102,7 +101,7 @@ class VariantKey(object):
     # --------------------------
 
     def encode_chrom(self, chrom):
-        """Returns chromosome numerical encoding.
+        """Encodes a chromosome identifier into a numerical code.
 
         Parameters
         ----------
@@ -118,7 +117,7 @@ class VariantKey(object):
         return f(np.array(chrom).astype(np.bytes_))
 
     def decode_chrom(self, code):
-        """Decode the chromosome numerical code.
+        """Decodes a chromosome numerical code into its string representation.
 
         Parameters
         ----------
@@ -134,7 +133,7 @@ class VariantKey(object):
         return f(np.array(code).astype(np.uint8))
 
     def encode_refalt(self, ref, alt):
-        """Returns reference+alternate numerical encoding.
+        """Encodes a REF+ALT pair into a 31 bit code.
 
         Parameters
         ----------
@@ -155,8 +154,8 @@ class VariantKey(object):
         return f(np.array(ref).astype(np.bytes_), np.array(alt).astype(np.bytes_))
 
     def decode_refalt(self, code):
-        """Decode the 32 bit REF+ALT code if reversible
-        (if it has 11 or less bases in total and only contains ACGT letters).
+        """Decodes a 32 bit REF+ALT code if it was produced by the reversible encoding
+        (11 or less bases in total, containing only A, C, G and T letters).
 
         Parameters
         ----------
@@ -177,7 +176,7 @@ class VariantKey(object):
         return f(np.array(code).astype(np.uint32))
 
     def encode_variantkey(self, chrom, pos, refalt):
-        """Returns a 64 bit variant key based on the pre-encoded CHROM, POS (0-based) and REF+ALT.
+        """Assembles a VariantKey from the pre-encoded CHROM, POS and REF+ALT.
 
         Parameters
         ----------
@@ -201,7 +200,7 @@ class VariantKey(object):
         )
 
     def extract_variantkey_chrom(self, vk):
-        """Extract the CHROM code from VariantKey.
+        """Extracts the CHROM code from a VariantKey.
 
         Parameters
         ----------
@@ -217,7 +216,7 @@ class VariantKey(object):
         return f(np.array(vk).astype(np.uint64))
 
     def extract_variantkey_pos(self, vk):
-        """Extract the POS code from VariantKey.
+        """Extracts the POS value from a VariantKey.
 
         Parameters
         ----------
@@ -233,7 +232,7 @@ class VariantKey(object):
         return f(np.array(vk).astype(np.uint64))
 
     def extract_variantkey_refalt(self, vk):
-        """Extract the REF+ALT code from VariantKey.
+        """Extracts the REF+ALT code from a VariantKey.
 
         Parameters
         ----------
@@ -249,7 +248,7 @@ class VariantKey(object):
         return f(np.array(vk).astype(np.uint64))
 
     def decode_variantkey(self, vk):
-        """Decode a VariantKey code and returns the components.
+        """Splits a VariantKey into its CHROM, POS and REF+ALT components.
 
         Parameters
         ----------
@@ -267,7 +266,7 @@ class VariantKey(object):
         return f(np.array(vk).astype(np.uint64))
 
     def variantkey(self, chrom, pos, ref, alt):
-        """Returns a 64 bit variant key based on CHROM, POS (0-based), REF, ALT.
+        """Returns a VariantKey for the given CHROM, POS (0-based), REF and ALT.
         The variant should be already normalized (see normalize_variant or use normalized_variantkey).
 
         Parameters
@@ -297,7 +296,7 @@ class VariantKey(object):
         )
 
     def variantkey_range(self, chrom, pos_min, pos_max):
-        """Returns minimum and maximum VariantKeys for range searches.
+        """Returns the minimum and maximum VariantKey of a CHROM and POS range.
 
         Parameters
         ----------
@@ -322,7 +321,7 @@ class VariantKey(object):
         )
 
     def compare_variantkey_chrom(self, vka, vkb):
-        """Compares two VariantKeys by chromosome only.
+        """Compares two VariantKeys by CHROM only.
 
         Parameters
         ----------
@@ -341,7 +340,7 @@ class VariantKey(object):
         return f(np.array(vka).astype(np.uint64), np.array(vkb).astype(np.uint64))
 
     def compare_variantkey_chrom_pos(self, vka, vkb):
-        """Compares two VariantKeys by chromosome and position.
+        """Compares two VariantKeys by CHROM and POS.
 
         Parameters
         ----------
@@ -360,7 +359,7 @@ class VariantKey(object):
         return f(np.array(vka).astype(np.uint64), np.array(vkb).astype(np.uint64))
 
     def variantkey_hex(self, vk):
-        """Returns VariantKey hexadecimal string (16 characters).
+        """Returns a VariantKey as a 16 character hexadecimal string.
 
         Parameters
         ----------
@@ -376,7 +375,7 @@ class VariantKey(object):
         return f(np.array(vk).astype(np.uint64))
 
     def parse_variantkey_hex(self, vs):
-        """Parses a VariantKey hexadecimal string and returns the code.
+        """Parses a 16 character hexadecimal string into a VariantKey.
 
         Parameters
         ----------
@@ -395,7 +394,7 @@ class VariantKey(object):
     # -------
 
     def find_rv_variantkey_by_rsid(self, rsid):
-        """Search for the specified rsID and returns the first occurrence of VariantKey in the RV file.
+        """Returns the first VariantKey associated with an rsID.
 
         Parameters
         ----------
@@ -416,9 +415,8 @@ class VariantKey(object):
         return f(self.rsvk_mc, 0, self.rsvk_nrows, np.array(rsid).astype(np.uint32))
 
     def get_next_rv_variantkey_by_rsid(self, pos, rsid):
-        """Get the next VariantKey for the specified rsID in the RV file."\
-        " This function should be used after find_rv_variantkey_by_rsid."\
-        " This function can be called in a loop to get all VariantKeys that are associated with the same rsID (if any).
+        """Returns the next VariantKey associated with an rsID.
+        Call this in a loop after find_rv_variantkey_by_rsid to get all the VariantKeys of the same rsID.
 
         Parameters
         ----------
@@ -446,7 +444,7 @@ class VariantKey(object):
         )
 
     def find_all_rv_variantkey_by_rsid(self, rsid):
-        """Search for the specified rsID and returns all associated VariantKeys.
+        """Returns all the VariantKeys associated with an rsID.
 
         Parameters
         ----------
@@ -467,7 +465,7 @@ class VariantKey(object):
         return np.array(vk).astype(np.uint64)
 
     def find_vr_rsid_by_variantkey(self, vk):
-        """Search for the specified VariantKey and returns the first occurrence of rsID in the VR file.
+        """Returns the first rsID associated with a VariantKey.
 
         Parameters
         ----------
@@ -488,9 +486,8 @@ class VariantKey(object):
         return f(self.vkrs_mc, 0, self.vkrs_nrows, np.array(vk).astype(np.uint64))
 
     def get_next_vr_rsid_by_variantkey(self, pos, vk):
-        """Get the next rsID for the specified VariantKey in the VR file."\
-        " This function should be used after find_vr_rsid_by_variantkey."\
-        " This function can be called in a loop to get all rsIDs that are associated with the same VariantKey (if any).
+        """Returns the next rsID associated with a VariantKey.
+        Call this in a loop after find_vr_rsid_by_variantkey to get all the rsIDs of the same VariantKey.
 
         Parameters
         ----------
@@ -518,7 +515,7 @@ class VariantKey(object):
         )
 
     def find_all_vr_rsid_by_variantkey(self, vk):
-        """Search for the specified VariantKey and returns all associated rsIDs.
+        """Returns all the rsIDs associated with a VariantKey.
 
         Parameters
         ----------
@@ -539,7 +536,7 @@ class VariantKey(object):
         return np.array(rs).astype(np.uint32)
 
     def find_vr_chrompos_range(self, chrom, pos_min, pos_max):
-        """Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.
+        """Returns the first rsID of a CHROM and POS range.
 
         Parameters
         ----------
@@ -575,7 +572,7 @@ class VariantKey(object):
     # ----
 
     def find_ref_alt_by_variantkey(self, vk):
-        """Retrieve the REF and ALT strings for the specified VariantKey.
+        """Looks up the REF and ALT strings of a VariantKey.
 
         Parameters
         ----------
@@ -599,7 +596,7 @@ class VariantKey(object):
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
     def reverse_variantkey(self, vk):
-        """Reverse a VariantKey code and returns the normalized components.
+        """Reverses a VariantKey into its CHROM, POS, REF and ALT components.
 
         Parameters
         ----------
@@ -625,7 +622,7 @@ class VariantKey(object):
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
     def get_variantkey_ref_length(self, vk):
-        """Retrieve the REF length for the specified VariantKey.
+        """Returns the REF length of a VariantKey.
 
         Parameters
         ----------
@@ -643,7 +640,7 @@ class VariantKey(object):
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
     def get_variantkey_endpos(self, vk):
-        """Get the VariantKey end position (POS + REF length).
+        """Returns the end position of a VariantKey (POS + REF length).
 
         Parameters
         ----------
@@ -659,7 +656,7 @@ class VariantKey(object):
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
     def get_variantkey_chrom_startpos(self, vk):
-        """Get the CHROM + START POS encoding from VariantKey.
+        """Returns the CHROM and START POS section of a VariantKey.
 
         Parameters
         ----------
@@ -675,7 +672,7 @@ class VariantKey(object):
         return f(np.array(vk).astype(np.uint64))
 
     def get_variantkey_chrom_endpos(self, vk):
-        """Get the CHROM + END POS encoding from VariantKey.
+        """Returns the CHROM and END POS of a VariantKey.
 
         Parameters
         ----------
@@ -693,7 +690,7 @@ class VariantKey(object):
         return f(self.nrvk_mc, np.array(vk).astype(np.uint64))
 
     def nrvk_bin_to_tsv(self, tsvfile):
-        """Convert a vrnr.bin file to a simple TSV.
+        """Writes the content of the NRVK memory mapped file as a TSV file.
         For the reverse operation see the resources/tools/nrvk.sh script.
 
         Parameters
@@ -712,7 +709,7 @@ class VariantKey(object):
     # ----------
 
     def get_genoref_seq(self, chrom, pos):
-        """Returns the genome reference nucleotide at the specified chromosome and position.
+        """Returns the genome reference nucleotide at the given chromosome and position.
 
         Parameters
         ----------
@@ -734,7 +731,7 @@ class VariantKey(object):
         )
 
     def check_reference(self, chrom, pos, ref):
-        """Check if the reference allele matches the reference genome data.
+        """Checks a reference allele against the genome reference data.
 
         Parameters
         ----------
@@ -764,7 +761,7 @@ class VariantKey(object):
         )
 
     def flip_allele(self, allele):
-        """Flip the allele nucleotides (replaces each letter with its complement).
+        """Replaces each nucleotide of an allele with its complement.
         The resulting string is always in uppercase.
         Supports extended nucleotide letters.
 
@@ -782,9 +779,8 @@ class VariantKey(object):
         return f(np.array(allele).astype(np.bytes_))
 
     def normalize_variant(self, chrom, pos, ref, alt):
-        """Normalize a variant."\
-        " Flip alleles if required and apply the normalization algorithm described at:"\
-        " https://genome.sph.umich.edu/wiki/Variant_Normalization
+        """Normalizes a variant against the genome reference, flipping the alleles if required.
+        See https://genome.sph.umich.edu/wiki/Variant_Normalization
 
         Parameters
         ----------
@@ -830,9 +826,8 @@ class VariantKey(object):
         )
 
     def normalized_variantkey(self, chrom, pos, posindex, ref, alt):
-        """Normalize a variant."\
-        " Flip alleles if required and apply the normalization algorithm described at:"\
-        " https://genome.sph.umich.edu/wiki/Variant_Normalization
+        """Normalizes a variant and returns its VariantKey.
+        See https://genome.sph.umich.edu/wiki/Variant_Normalization
 
         Parameters
         ----------
@@ -871,7 +866,7 @@ class VariantKey(object):
     # ---------
 
     def encode_region_strand(self, strand):
-        """Encode the strand direction (-1 > 2, 0 > 0, +1 > 1).
+        """Encodes a strand direction: -1 to 2, 0 to 0, +1 to 1.
 
         Parameters
         ----------
@@ -887,7 +882,7 @@ class VariantKey(object):
         return f(np.array(strand).astype(np.int16))
 
     def decode_region_strand(self, strand):
-        """Decode the strand direction code (0 > 0, 1 > +1, 2 > -1).
+        """Decodes a strand code: 0 to 0, 1 to +1, 2 to -1.
 
         Parameters
         ----------
@@ -903,7 +898,7 @@ class VariantKey(object):
         return f(np.array(strand).astype(np.uint8))
 
     def encode_regionkey(self, chrom, startpos, endpos, strand):
-        """Returns a 64 bit regionkey
+        """Assembles a RegionKey from its pre-encoded components.
 
         Parameters
         ----------
@@ -930,7 +925,7 @@ class VariantKey(object):
         )
 
     def extract_regionkey_chrom(self, rk):
-        """Extract the CHROM code from RegionKey.
+        """Extracts the CHROM code from a RegionKey.
 
         Parameters
         ----------
@@ -946,7 +941,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def extract_regionkey_startpos(self, rk):
-        """Extract the START POS code from RegionKey.
+        """Extracts the START POS value from a RegionKey.
 
         Parameters
         ----------
@@ -962,7 +957,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def extract_regionkey_endpos(self, rk):
-        """Extract the END POS code from RegionKey.
+        """Extracts the END POS value from a RegionKey.
 
         Parameters
         ----------
@@ -978,7 +973,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def extract_regionkey_strand(self, rk):
-        """Extract the STRAND from RegionKey.
+        """Extracts the STRAND code from a RegionKey.
 
         Parameters
         ----------
@@ -994,7 +989,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def decode_regionkey(self, rk):
-        """Decode a RegionKey code and returns the components as regionkey_t structure.
+        """Splits a RegionKey into its encoded components.
 
         Parameters
         ----------
@@ -1015,7 +1010,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def reverse_regionkey(self, rk):
-        """Reverse a RegionKey code and returns the normalized components as regionkey_rev_t structure.
+        """Reverses a RegionKey into its decoded components.
 
         Parameters
         ----------
@@ -1036,7 +1031,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def regionkey(self, chrom, startpos, endpos, strand):
-        """Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.
+        """Returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND.
 
         Parameters
         ----------
@@ -1063,7 +1058,7 @@ class VariantKey(object):
         )
 
     def extend_regionkey(self, rk, size):
-        """Extend a regionkey region by a fixed amount from the start and end position.
+        """Extends a RegionKey region by a fixed amount at both ends.
 
         Parameters
         ----------
@@ -1081,7 +1076,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64), np.array(size).astype(np.uint32))
 
     def regionkey_hex(self, rk):
-        """Returns RegionKey hexadecimal string (16 characters).
+        """Returns a RegionKey as a 16 character hexadecimal string.
 
         Parameters
         ----------
@@ -1097,7 +1092,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def parse_regionkey_hex(self, rs):
-        """Parses a RegionKey hexadecimal string and returns the code.
+        """Parses a 16 character hexadecimal string into a RegionKey.
 
         Parameters
         ----------
@@ -1113,7 +1108,7 @@ class VariantKey(object):
         return f(np.array(rs).astype(np.bytes_))
 
     def get_regionkey_chrom_startpos(self, rk):
-        """Get the CHROM + START POS encoding from RegionKey.
+        """Returns the CHROM and START POS section of a RegionKey.
 
         Parameters
         ----------
@@ -1129,7 +1124,7 @@ class VariantKey(object):
         return f(np.array(rk).astype(np.uint64))
 
     def get_regionkey_chrom_endpos(self, rk):
-        """Get the CHROM + END POS encoding from RegionKey.
+        """Returns the CHROM and END POS of a RegionKey.
 
         Parameters
         ----------
@@ -1147,7 +1142,7 @@ class VariantKey(object):
     def are_overlapping_regions(
         self, a_chrom, a_startpos, a_endpos, b_chrom, b_startpos, b_endpos
     ):
-        """Check if two regions are overlapping.
+        """Checks whether two regions overlap.
 
         Parameters
         ----------
@@ -1180,7 +1175,7 @@ class VariantKey(object):
         )
 
     def are_overlapping_region_regionkey(self, chrom, startpos, endpos, rk):
-        """Check if a region and a regionkey are overlapping.
+        """Checks whether a region and a RegionKey overlap.
 
         Parameters
         ----------
@@ -1207,7 +1202,7 @@ class VariantKey(object):
         )
 
     def are_overlapping_regionkeys(self, rka, rkb):
-        """Check if two regionkeys are overlapping.
+        """Checks whether two RegionKeys overlap.
 
         Parameters
         ----------
@@ -1225,7 +1220,7 @@ class VariantKey(object):
         return f(np.array(rka).astype(np.uint64), np.array(rkb).astype(np.uint64))
 
     def are_overlapping_variantkey_regionkey(self, vk, rk):
-        """Check if variantkey and regionkey are overlapping.
+        """Checks whether a VariantKey and a RegionKey overlap.
 
         Parameters
         ----------
@@ -1247,7 +1242,7 @@ class VariantKey(object):
         )
 
     def variantkey_to_regionkey(self, vk):
-        """Get RegionKey from VariantKey.
+        """Converts a VariantKey into a RegionKey.
 
         Parameters
         ----------
@@ -1268,7 +1263,7 @@ class VariantKey(object):
     # ----
 
     def encode_string_id(self, strid, start=0):
-        """Encode maximum 10 characters of a string into a 64 bit unsigned integer.
+        """Encodes up to 10 characters of a string into a 64 bit unsigned integer.
         This function can be used to convert generic string IDs to numeric IDs.
 
         Parameters
@@ -1289,10 +1284,10 @@ class VariantKey(object):
         return f(vstrid, vstart)
 
     def encode_string_num_id(self, strid, sep=b":"):
-        """Encode a string composed by a character section followed by a separator
-        character and a numerical section into a 64 bit unsigned integer. For example: ABCDE:0001234.
-        Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
-        If the string is 10 character or less, then the encode_string_id() is used.
+        """Encodes a string made of a character section, a separator and a numerical section
+        into a 64 bit unsigned integer. For example: ABCDE:0001234.
+        It encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
+        Strings of 10 characters or less are encoded as by encode_string_id().
 
         Parameters
         ----------
@@ -1310,7 +1305,7 @@ class VariantKey(object):
         return f(np.array(strid).astype(np.bytes_), np.array(sep).astype("|S1"))
 
     def decode_string_id(self, esid):
-        """Decode the encoded string ID.
+        """Decodes an encoded string ID.
         This function is the reverse of encode_string_id.
         The string is always returned in uppercase mode.
 
@@ -1329,7 +1324,7 @@ class VariantKey(object):
         return f(np.array(esid).astype(np.uint64))
 
     def hash_string_id(self, strid):
-        """Hash the input string into a 64 bit unsigned integer.
+        """Hashes a string into a non-reversible 64 bit string ID.
         This function can be used to convert long string IDs to numeric IDs.
 
         Parameters

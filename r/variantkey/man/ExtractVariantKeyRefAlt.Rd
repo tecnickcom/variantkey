@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtractVariantKeyRefAlt}
 \alias{ExtractVariantKeyRefAlt}
-\title{Extract the REF+ALT code from VariantKey.}
+\title{Extracts the REF+ALT code from a VariantKey.}
 \usage{
 ExtractVariantKeyRefAlt(vk)
 }
@@ -10,5 +10,5 @@ ExtractVariantKeyRefAlt(vk)
 \item{vk}{VariantKey code.}
 }
 \description{
-Extract the REF+ALT code from VariantKey.
+Extracts the REF+ALT code from a VariantKey.
 }

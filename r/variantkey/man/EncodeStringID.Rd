@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeStringID}
 \alias{EncodeStringID}
-\title{Encode maximum 10 characters of a string into a 64 bit unsigned integer.
+\title{Encodes up to 10 characters of a string into a 64 bit unsigned integer.
 This function can be used to convert generic string IDs to numeric IDs.}
 \usage{
 EncodeStringID(str, start = 0)
@@ -13,6 +13,6 @@ EncodeStringID(str, start = 0)
 \item{start}{First character to encode, starting from 0. To encode the last 10 characters, set this value at (size - 10).}
 }
 \description{
-Encode maximum 10 characters of a string into a 64 bit unsigned integer.
+Encodes up to 10 characters of a string into a 64 bit unsigned integer.
 This function can be used to convert generic string IDs to numeric IDs.
 }

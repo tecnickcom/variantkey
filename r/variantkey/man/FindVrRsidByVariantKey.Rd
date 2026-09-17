@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{FindVrRsidByVariantKey}
 \alias{FindVrRsidByVariantKey}
-\title{Search for the specified VariantKey and returns the first occurrence of rsID in the VR file, or 0 if not found.}
+\title{Returns the first rsID associated with a VariantKey.}
 \usage{
 FindVrRsidByVariantKey(
   vk,
@@ -18,8 +18,8 @@ FindVrRsidByVariantKey(
 
 \item{last}{Element (up to but not including) where to end the search (max value = nitems).}
 
-\item{mc}{Memory-mapped columns object as retured by MmapVKRSfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapVKRSfile.}
 }
 \description{
-Search for the specified VariantKey and returns the first occurrence of rsID in the VR file, or 0 if not found.
+Returns the first rsID associated with a VariantKey.
 }

@@ -21,8 +21,7 @@
 //!< Highest position representable in the 28 bit POS field
 enum { VK_MAX_POS = 0x0FFFFFFF };
 
-// Unlike the library, which trusts its input by design, this command line tool
-// validates the POS argument before encoding.
+// The library trusts its input, so the POS argument is validated here.
 int main(int argc, char *argv[])
 {
     if (argc != 5)

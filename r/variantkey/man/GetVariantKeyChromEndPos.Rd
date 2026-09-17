@@ -2,15 +2,15 @@
 % Please edit documentation in R/variantkey.R
 \name{GetVariantKeyChromEndPos}
 \alias{GetVariantKeyChromEndPos}
-\title{Get the CHROM + END POS encoding from VariantKey.}
+\title{Returns the CHROM and END POS of a VariantKey.}
 \usage{
 GetVariantKeyChromEndPos(vk, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{vk}{VariantKey.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
 }
 \description{
-Get the CHROM + END POS encoding from VariantKey.
+Returns the CHROM and END POS of a VariantKey.
 }

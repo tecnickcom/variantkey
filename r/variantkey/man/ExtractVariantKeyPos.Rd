@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtractVariantKeyPos}
 \alias{ExtractVariantKeyPos}
-\title{Extract the POS code from VariantKey.}
+\title{Extracts the POS value from a VariantKey.}
 \usage{
 ExtractVariantKeyPos(vk)
 }
@@ -10,5 +10,5 @@ ExtractVariantKeyPos(vk)
 \item{vk}{VariantKey code.}
 }
 \description{
-Extract the POS code from VariantKey.
+Extracts the POS value from a VariantKey.
 }

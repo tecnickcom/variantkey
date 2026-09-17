@@ -2,8 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{CompareVariantKeyChromPos}
 \alias{CompareVariantKeyChromPos}
-\title{Compares two VariantKeys by chromosome and position.
-Return -1 if the first CHROM+POS is smaller than the second, 0 if they are equal and 1 if the first is greater than the second.}
+\title{Compares two VariantKeys by CHROM and POS.}
 \usage{
 CompareVariantKeyChromPos(vka, vkb)
 }
@@ -12,7 +11,9 @@ CompareVariantKeyChromPos(vka, vkb)
 
 \item{vkb}{The second VariantKey to be compared.}
 }
+\value{
+-1 if the first CHROM+POS is smaller than the second, 0 if they are equal and 1 if the first is greater than the second.
+}
 \description{
-Compares two VariantKeys by chromosome and position.
-Return -1 if the first CHROM+POS is smaller than the second, 0 if they are equal and 1 if the first is greater than the second.
+Compares two VariantKeys by CHROM and POS.
 }

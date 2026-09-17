@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{DecodeRegionKey}
 \alias{DecodeRegionKey}
-\title{Decode a RegionKey code and returns the components as regionkey_t structure.}
+\title{Splits a RegionKey into its encoded components.}
 \usage{
 DecodeRegionKey(rk)
 }
@@ -10,5 +10,5 @@ DecodeRegionKey(rk)
 \item{rk}{RegionKey code.}
 }
 \description{
-Decode a RegionKey code and returns the components as regionkey_t structure.
+Splits a RegionKey into its encoded components.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtractRegionKeyStrand}
 \alias{ExtractRegionKeyStrand}
-\title{Extract the STRAND from RegionKey.}
+\title{Extracts the STRAND code from a RegionKey.}
 \usage{
 ExtractRegionKeyStrand(rk)
 }
@@ -10,5 +10,5 @@ ExtractRegionKeyStrand(rk)
 \item{rk}{RegionKey code.}
 }
 \description{
-Extract the STRAND from RegionKey.
+Extracts the STRAND code from a RegionKey.
 }

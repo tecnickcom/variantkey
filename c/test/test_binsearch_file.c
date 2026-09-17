@@ -22,6 +22,8 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "../src/variantkey/binsearch.h"
 
 int test_mmap_binfile_error(const char* file)
@@ -39,7 +41,7 @@ int test_mmap_binfile_error(const char* file)
 int test_munmap_binfile_error()
 {
     mmfile_t mf = {0};
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e == 0)
     {
         (void)fprintf_s(stderr, "An mummap error was expected\n");
@@ -107,7 +109,7 @@ int test_map_file_arrow()
         (void)fprintf_s(stderr, "%s mf.index[1] : Expecting 424 bytes, got instead: %" PRIu64 "\n", __func__, mf.index[1]);
         errors++;
     }
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e != 0)
     {
         (void)fprintf_s(stderr, "%s Got %d error while unmapping the file\n", __func__, e);
@@ -175,7 +177,7 @@ int test_map_file_feather()
         (void)fprintf_s(stderr, "%s mf.index[1] : Expecting 56 bytes, got instead: %" PRIu64 "\n", __func__, mf.index[1]);
         errors++;
     }
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e != 0)
     {
         (void)fprintf_s(stderr, "%s Got %d error while unmapping the file\n", __func__, e);
@@ -240,7 +242,7 @@ int test_map_file_binsrc()
         (void)fprintf_s(stderr, "%s mf.index[1] : Expecting 88 bytes, got instead: %" PRIu64 "\n", __func__, mf.index[1]);
         errors++;
     }
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e != 0)
     {
         (void)fprintf_s(stderr, "%s Got %d error while unmapping the file\n", __func__, e);
@@ -295,10 +297,102 @@ int test_map_file_col()
         (void)fprintf_s(stderr, "%s mf.ncols : Expecting 0 items, got instead: %" PRIu8 "\n", __func__, mf.ncols);
         errors++;
     }
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e != 0)
     {
         (void)fprintf_s(stderr, "%s Got %d error while unmapping the file\n", __func__, e);
+        errors++;
+    }
+    return errors;
+}
+
+// A regular file with no content has nothing to map.
+int test_mmap_binfile_empty()
+{
+    const char *file = "test_empty.tmp";
+    (void)remove(file);
+    FILE *f = fopen(file, "wb");
+    if (f == NULL)
+    {
+        (void)fprintf_s(stderr, "%s Unable to create the empty test file\n", __func__);
+        return 1;
+    }
+    (void)fclose(f);
+    int errors = test_mmap_binfile_error(file);
+    (void)remove(file);
+    return errors;
+}
+
+// A path that does not name a regular file must be rejected instead of being
+// mapped. A FIFO also checks that the open does not wait for a writer.
+int test_mmap_binfile_not_regular()
+{
+    int errors = 0;
+    const char *fifo = "test_fifo.tmp";
+    (void)remove(fifo);
+    if (mkfifo(fifo, 0600) != 0)
+    {
+        (void)fprintf_s(stderr, "%s Unable to create the test fifo\n", __func__);
+        return 1;
+    }
+    errors += test_mmap_binfile_error(fifo);
+    (void)remove(fifo);
+    // A directory is the other kind of file whose size describes no readable
+    // content.
+    errors += test_mmap_binfile_error(".");
+    return errors;
+}
+
+// A successful unmapping leaves the descriptor in the state of a file that was
+// never mapped, so that a second call reports an error.
+int test_munmap_binfile_twice()
+{
+    int errors = 0;
+    const char *file = "test_data_binsrc.bin";
+    mmfile_t mf = {0};
+    mmap_binfile(file, &mf);
+    if (mf.fd < 0)
+    {
+        (void)fprintf_s(stderr, "%s can't open %s for reading\n", __func__, file);
+        return 1;
+    }
+    // The hint is optional: a failure is only an error where the platform
+    // provides a way to give it.
+    // cppcheck-suppress knownConditionTrueFalse ; the result depends on the platform
+    if ((binsearch_advise_random(&mf) != 0) && BINSEARCH_HAVE_ADVISE)
+    {
+        (void)fprintf_s(stderr, "%s binsearch_advise_random failed\n", __func__);
+        errors++;
+    }
+    if (munmap_binfile(&mf) != 0)
+    {
+        (void)fprintf_s(stderr, "%s error while unmapping the file\n", __func__);
+        errors++;
+    }
+    if ((mf.src != MAP_FAILED) || (mf.fd != -1) || (mf.size != 0) || (mf.nrows != 0))
+    {
+        (void)fprintf_s(stderr, "%s the descriptor was not reset\n", __func__);
+        errors++;
+    }
+    if (munmap_binfile(&mf) == 0)
+    {
+        (void)fprintf_s(stderr, "%s a second unmapping was expected to fail\n", __func__);
+        errors++;
+    }
+    // cppcheck-suppress knownConditionTrueFalse ; the result depends on the platform
+    if (binsearch_advise_random(&mf) == 0)
+    {
+        (void)fprintf_s(stderr, "%s advising an unmapped file was expected to fail\n", __func__);
+        errors++;
+    }
+    // A mapping of no bytes has nothing to advise about either.
+    mmfile_t empty = {0};
+    empty.src = (uint8_t *)&errors;
+    empty.size = 0;
+    // cppcheck-suppress knownConditionTrueFalse ; the result depends on the platform
+    if (binsearch_advise_random(&empty) == 0)
+    {
+        (void)fprintf_s(stderr, "%s advising an empty mapping was expected to fail\n", __func__);
         errors++;
     }
     return errors;
@@ -310,7 +404,10 @@ int main()
 
     errors += test_mmap_binfile_error("ERROR");
     errors += test_mmap_binfile_error("/dev/null");
+    errors += test_mmap_binfile_empty();
+    errors += test_mmap_binfile_not_regular();
     errors += test_munmap_binfile_error();
+    errors += test_munmap_binfile_twice();
     errors += test_map_file_arrow();
     errors += test_map_file_feather();
     errors += test_map_file_binsrc();

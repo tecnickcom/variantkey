@@ -69,13 +69,13 @@ $(if $(CMAKE_INSTALL_PATH),-DCMAKE_INSTALL_PREFIX="$(CMAKE_INSTALL_PATH)")
 LCOVOPTS=--rc branch_coverage=1
 
 # clang-tidy check list, shared by the tidy and linter targets.
-TIDYCHECKS=*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-hicpp-no-assembler,-hicpp-signed-bitwise,-hicpp-use-nullptr,-modernize-use-nullptr,-misc-include-cleaner,-clang-analyzer-alpha.*
+TIDYCHECKS=*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-android-cloexec-fopen,-hicpp-no-assembler,-hicpp-signed-bitwise,-hicpp-use-nullptr,-modernize-use-nullptr,-misc-include-cleaner,-clang-analyzer-alpha.*
 
 # Extra clang-tidy exclusions for the test files imported from the binsearch
 # repository: upstream only runs clang-tidy on the header, so its tests are not
 # written against this check list and they must not be edited here, otherwise
 # the next "make binsearch" would revert the changes.
-VENDORTIDYCHECKS=-bugprone-reserved-identifier,-cert-dcl37-c,-cert-dcl51-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-bugprone-not-null-terminated-result,-android-cloexec-fopen
+VENDORTIDYCHECKS=-bugprone-reserved-identifier,-cert-dcl37-c,-cert-dcl51-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-bugprone-not-null-terminated-result,-android-cloexec-fopen,-bugprone-implicit-widening-of-multiplication-result,-google-readability-function-size,-hicpp-function-size,-readability-function-size
 
 # Test files imported from the binsearch repository.
 VENDORTESTS=$(wildcard test/test_binsearch*.c)
@@ -84,14 +84,14 @@ VENDORTESTS=$(wildcard test/test_binsearch*.c)
 OWNTESTS=$(filter-out $(VENDORTESTS),$(wildcard test/*.c))
 
 # Git tag, branch or commit of the imported binsearch code.
-BINSEARCHVERSION=v9.5.0
+BINSEARCHVERSION=v10.0.0
 
 # Base URL of the raw binsearch files at the selected version.
 BINSEARCHURL=https://raw.githubusercontent.com/tecnickcom/binsearch/$(BINSEARCHVERSION)
 
 # Test files to import from the binsearch repository (the list must be extended
 # when a new test file is added upstream; the build registers them by glob).
-BINSEARCHTESTS=test_binsearch.c test_binsearch_col.c test_binsearch_file.c test_binsearch_mmap.c test_binsearch_range.c
+BINSEARCHTESTS=test_binsearch.c test_binsearch_col.c test_binsearch_file.c test_binsearch_many.c test_binsearch_mmap.c test_binsearch_range.c
 
 # Test data files to import from the binsearch repository.
 BINSEARCHDATA=test_data.bin test_data.hex test_data_arrow.bin test_data_binsrc.bin test_data_binsrc.hex test_data_col.bin test_data_col.hex test_data_feather.bin
@@ -110,7 +110,7 @@ help:
 	@awk '/^## /{desc=substr($$0,4)} /^\.PHONY:/{if(NF>1) {target=$$2; if(desc) printf "  make %-15s: %s\n",target,desc; desc=""}}' Makefile
 	@echo ""
 
-all: clean version format test coverage sanitize linter build rpm deb package_vk doc
+all: clean version format test coverage sanitize linter build rpm deb package_vk package_vkbin doc
 
 ## Test C code compatibility with C++
 .PHONY: testcpp
@@ -152,17 +152,25 @@ coverage: test
 		if [ "$$value" != "100.0" ]; then echo "ERROR: $$metric coverage '$$value%' is below 100%"; exit 1; fi; \
 	done
 
+# Compiler flags shared by every sanitizer build.
+SANITIZEFLAGS=-std=c17 -pedantic -Wall -Wextra -Wcast-align -Wundef -Wformat -Wformat-security -Wshadow \
+-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
+
 ## Build and run the unit tests under the Address and Undefined Behaviour sanitizers
 .PHONY: sanitize
 sanitize:
 	@mkdir -p target/sanitize
+	# test_vkbin drives the vkbin executable as a subprocess, so the tool is
+	# built with the same sanitizers and its path and fixture are passed in,
+	# as the CMake build does through the same two macros.
+	$(CC) $(SANITIZEFLAGS) -o target/sanitize/vkbin vkbin/vkbin.c || exit 1
 	for src in test/test_*.c; do \
 		name=$$(basename "$$src" .c); \
-		$(CC) -std=c17 -pedantic -Wall -Wextra -Wcast-align -Wundef -Wformat -Wformat-security -Wshadow \
-		-O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
+		$(CC) $(SANITIZEFLAGS) \
+		-DVKBIN_PATH='"./vkbin"' -DVKBIN_DATA='"vkbin.tsv"' \
 		-o "target/sanitize/$$name" "$$src" || exit 1; \
 	done
-	cp test/data/*.bin target/sanitize/
+	cp test/data/*.bin test/data/*.tsv target/sanitize/
 	cd target/sanitize && for src in ../../test/test_*.c; do \
 		name=$$(basename "$$src" .c); \
 		echo "*** $$name ***"; \
@@ -176,13 +184,16 @@ tidy:
 	# with the right language and standard. --warnings-as-errors makes the target
 	# fail on any reported warning.
 	clang-tidy src/variantkey/*.h vk/vk.c --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS)' -checks='$(TIDYCHECKS)' -- -x c -std=c17 -I src/variantkey
+	# vkbin is a single-threaded command line tool, so the thread safety of
+	# strerror and friends does not apply, as for the test files below.
+	clang-tidy vkbin/vkbin.c --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS),-concurrency-mt-unsafe' -checks='$(TIDYCHECKS),-concurrency-mt-unsafe' -- -x c -std=c17 -I src/variantkey
 	clang-tidy $(OWNTESTS) test/rsidvar_bench/*.c --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS),-concurrency-mt-unsafe' -checks='$(TIDYCHECKS),-concurrency-mt-unsafe' -- -x c -std=c17 -I src/variantkey
 	clang-tidy $(VENDORTESTS) --header-filter='.*/src/variantkey/.*\.h' --warnings-as-errors='$(TIDYCHECKS),-concurrency-mt-unsafe,$(VENDORTIDYCHECKS)' -checks='$(TIDYCHECKS),-concurrency-mt-unsafe,$(VENDORTIDYCHECKS)' -- -x c -std=c17 -I src/variantkey
 
 ## Check the code via cppcheck and clang-tidy
 .PHONY: linter
 linter: tidy
-	cppcheck --enable=warning,style,performance,portability --check-level=exhaustive --error-exitcode=1 --inline-suppr --std=c17 -I src/variantkey src/variantkey/*.h vk/vk.c
+	cppcheck --enable=warning,style,performance,portability --check-level=exhaustive --error-exitcode=1 --inline-suppr --std=c17 -I src/variantkey src/variantkey/*.h vk/vk.c vkbin/vkbin.c
 
 ## Build the library
 .PHONY: build
@@ -204,6 +215,11 @@ build:
 .PHONY: package_vk
 package_vk: version
 	cd target/build/vk && make -j package
+
+## Package vkbin tool
+.PHONY: package_vkbin
+package_vkbin: version
+	cd target/build/vkbin && make -j package
 
 ## Set the version from VERSION file
 .PHONY: version
@@ -252,6 +268,7 @@ format:
 	astyle --style=allman --recursive --suffix=none 'src/variantkey/*.h'
 	astyle --style=allman --recursive --suffix=none 'test/*.c'
 	astyle --style=allman --recursive --suffix=none 'vk/*.c'
+	astyle --style=allman --recursive --suffix=none 'vkbin/*.c'
 
 ## Remove any build artifact
 .PHONY: clean

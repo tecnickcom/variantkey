@@ -2,8 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{AreOverlappingRegions}
 \alias{AreOverlappingRegions}
-\title{Check if two regions are overlapping.
-Return 1 if the regions overlap, 0 otherwise.}
+\title{Checks whether two regions overlap.}
 \usage{
 AreOverlappingRegions(
   a_chrom,
@@ -27,7 +26,9 @@ AreOverlappingRegions(
 
 \item{b_endpos}{Region B end position (startpos + region length).}
 }
+\value{
+1 if the regions overlap, 0 otherwise.
+}
 \description{
-Check if two regions are overlapping.
-Return 1 if the regions overlap, 0 otherwise.
+Checks whether two regions overlap.
 }

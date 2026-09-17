@@ -1204,7 +1204,7 @@ int main()
     benchmark_find_first_sub_le_uint64_t(mf, blklen, nrows);
     benchmark_find_last_sub_le_uint64_t(mf, blklen, nrows);
 
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e != 0)
     {
         (void)fprintf_s(stderr, "Got %d error while unmapping the file\n", e);

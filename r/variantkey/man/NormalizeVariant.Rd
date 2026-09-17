@@ -2,23 +2,9 @@
 % Please edit documentation in R/variantkey.R
 \name{NormalizeVariant}
 \alias{NormalizeVariant}
-\title{Normalize a variant.
-Flip alleles if required and apply the normalization algorithm described at:
-https://genome.sph.umich.edu/wiki/Variant_Normalization
-Return Positive bitmask number in case of success, negative number in case of error.
-When positive, each bit has a different meaning when set, has defined by the NORM_* defines:
-  * bit 0:
-    Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
-  * bit 1:
-    Alleles have been swapped.
-  * bit 2:
-    Alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
-  * bit 3:
-    Alleles have been left extended.
-  * bit 4:
-    Alleles have been right trimmed.
-  * bit 5:
-    Alleles have been left trimmed.}
+\title{Normalizes a variant against the genome reference, flipping the alleles if required.
+See the normalization algorithm described at:
+https://genome.sph.umich.edu/wiki/Variant_Normalization}
 \usage{
 NormalizeVariant(chrom, pos, ref, alt, mf = vk.env$genoref_$MF)
 }
@@ -31,24 +17,26 @@ NormalizeVariant(chrom, pos, ref, alt, mf = vk.env$genoref_$MF)
 
 \item{alt}{Alternate non-reference allele string.}
 
-\item{mf}{Memory-mapped file object as retured by MmapGenorefFile.}
+\item{mf}{Memory-mapped file object as returned by MmapGenorefFile.}
+}
+\value{
+Positive bitmask number in case of success, negative number in case of error.
+  When positive, each bit set has a different meaning, as defined by the NORM_* codes:
+  * bit 0:
+  Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
+  * bit 1:
+  Alleles have been swapped.
+  * bit 2:
+  Allele nucleotides have been flipped (each nucleotide has been replaced with its complement).
+  * bit 3:
+  Alleles have been left extended.
+  * bit 4:
+  Alleles have been right trimmed.
+  * bit 5:
+  Alleles have been left trimmed.
 }
 \description{
-Normalize a variant.
-Flip alleles if required and apply the normalization algorithm described at:
+Normalizes a variant against the genome reference, flipping the alleles if required.
+See the normalization algorithm described at:
 https://genome.sph.umich.edu/wiki/Variant_Normalization
-Return Positive bitmask number in case of success, negative number in case of error.
-When positive, each bit has a different meaning when set, has defined by the NORM_* defines:
-  * bit 0:
-    Reference allele is inconsistent with the genome reference (i.e. when contains nucleotide letters other than A, C, G and T).
-  * bit 1:
-    Alleles have been swapped.
-  * bit 2:
-    Alleles nucleotides have been flipped (each nucleotide have been replaced with its complement).
-  * bit 3:
-    Alleles have been left extended.
-  * bit 4:
-    Alleles have been right trimmed.
-  * bit 5:
-    Alleles have been left trimmed.
 }

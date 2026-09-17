@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{DecodeChrom}
 \alias{DecodeChrom}
-\title{Decode the CHROM code.}
+\title{Decodes a chromosome numerical code into its string representation.}
 \usage{
 DecodeChrom(code)
 }
@@ -10,5 +10,5 @@ DecodeChrom(code)
 \item{code}{Chromosome numerical code.}
 }
 \description{
-Decode the CHROM code.
+Decodes a chromosome numerical code into its string representation.
 }

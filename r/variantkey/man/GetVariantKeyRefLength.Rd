@@ -2,17 +2,18 @@
 % Please edit documentation in R/variantkey.R
 \name{GetVariantKeyRefLength}
 \alias{GetVariantKeyRefLength}
-\title{Retrieve the REF length for the specified VariantKey.
-Return REF length or 0 if the VariantKey is not reversible and not found.}
+\title{Returns the REF length of a VariantKey.}
 \usage{
 GetVariantKeyRefLength(vk, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{vk}{VariantKey.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
+}
+\value{
+REF length or 0 if the VariantKey is not reversible and not found.
 }
 \description{
-Retrieve the REF length for the specified VariantKey.
-Return REF length or 0 if the VariantKey is not reversible and not found.
+Returns the REF length of a VariantKey.
 }

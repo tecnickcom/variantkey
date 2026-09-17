@@ -2,8 +2,8 @@
 % Please edit documentation in R/variantkey.R
 \name{GetNextVrRsidByVariantKey}
 \alias{GetNextVrRsidByVariantKey}
-\title{Get the next rsID for the specified VariantKey in the VR file, or 0 if not found
-This function can be called in a loop to get all rsIDs that are associated with the same VariantKey (if any).}
+\title{Returns the next rsID associated with a VariantKey.
+Call this in a loop after FindVRRsidByVariantKey to get all the rsIDs of the same VariantKey.}
 \usage{
 GetNextVrRsidByVariantKey(
   vk,
@@ -19,9 +19,9 @@ GetNextVrRsidByVariantKey(
 
 \item{last}{Element (up to but not including) where to end the search (max value = nitems).}
 
-\item{mc}{Memory-mapped columns object as retured by MmapRSVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapRSVKfile.}
 }
 \description{
-Get the next rsID for the specified VariantKey in the VR file, or 0 if not found
-This function can be called in a loop to get all rsIDs that are associated with the same VariantKey (if any).
+Returns the next rsID associated with a VariantKey.
+Call this in a loop after FindVRRsidByVariantKey to get all the rsIDs of the same VariantKey.
 }

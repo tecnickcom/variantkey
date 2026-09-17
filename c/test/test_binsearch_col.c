@@ -427,12 +427,37 @@ static const t_test_col_uint64_t test_col_data_sub_uint64_t[] =
 
 static const uint8_t typecolmap[] = {0,0,1,0,2,0,0,0,3};
 
-#define define_test_col_find_first(T) \
-int test_col_find_first_##T(mmfile_t mf) \
+// Returns the address of the column of the given type in the memory mapped file.
+#define col_src(MF, T) get_src_offset_##T((MF).src, (MF).index[typecolmap[sizeof(T)]])
+
+// The fixture is little-endian, so a copy of it with the bytes of every value
+// reversed is the big-endian form of the same column: reading that copy with
+// the "_be_" functions must return the same items as reading the fixture with
+// the "_le_" ones. The swap is written with the order_* macros, so it is the
+// big-endian form on a big-endian host too.
+#define define_swap_col(T) \
+static T swapped_##T[TEST_DATA_ITEMS]; \
+static const T *swap_col_##T(mmfile_t mf) \
+{ \
+    const T *src = col_src(mf, T); \
+    uint64_t i; \
+    for (i = 0; i < TEST_DATA_ITEMS; i++) \
+    { \
+        swapped_##T[i] = order_be_##T(order_le_##T(src[i])); \
+    } \
+    return swapped_##T; \
+}
+
+define_swap_col(uint8_t)
+define_swap_col(uint16_t)
+define_swap_col(uint32_t)
+define_swap_col(uint64_t)
+
+#define define_test_col_find_first(O, T) \
+int test_col_find_first_##O##_##T(const T *src) \
 { \
     int errors = 0; \
     int i; \
-    const T *src = get_src_offset_##T(mf.src, mf.index[typecolmap[sizeof(T)]]); \
     uint8_t nbytes = (uint8_t)sizeof(T); \
     uint8_t bitstart = ((nbytes >> 2) * 8); \
     uint8_t bitend = ((8 * nbytes) - 1 - bitstart); \
@@ -441,7 +466,7 @@ int test_col_find_first_##T(mmfile_t mf) \
     { \
         first = test_col_data_##T[i].first; \
         last = test_col_data_##T[i].last; \
-        ffound = col_find_first_##T(src, &first, &last, test_col_data_##T[i].search); \
+        ffound = col_find_first_##O##_##T(src, &first, &last, test_col_data_##T[i].search); \
         if (ffound != test_col_data_##T[i].foundFirst) \
         { \
             (void)fprintf_s(stderr, "%s (%d) Expected found %" PRIx64 ", got %" PRIx64 "\n", __func__, i, test_col_data_##T[i].foundFirst, ffound); \
@@ -462,7 +487,7 @@ int test_col_find_first_##T(mmfile_t mf) \
         { \
             pos = ffound; \
             counter = 0; \
-            while (col_has_next_##T(src, &pos, test_col_data_##T[i].last, test_col_data_##T[i].search)) \
+            while (col_has_next_##O##_##T(src, &pos, test_col_data_##T[i].last, test_col_data_##T[i].search)) \
             { \
               counter++; \
             } \
@@ -474,7 +499,7 @@ int test_col_find_first_##T(mmfile_t mf) \
         } \
         first = test_col_data_sub_##T[i].first; \
         last = test_col_data_sub_##T[i].last; \
-        lfound = col_find_first_sub_##T(src, bitstart, bitend, &first, &last, test_col_data_sub_##T[i].search); \
+        lfound = col_find_first_sub_##O##_##T(src, bitstart, bitend, &first, &last, test_col_data_sub_##T[i].search); \
         if (lfound != test_col_data_sub_##T[i].foundFirst) \
         { \
             (void)fprintf_s(stderr, "%s SUB (%d) Expected found %" PRIx64 ", got %" PRIx64 "\n", __func__, i, test_col_data_sub_##T[i].foundFirst, lfound); \
@@ -495,7 +520,7 @@ int test_col_find_first_##T(mmfile_t mf) \
         { \
             pos = lfound; \
             counter = 0; \
-            while (col_has_next_sub_##T(src, bitstart, bitend, &pos, test_col_data_sub_##T[i].last, test_col_data_sub_##T[i].search)) \
+            while (col_has_next_sub_##O##_##T(src, bitstart, bitend, &pos, test_col_data_sub_##T[i].last, test_col_data_sub_##T[i].search)) \
             { \
               counter++; \
             } \
@@ -509,17 +534,20 @@ int test_col_find_first_##T(mmfile_t mf) \
     return errors; \
 }
 
-define_test_col_find_first(uint8_t)
-define_test_col_find_first(uint16_t)
-define_test_col_find_first(uint32_t)
-define_test_col_find_first(uint64_t)
+define_test_col_find_first(be, uint8_t)
+define_test_col_find_first(be, uint16_t)
+define_test_col_find_first(be, uint32_t)
+define_test_col_find_first(be, uint64_t)
+define_test_col_find_first(le, uint8_t)
+define_test_col_find_first(le, uint16_t)
+define_test_col_find_first(le, uint32_t)
+define_test_col_find_first(le, uint64_t)
 
-#define define_test_col_find_last(T) \
-int test_col_find_last_##T(mmfile_t mf) \
+#define define_test_col_find_last(O, T) \
+int test_col_find_last_##O##_##T(const T *src) \
 { \
     int errors = 0; \
     int i; \
-    const T *src = get_src_offset_##T(mf.src, mf.index[typecolmap[sizeof(T)]]); \
     uint8_t nbytes = (uint8_t)sizeof(T); \
     uint8_t bitstart = ((nbytes >> 2) * 8); \
     uint8_t bitend = ((8 * nbytes) - 1 - bitstart); \
@@ -528,7 +556,7 @@ int test_col_find_last_##T(mmfile_t mf) \
     { \
         first = test_col_data_##T[i].first; \
         last = test_col_data_##T[i].last; \
-        ffound = col_find_last_##T(src, &first, &last, test_col_data_##T[i].search); \
+        ffound = col_find_last_##O##_##T(src, &first, &last, test_col_data_##T[i].search); \
         if (ffound != test_col_data_##T[i].foundLast) \
         { \
             (void)fprintf_s(stderr, "%s (%d) Expected found %" PRIx64 ", got %" PRIx64 "\n", __func__, i, test_col_data_##T[i].foundLast, ffound); \
@@ -549,7 +577,7 @@ int test_col_find_last_##T(mmfile_t mf) \
         { \
             pos = ffound; \
             counter = 0; \
-            while (col_has_prev_##T(src, test_col_data_sub_##T[i].first, &pos, test_col_data_##T[i].search)) \
+            while (col_has_prev_##O##_##T(src, test_col_data_sub_##T[i].first, &pos, test_col_data_##T[i].search)) \
             { \
               counter++; \
             } \
@@ -561,7 +589,7 @@ int test_col_find_last_##T(mmfile_t mf) \
         } \
         first = test_col_data_sub_##T[i].first; \
         last = test_col_data_sub_##T[i].last; \
-        lfound = col_find_last_sub_##T(src, bitstart, bitend, &first, &last, test_col_data_sub_##T[i].search); \
+        lfound = col_find_last_sub_##O##_##T(src, bitstart, bitend, &first, &last, test_col_data_sub_##T[i].search); \
         if (lfound != test_col_data_sub_##T[i].foundLast) \
         { \
             (void)fprintf_s(stderr, "%s SUB (%d) Expected found %" PRIx64 ", got %" PRIx64 "\n", __func__, i, test_col_data_sub_##T[i].foundLast, lfound); \
@@ -582,7 +610,7 @@ int test_col_find_last_##T(mmfile_t mf) \
         { \
             pos = lfound; \
             counter = 0; \
-            while (col_has_prev_sub_##T(src, bitstart, bitend, test_col_data_sub_##T[i].first, &pos, test_col_data_sub_##T[i].search)) \
+            while (col_has_prev_sub_##O##_##T(src, bitstart, bitend, test_col_data_sub_##T[i].first, &pos, test_col_data_sub_##T[i].search)) \
             { \
               counter++; \
             } \
@@ -596,10 +624,64 @@ int test_col_find_last_##T(mmfile_t mf) \
     return errors; \
 }
 
-define_test_col_find_last(uint8_t)
-define_test_col_find_last(uint16_t)
-define_test_col_find_last(uint32_t)
-define_test_col_find_last(uint64_t)
+define_test_col_find_last(be, uint8_t)
+define_test_col_find_last(be, uint16_t)
+define_test_col_find_last(be, uint32_t)
+define_test_col_find_last(be, uint64_t)
+define_test_col_find_last(le, uint8_t)
+define_test_col_find_last(le, uint16_t)
+define_test_col_find_last(le, uint32_t)
+define_test_col_find_last(le, uint64_t)
+
+#define TEST_ORDER_ITEMS 200 //!< Number of items of the byte order test column
+
+// A sorted column built in one byte order, searched by the matching variant.
+// The significant bytes sit in the high half of each value, so a variant that
+// reads them in the wrong order sees an unsorted column and finds nothing.
+// Both orders run on any host: on a little-endian one the "_be_" column is the
+// non-native one, on a big-endian one the "_le_" column is.
+#define define_test_col_order(O, T) \
+static T order_col_##O##_##T[TEST_ORDER_ITEMS]; \
+int test_col_order_##O##_##T(void) \
+{ \
+    int errors = 0; \
+    uint64_t i, first, last, found; \
+    T value; \
+    for (i = 0; i < TEST_ORDER_ITEMS; i++) \
+    { \
+        order_col_##O##_##T[i] = order_##O##_##T((T)((i + 1) << ((sizeof(T) - 1) * 8))); \
+    } \
+    for (i = 0; i < TEST_ORDER_ITEMS; i++) \
+    { \
+        value = (T)((i + 1) << ((sizeof(T) - 1) * 8)); \
+        first = 0; \
+        last = TEST_ORDER_ITEMS; \
+        found = col_find_first_##O##_##T(order_col_##O##_##T, &first, &last, value); \
+        if (found != i) \
+        { \
+            (void)fprintf_s(stderr, "%s (%" PRIu64 ") Expected found %" PRIu64 ", got %" PRIu64 "\n", __func__, i, i, found); \
+            ++errors; \
+        } \
+        first = 0; \
+        last = TEST_ORDER_ITEMS; \
+        found = col_find_last_##O##_##T(order_col_##O##_##T, &first, &last, value); \
+        if (found != i) \
+        { \
+            (void)fprintf_s(stderr, "%s LAST (%" PRIu64 ") Expected found %" PRIu64 ", got %" PRIu64 "\n", __func__, i, i, found); \
+            ++errors; \
+        } \
+    } \
+    return errors; \
+}
+
+define_test_col_order(be, uint8_t)
+define_test_col_order(be, uint16_t)
+define_test_col_order(be, uint32_t)
+define_test_col_order(be, uint64_t)
+define_test_col_order(le, uint8_t)
+define_test_col_order(le, uint16_t)
+define_test_col_order(le, uint32_t)
+define_test_col_order(le, uint64_t)
 
 // returns current time in nanoseconds
 uint64_t get_time()
@@ -617,14 +699,14 @@ void benchmark_col_find_first_##T(mmfile_t mf) \
     uint64_t last = TEST_DATA_ITEMS; \
     uint64_t found; \
     int i; \
-    const T *src = get_src_offset_##T(mf.src, mf.index[typecolmap[sizeof(T)]]); \
+    const T *src = col_src(mf, T); \
     int size = 10000; \
     tstart = get_time(); \
     for (i=0 ; i < size; i++) \
     { \
         first = 0; \
         last = TEST_DATA_ITEMS; \
-        found = col_find_first_##T(src, &first, &last, test_col_data_##T[4].search); \
+        found = col_find_first_le_##T(src, &first, &last, test_col_data_##T[4].search); \
     } \
     tend = get_time(); \
     (void)fprintf_s(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/(uint64_t)(size*4), found); \
@@ -643,14 +725,14 @@ void benchmark_col_find_last_##T(mmfile_t mf) \
     uint64_t last = TEST_DATA_ITEMS; \
     uint64_t found; \
     int i; \
-    const T *src = get_src_offset_##T(mf.src, mf.index[typecolmap[sizeof(T)]]); \
+    const T *src = col_src(mf, T); \
     int size = 10000; \
     tstart = get_time(); \
     for (i=0 ; i < size; i++) \
     { \
         first = 0; \
         last = TEST_DATA_ITEMS; \
-        found = col_find_last_##T(src, &first, &last, test_col_data_##T[4].search); \
+        found = col_find_last_le_##T(src, &first, &last, test_col_data_##T[4].search); \
     } \
     tend = get_time(); \
     (void)fprintf_s(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/(uint64_t)(size*4), found); \
@@ -672,14 +754,14 @@ void benchmark_col_find_first_sub_##T(mmfile_t mf) \
     uint8_t bitstart = ((nbytes >> 2) * 8); \
     uint8_t bitend = ((8 * nbytes) - 1 - bitstart); \
     int i; \
-    const T *src = get_src_offset_##T(mf.src, mf.index[typecolmap[sizeof(T)]]); \
+    const T *src = col_src(mf, T); \
     int size = 10000; \
     tstart = get_time(); \
     for (i=0 ; i < size; i++) \
     { \
         first = 0; \
         last = TEST_DATA_ITEMS; \
-        found = col_find_first_sub_##T(src, bitstart, bitend, &first, &last, test_col_data_##T[4].search); \
+        found = col_find_first_sub_le_##T(src, bitstart, bitend, &first, &last, test_col_data_##T[4].search); \
     } \
     tend = get_time(); \
     (void)fprintf_s(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/(uint64_t)(size*4), found); \
@@ -701,14 +783,14 @@ void benchmark_col_find_last_sub_##T(mmfile_t mf) \
     uint8_t bitstart = ((nbytes >> 2) * 8); \
     uint8_t bitend = ((8 * nbytes) - 1 - bitstart); \
     int i; \
-    const T *src = get_src_offset_##T(mf.src, mf.index[typecolmap[sizeof(T)]]); \
+    const T *src = col_src(mf, T); \
     int size = 10000; \
     tstart = get_time(); \
     for (i=0 ; i < size; i++) \
     { \
         first = 0; \
         last = TEST_DATA_ITEMS; \
-        found = col_find_last_sub_##T(src, bitstart, bitend, &first, &last, test_col_data_##T[4].search); \
+        found = col_find_last_sub_le_##T(src, bitstart, bitend, &first, &last, test_col_data_##T[4].search); \
     } \
     tend = get_time(); \
     (void)fprintf_s(stdout, " * %s : %lu ns/op (%" PRIx64 ")\n", __func__, (tend - tstart)/(uint64_t)(size*4), found); \
@@ -755,14 +837,32 @@ int main()
         return 1;
     }
 
-    errors += test_col_find_first_uint8_t(mf);
-    errors += test_col_find_last_uint8_t(mf);
-    errors += test_col_find_first_uint16_t(mf);
-    errors += test_col_find_last_uint16_t(mf);
-    errors += test_col_find_first_uint32_t(mf);
-    errors += test_col_find_last_uint32_t(mf);
-    errors += test_col_find_first_uint64_t(mf);
-    errors += test_col_find_last_uint64_t(mf);
+    errors += test_col_find_first_le_uint8_t(col_src(mf, uint8_t));
+    errors += test_col_find_last_le_uint8_t(col_src(mf, uint8_t));
+    errors += test_col_find_first_le_uint16_t(col_src(mf, uint16_t));
+    errors += test_col_find_last_le_uint16_t(col_src(mf, uint16_t));
+    errors += test_col_find_first_le_uint32_t(col_src(mf, uint32_t));
+    errors += test_col_find_last_le_uint32_t(col_src(mf, uint32_t));
+    errors += test_col_find_first_le_uint64_t(col_src(mf, uint64_t));
+    errors += test_col_find_last_le_uint64_t(col_src(mf, uint64_t));
+
+    errors += test_col_find_first_be_uint8_t(swap_col_uint8_t(mf));
+    errors += test_col_find_last_be_uint8_t(swap_col_uint8_t(mf));
+    errors += test_col_find_first_be_uint16_t(swap_col_uint16_t(mf));
+    errors += test_col_find_last_be_uint16_t(swap_col_uint16_t(mf));
+    errors += test_col_find_first_be_uint32_t(swap_col_uint32_t(mf));
+    errors += test_col_find_last_be_uint32_t(swap_col_uint32_t(mf));
+    errors += test_col_find_first_be_uint64_t(swap_col_uint64_t(mf));
+    errors += test_col_find_last_be_uint64_t(swap_col_uint64_t(mf));
+
+    errors += test_col_order_be_uint8_t();
+    errors += test_col_order_be_uint16_t();
+    errors += test_col_order_be_uint32_t();
+    errors += test_col_order_be_uint64_t();
+    errors += test_col_order_le_uint8_t();
+    errors += test_col_order_le_uint16_t();
+    errors += test_col_order_le_uint32_t();
+    errors += test_col_order_le_uint64_t();
 
     benchmark_col_find_first_uint8_t(mf);
     benchmark_col_find_last_uint8_t(mf);
@@ -782,7 +882,7 @@ int main()
     benchmark_col_find_first_sub_uint64_t(mf);
     benchmark_col_find_last_sub_uint64_t(mf);
 
-    int e = munmap_binfile(mf);
+    int e = munmap_binfile(&mf);
     if (e != 0)
     {
         (void)fprintf_s(stderr, "Got %d error while unmapping the file\n", e);

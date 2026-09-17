@@ -266,7 +266,7 @@ static PyObject* py_munmap_binfile(PyObject *Py_UNUSED(ignored), PyObject *args,
     {
         return Py_BuildValue("i", 0); // already unmapped
     }
-    int ret = munmap_binfile(*cmf);
+    int ret = munmap_binfile(cmf);
     if (ret == 0)
     {
         memset(cmf, 0, sizeof(mmfile_t));

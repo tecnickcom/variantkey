@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{VariantKeyRange}
 \alias{VariantKeyRange}
-\title{Returns minimum and maximum variant keys for range searches.}
+\title{Returns the minimum and maximum VariantKey of a CHROM and POS range.}
 \usage{
 VariantKeyRange(chrom, pos_min, pos_max)
 }
@@ -14,5 +14,5 @@ VariantKeyRange(chrom, pos_min, pos_max)
 \item{pos_max}{End reference position, with the first base having position 0.}
 }
 \description{
-Returns minimum and maximum variant keys for range searches.
+Returns the minimum and maximum VariantKey of a CHROM and POS range.
 }

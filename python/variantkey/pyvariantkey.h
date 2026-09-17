@@ -91,7 +91,7 @@ PyMODINIT_FUNC initvariantkey(void);
 
 // VARIANTKEY
 
-#define PYENCODECHROM_DOCSTRING "Returns chromosome numerical encoding.\n"\
+#define PYENCODECHROM_DOCSTRING "Encodes a chromosome identifier into a numerical code.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -108,7 +108,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> encode_chrom('X')\n"\
 "23"
 
-#define PYDECODECHROM_DOCSTRING "Decode the chromosome numerical code.\n"\
+#define PYDECODECHROM_DOCSTRING "Decodes a chromosome numerical code into its string representation.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -125,7 +125,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> decode_chrom(23)\n"\
 "b'X'"
 
-#define PYENCODEREFALT_DOCSTRING "Returns reference+alternate numerical encoding.\n"\
+#define PYENCODEREFALT_DOCSTRING "Encodes a REF+ALT pair into a 31 bit code.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -144,7 +144,8 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> encode_refalt(ref=b'AC', alt=b'GT')\n"\
 "286097408"
 
-#define PYDECODEREFALT_DOCSTRING "Decode the 32 bit REF+ALT code if reversible (if it has 11 or less bases in total and only contains ACGT letters).\n"\
+#define PYDECODEREFALT_DOCSTRING "Decodes a 32 bit REF+ALT code if it was produced by the reversible encoding\n"\
+"(11 or less bases in total, containing only A, C, G and T letters).\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -164,7 +165,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> decode_refalt(286097408)\n"\
 "(b'AC', b'GT', 2, 2)"
 
-#define PYENCODEVARIANTKEY_DOCSTRING "Returns a 64 bit variant key based on the pre-encoded CHROM, POS (0-based) and REF+ALT.\n"\
+#define PYENCODEVARIANTKEY_DOCSTRING "Assembles a VariantKey from the pre-encoded CHROM, POS and REF+ALT.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -185,7 +186,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> encode_variantkey(chrom=23, pos=12345, refalt=286097408)\n"\
 "13258623813950472192"
 
-#define PYEXTRACTVARIANTKEYCHROM_DOCSTRING "Extract the CHROM code from VariantKey.\n"\
+#define PYEXTRACTVARIANTKEYCHROM_DOCSTRING "Extracts the CHROM code from a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -202,7 +203,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> extract_variantkey_chrom(13258623813950472192)\n"\
 "23"
 
-#define PYEXTRACTVARIANTKEYPOS_DOCSTRING "Extract the POS code from VariantKey.\n"\
+#define PYEXTRACTVARIANTKEYPOS_DOCSTRING "Extracts the POS value from a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -219,7 +220,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> extract_variantkey_pos(13258623813950472192)\n"\
 "12345"
 
-#define PYEXTRACTVARIANTKEYREFALT_DOCSTRING "Extract the REF+ALT code from VariantKey.\n"\
+#define PYEXTRACTVARIANTKEYREFALT_DOCSTRING "Extracts the REF+ALT code from a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -236,7 +237,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> extract_variantkey_refalt(13258623813950472192)\n"\
 "286097408"
 
-#define PYDECODEVARIANTKEY_DOCSTRING "Decode a VariantKey code and returns the components.\n"\
+#define PYDECODEVARIANTKEY_DOCSTRING "Splits a VariantKey into its CHROM, POS and REF+ALT components.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -255,7 +256,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> decode_variantkey(13258623813950472192)\n"\
 "(23, 12345, 286097408)"
 
-#define PYVARIANTKEY_DOCSTRING "Returns a 64 bit variant key based on CHROM, POS (0-based), REF, ALT.\n"\
+#define PYVARIANTKEY_DOCSTRING "Returns a VariantKey for the given CHROM, POS (0-based), REF and ALT.\n"\
 "The variant should be already normalized (see normalize_variant or use normalized_variantkey).\n"\
 "\n"\
 "Parameters\n"\
@@ -285,7 +286,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> variantkey('X', 12345, 'AC', 'GT')\n"\
 "13258623813950472192"
 
-#define PYVARIANTKEYRANGE_DOCSTRING "Returns minimum and maximum VariantKeys for range searches.\n"\
+#define PYVARIANTKEYRANGE_DOCSTRING "Returns the minimum and maximum VariantKey of a CHROM and POS range.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -307,7 +308,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> variantkey_range(chrom=23, pos_min=1234, pos_max=5678)\n"\
 "(13258599952973561856, 13258609498538377215)"
 
-#define PYCOMPAREVARIANTKEYCHROM_DOCSTRING "Compares two VariantKeys by chromosome only.\n"\
+#define PYCOMPAREVARIANTKEYCHROM_DOCSTRING "Compares two VariantKeys by CHROM only.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -326,7 +327,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> compare_variantkey_chrom(13258599952973561856, 13258609498538377215)\n"\
 "0"
 
-#define PYCOMPAREVARIANTKEYCHROMPOS_DOCSTRING "Compares two VariantKeys by chromosome and position.\n"\
+#define PYCOMPAREVARIANTKEYCHROMPOS_DOCSTRING "Compares two VariantKeys by CHROM and POS.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -345,7 +346,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> compare_variantkey_chrom_pos(13258599952973561856, 13258609498538377215)\n"\
 "-1"
 
-#define PYVARIANTKEYHEX_DOCSTRING "Returns VariantKey hexadecimal string (16 characters).\n"\
+#define PYVARIANTKEYHEX_DOCSTRING "Returns a VariantKey as a 16 character hexadecimal string.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -362,7 +363,7 @@ PyMODINIT_FUNC initvariantkey(void);
 ">>> variantkey_hex(13258623813950472192)\n"\
 "b'b800181c910d8000'"
 
-#define PYPARSEVARIANTKEYSTRING_DOCSTRING "Parses a VariantKey hexadecimal string and returns the code.\n"\
+#define PYPARSEVARIANTKEYSTRING_DOCSTRING "Parses a 16 character hexadecimal string into a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -382,7 +383,7 @@ PyMODINIT_FUNC initvariantkey(void);
 // BINSEARCH
 // ----------
 
-#define PYMUNMAPBINFILE_DOCSTRING "Unmap and close the memory-mapped file.\n"\
+#define PYMUNMAPBINFILE_DOCSTRING "Unmaps and closes a memory mapped file.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -398,7 +399,7 @@ PyMODINIT_FUNC initvariantkey(void);
 
 // RSIDVAR
 
-#define PYMMAPRSVKFILE_DOCSTRING "Memory map the specified RSVK binary file (rsvk.bin).\n"\
+#define PYMMAPRSVKFILE_DOCSTRING "Memory maps the RSVK binary file (rsvk.bin).\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -414,7 +415,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - Pointer to the memory mapped columns object.\n"\
 "    - Number of rows."
 
-#define PYMMAPVKRSFILE_DOCSTRING "Memory map the specified VKRS binary file (vkrs.bin).\n"\
+#define PYMMAPVKRSFILE_DOCSTRING "Memory maps the VKRS binary file (vkrs.bin).\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -430,12 +431,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - Pointer to the memory mapped columns object.\n"\
 "    - Number of rows."
 
-#define PYFINDRVVARIANTKEYBYRSID_DOCSTRING "Search for the specified rsID and returns the first occurrence of VariantKey in the RV file.\n"\
+#define PYFINDRVVARIANTKEYBYRSID_DOCSTRING "Returns the first VariantKey associated with an rsID.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_rsvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_rsvk_file().\n"\
 "first : int\n"\
 "    First element of the range to search (min value = 0).\n"\
 "last : int\n"\
@@ -449,14 +450,13 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - VariantKey or 0 in case not found.\n"\
 "    - Item position in the file."
 
-#define PYGETNEXTRVVARIANTKEYBYRSID_DOCSTRING "Get the next VariantKey for the specified rsID in the RV file."\
-" This function should be used after find_rv_variantkey_by_rsid."\
-" This function can be called in a loop to get all VariantKeys that are associated with the same rsID (if any).\n"\
+#define PYGETNEXTRVVARIANTKEYBYRSID_DOCSTRING "Returns the next VariantKey associated with an rsID.\n"\
+"Call this in a loop after find_rv_variantkey_by_rsid to get all the VariantKeys of the same rsID.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_rsvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_rsvk_file().\n"\
 "pos : int\n"\
 "    Current item position.\n"\
 "last : int\n"\
@@ -470,12 +470,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - VariantKey or 0 in case not found.\n"\
 "    - Item position in the file."
 
-#define PYFINDALLRVVARIANTKEYBYRSID_DOCSTRING "Search for the specified rsID and returns all associated VariantKeys.\n"\
+#define PYFINDALLRVVARIANTKEYBYRSID_DOCSTRING "Returns all the VariantKeys associated with an rsID.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_rsvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_rsvk_file().\n"\
 "first : int\n"\
 "    First element of the range to search (min value = 0).\n"\
 "last : int\n"\
@@ -488,12 +488,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "list : int\n"\
 "    - VariantKey(s)."
 
-#define PYFINDVRRSIDBYVARIANTKEY_DOCSTRING "Search for the specified VariantKey and returns the first occurrence of rsID in the VR file.\n"\
+#define PYFINDVRRSIDBYVARIANTKEY_DOCSTRING "Returns the first rsID associated with a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_vkrs_file().\n"\
+"    Memory-mapped columns object as returned by mmap_vkrs_file().\n"\
 "first : int\n"\
 "    First element of the range to search (min value = 0).\n"\
 "last : int\n"\
@@ -507,14 +507,13 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - rsID or 0 in case not found.\n"\
 "    - Item position in the file."
 
-#define PYGETNEXTVRRSIDBYVARIANTKEY_DOCSTRING "Get the next VariantKey for the specified rsID in the VR file."\
-" This function should be used after find_vr_rsid_by_variantkey."\
-" This function can be called in a loop to get all rsIDs that are associated with the same VariantKey (if any).\n"\
+#define PYGETNEXTVRRSIDBYVARIANTKEY_DOCSTRING "Returns the next rsID associated with a VariantKey.\n"\
+"Call this in a loop after find_vr_rsid_by_variantkey to get all the rsIDs of the same VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_vkrs_file().\n"\
+"    Memory-mapped columns object as returned by mmap_vkrs_file().\n"\
 "pos : int\n"\
 "    Current item position.\n"\
 "last : int\n"\
@@ -528,12 +527,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - rsID or 0 in case not found.\n"\
 "    - Item position in the file."
 
-#define PYFINDALLVRRSIDBYVARIANTKEY_DOCSTRING "Search for the specified VariantKey and returns all associated rsIDs.\n"\
+#define PYFINDALLVRRSIDBYVARIANTKEY_DOCSTRING "Returns all the rsIDs associated with a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_vkrs_file().\n"\
+"    Memory-mapped columns object as returned by mmap_vkrs_file().\n"\
 "first : int\n"\
 "    First element of the range to search (min value = 0).\n"\
 "last : int\n"\
@@ -546,12 +545,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "list : int\n"\
 "    - rsID(s)."
 
-#define PYFINDVRCHROMPOSRANGE_DOCSTRING "Search for the specified CHROM-POS range and returns the first occurrence of rsID in the VR file.\n"\
+#define PYFINDVRCHROMPOSRANGE_DOCSTRING "Returns the first rsID of a CHROM and POS range.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_vkrs_file().\n"\
+"    Memory-mapped columns object as returned by mmap_vkrs_file().\n"\
 "first : int\n"\
 "    First element of the range to search (min value = 0).\n"\
 "last : int\n"\
@@ -574,7 +573,7 @@ PyMODINIT_FUNC initvariantkey(void);
 
 // NRVK
 
-#define PYMMAPNRVKFILE_DOCSTRING "Memory map the specified NRVK binary file (nrvk.bin).\n"\
+#define PYMMAPNRVKFILE_DOCSTRING "Memory maps the NRVK binary file (nrvk.bin).\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -588,12 +587,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - Pointer to the memory mapped columns object.\n"\
 "    - Number of rows."
 
-#define PYFINDREFALTBYVARIANTKEY_DOCSTRING "Retrieve the REF and ALT strings for the specified VariantKey.\n"\
+#define PYFINDREFALTBYVARIANTKEY_DOCSTRING "Looks up the REF and ALT strings of a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey to search.\n"\
 "\n"\
@@ -606,12 +605,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - ALT length.\n"\
 "    - REF+ALT length."
 
-#define PYREVERSEVARIANTKEY_DOCSTRING "Reverse a VariantKey code and returns the normalized components.\n"\
+#define PYREVERSEVARIANTKEY_DOCSTRING "Reverses a VariantKey into its CHROM, POS, REF and ALT components.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey code.\n"\
 "\n"\
@@ -626,12 +625,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - ALT length.\n"\
 "    - REF+ALT length."
 
-#define PYGETREFLENGTHBYVARIANTKEY_DOCSTRING "Retrieve the REF length for the specified VariantKey.\n"\
+#define PYGETREFLENGTHBYVARIANTKEY_DOCSTRING "Returns the REF length of a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey\n"\
 "\n"\
@@ -640,12 +639,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    REF length or 0 if the VariantKey is not reversible and not found."
 
-#define PYGETVARIANTKEYENDPOS_DOCSTRING "Get the VariantKey end position (POS + REF length).\n"\
+#define PYGETVARIANTKEYENDPOS_DOCSTRING "Returns the end position of a VariantKey (POS + REF length).\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey.\n"\
 "\n"\
@@ -654,7 +653,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    Variant end position."
 
-#define PYGETVARIANTKEYCHROMSTARTPOS_DOCSTRING "Get the CHROM + START POS encoding from VariantKey.\n"\
+#define PYGETVARIANTKEYCHROMSTARTPOS_DOCSTRING "Returns the CHROM and START POS section of a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -666,12 +665,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    CHROM + START POS encoding."
 
-#define PYGETVARIANTKEYCHROMENDPOS_DOCSTRING "Get the CHROM + END POS encoding from VariantKey.\n"\
+#define PYGETVARIANTKEYCHROMENDPOS_DOCSTRING "Returns the CHROM and END POS of a VariantKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey.\n"\
 "\n"\
@@ -680,14 +679,14 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    CHROM + END POS encoding."
 
-#define PYNRVKBINTOTSV_DOCSTRING "Convert a vrnr.bin file to a simple TSV.\n"\
+#define PYNRVKBINTOTSV_DOCSTRING "Writes the content of the NRVK memory mapped file as a TSV file.\n"\
 "For the reverse operation see the resources/tools/nrvk.sh script.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
-"tsvfile : int\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
+"tsvfile : str\n"\
 "    Output file name.\n"\
 "\n"\
 "Returns\n"\
@@ -699,7 +698,7 @@ PyMODINIT_FUNC initvariantkey(void);
 
 // GENOREF
 
-#define PYMMAPGENOREFFILE_DOCSTRING "Memory map the specified genome reference binary file (fasta.bin).\n"\
+#define PYMMAPGENOREFFILE_DOCSTRING "Memory maps the genoref binary file (fasta.bin).\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -713,12 +712,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - File size."
 
 
-#define PYGETGENOREFSEQ_DOCSTRING "Returns the genome reference nucleotide at the specified chromosome and position.\n"\
+#define PYGETGENOREFSEQ_DOCSTRING "Returns the genome reference nucleotide at the given chromosome and position.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mf : obj\n"\
-"    Memory-mapped file object as retured by mmap_genoref_file().\n"\
+"    Memory-mapped file object as returned by mmap_genoref_file().\n"\
 "chrom : int\n"\
 "    Encoded Chromosome number (see encode_chrom).\n"\
 "pos : int\n"\
@@ -729,12 +728,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "bytes :\n"\
 "    Nucleotide letter or 0 (NULL char) in case of invalid position."
 
-#define PYCHECKREFERENCE_DOCSTRING "Check if the reference allele matches the reference genome data.\n"\
+#define PYCHECKREFERENCE_DOCSTRING "Checks a reference allele against the genome reference data.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mf : obj\n"\
-"    Memory-mapped file object as retured by mmap_genoref_file().\n"\
+"    Memory-mapped file object as returned by mmap_genoref_file().\n"\
 "chrom :\n"\
 "    Encoded Chromosome number (see encode_chrom).\n"\
 "pos : int\n"\
@@ -751,7 +750,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "       -1 the reference allele don't match the reference genome;\n"\
 "       -2 the chromosome is invalid or the reference allele is longer than the genome reference sequence."
 
-#define PYFLIPALLELE_DOCSTRING "Flip the allele nucleotides (replaces each letter with its complement).\n"\
+#define PYFLIPALLELE_DOCSTRING "Replaces each nucleotide of an allele with its complement.\n"\
 " The resulting string is always in uppercase."\
 " Supports extended nucleotide letters."\
 "\n"\
@@ -765,14 +764,13 @@ PyMODINIT_FUNC initvariantkey(void);
 "bytes :\n"\
 "    Flipped allele."
 
-#define PYNORMALIZEVARIANT_DOCSTRING "Normalize a variant."\
-" Flip alleles if required and apply the normalization algorithm described at:"\
-" https://genome.sph.umich.edu/wiki/Variant_Normalization\n"\
+#define PYNORMALIZEVARIANT_DOCSTRING "Normalizes a variant against the genome reference, flipping the alleles if required."\
+" See https://genome.sph.umich.edu/wiki/Variant_Normalization\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mf : obj\n"\
-"    Memory-mapped file object as retured by mmap_genoref_file().\n"\
+"    Memory-mapped file object as returned by mmap_genoref_file().\n"\
 "chrom : int\n"\
 "    Chromosome encoded number.\n"\
 "pos : int\n"\
@@ -798,12 +796,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - REF length.\n"\
 "    - ALT length."
 
-#define PYNORMALIZEDVARIANTKEY_DOCSTRING "Returns a normalized 64 bit variant key based on CHROM, POS, REF, ALT."\
+#define PYNORMALIZEDVARIANTKEY_DOCSTRING "Normalizes a variant and returns its VariantKey."\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mf : obj\n"\
-"    Memory-mapped file object as retured by mmap_genoref_file().\n"\
+"    Memory-mapped file object as returned by mmap_genoref_file().\n"\
 "chrom : str or bytes\n"\
 "    Chromosome. An identifier from the reference genome, no white-space or leading zeros permitted.\n"\
 "pos : int\n"\
@@ -825,7 +823,7 @@ PyMODINIT_FUNC initvariantkey(void);
 
 // REGIONKEY
 
-#define PYENCODEREGIONSTRAND_DOCSTRING "Encode the strand direction (-1 > 2, 0 > 0, +1 > 1).\n"\
+#define PYENCODEREGIONSTRAND_DOCSTRING "Encodes a strand direction: -1 to 2, 0 to 0, +1 to 1.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -837,7 +835,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    Strand code."
 
-#define PYDECODEREGIONSTRAND_DOCSTRING "Decode the strand direction code (0 > 0, 1 > +1, 2 > -1).\n"\
+#define PYDECODEREGIONSTRAND_DOCSTRING "Decodes a strand code: 0 to 0, 1 to +1, 2 to -1.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -849,7 +847,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    Strand direction."
 
-#define PYENCODEREGIONKEY_DOCSTRING "Returns a 64 bit regionkey\n"\
+#define PYENCODEREGIONKEY_DOCSTRING "Assembles a RegionKey from its pre-encoded components.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -867,7 +865,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    RegionKey 64 bit code."
 
-#define PYEXTRACTREGIONKEYCHROM_DOCSTRING "Extract the CHROM code from RegionKey.\n"\
+#define PYEXTRACTREGIONKEYCHROM_DOCSTRING "Extracts the CHROM code from a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -879,7 +877,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    CHROM code."
 
-#define PYEXTRACTREGIONKEYSTARTPOS_DOCSTRING "Extract the START POS code from RegionKey.\n"\
+#define PYEXTRACTREGIONKEYSTARTPOS_DOCSTRING "Extracts the START POS value from a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -891,7 +889,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    START POS."
 
-#define PYEXTRACTREGIONKEYENDPOS_DOCSTRING "Extract the END POS code from RegionKey.\n"\
+#define PYEXTRACTREGIONKEYENDPOS_DOCSTRING "Extracts the END POS value from a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -903,7 +901,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    END POS."
 
-#define PYEXTRACTREGIONKEYSTRAND_DOCSTRING "Extract the STRAND from RegionKey.\n"\
+#define PYEXTRACTREGIONKEYSTRAND_DOCSTRING "Extracts the STRAND code from a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -915,7 +913,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    STRAND."
 
-#define PYDECODEREGIONKEY_DOCSTRING "Decode a RegionKey code and returns the components as regionkey_t structure.\n"\
+#define PYDECODEREGIONKEY_DOCSTRING "Splits a RegionKey into its encoded components.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -930,7 +928,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - end position\n"\
 "    - encoded strand"
 
-#define PYREVERSEREGIONKEY_DOCSTRING "Reverse a RegionKey code and returns the normalized components as regionkey_rev_t structure.\n"\
+#define PYREVERSEREGIONKEY_DOCSTRING "Reverses a RegionKey into its decoded components.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -945,7 +943,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - end position\n"\
 "    - strand"
 
-#define PYREGIONKEY_DOCSTRING "Returns a 64 bit regionkey based on CHROM, START POS (0-based), END POS and STRAND.\n"\
+#define PYREGIONKEY_DOCSTRING "Returns a RegionKey for the given CHROM, START POS (0-based), END POS and STRAND.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -963,7 +961,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    RegionKey 64 bit code."
 
-#define PYEXTENDREGIONKEY_DOCSTRING "Extend a regionkey region by a fixed amount from the start and end position.\n"\
+#define PYEXTENDREGIONKEY_DOCSTRING "Extends a RegionKey region by a fixed amount at both ends.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -977,7 +975,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    RegionKey 64 bit code."
 
-#define PYREGIONKEYHEX_DOCSTRING "Returns RegionKey hexadecimal string (16 characters).\n"\
+#define PYREGIONKEYHEX_DOCSTRING "Returns a RegionKey as a 16 character hexadecimal string.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -989,7 +987,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "string :\n"\
 "    RegionKey hexadecimal string."
 
-#define PYPARSEREGIONKEYHEX_DOCSTRING "Parses a RegionKey hexadecimal string and returns the code.\n"\
+#define PYPARSEREGIONKEYHEX_DOCSTRING "Parses a 16 character hexadecimal string into a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1001,7 +999,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    A RegionKey code."
 
-#define PYGETREGIONKEYCHROMSTARTPOS_DOCSTRING "Get the CHROM + START POS encoding from RegionKey.\n"\
+#define PYGETREGIONKEYCHROMSTARTPOS_DOCSTRING "Returns the CHROM and START POS section of a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1013,7 +1011,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    CHROM + START POS encoding."
 
-#define PYGETREGIONKEYCHROMENDPOS_DOCSTRING "Get the CHROM + END POS encoding from RegionKey.\n"\
+#define PYGETREGIONKEYCHROMENDPOS_DOCSTRING "Returns the CHROM and END POS of a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1025,7 +1023,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    CHROM + END POS encoding."
 
-#define PYAREOVERLAPPINGREGIONS_DOCSTRING "Check if two regions are overlapping.\n"\
+#define PYAREOVERLAPPINGREGIONS_DOCSTRING "Checks whether two regions overlap.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1047,7 +1045,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    1 if the regions overlap, 0 otherwise."
 
-#define AREOVERLAPPINGREGIONREGIONKEY_DOCSTRING "Check if a region and a regionkey are overlapping.\n"\
+#define AREOVERLAPPINGREGIONREGIONKEY_DOCSTRING "Checks whether a region and a RegionKey overlap.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1065,7 +1063,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    1 if the regions overlap, 0 otherwise."
 
-#define AREOVERLAPPINGREGIONKEYS_DOCSTRING "Check if two regionkeys are overlapping.\n"\
+#define AREOVERLAPPINGREGIONKEYS_DOCSTRING "Checks whether two RegionKeys overlap.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1079,12 +1077,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    1 if the regions overlap, 0 otherwise."
 
-#define AREOVERLAPPINGVARIANTKEYREGIONKEY_DOCSTRING "Check if variantkey and regionkey are overlapping.\n"\
+#define AREOVERLAPPINGVARIANTKEYREGIONKEY_DOCSTRING "Checks whether a VariantKey and a RegionKey overlap.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey.\n"\
 "rk : int\n"\
@@ -1095,12 +1093,12 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    1 if the regions overlap, 0 otherwise."
 
-#define VARIANTKEYTOREGIONKEY_DOCSTRING "Get RegionKey from VariantKey.\n"\
+#define VARIANTKEYTOREGIONKEY_DOCSTRING "Converts a VariantKey into a RegionKey.\n"\
 "\n"\
 "Parameters\n"\
 "----------\n"\
 "mc : obj\n"\
-"    Memory-mapped columns object as retured by mmap_nrvk_file().\n"\
+"    Memory-mapped columns object as returned by mmap_nrvk_file().\n"\
 "vk : int\n"\
 "    VariantKey.\n"\
 "\n"\
@@ -1113,7 +1111,7 @@ PyMODINIT_FUNC initvariantkey(void);
 
 // ESID
 
-#define ENCODESTRINGID_DOCSTRING "Encode maximum 10 characters of a string into a 64 bit unsigned integer.\n"\
+#define ENCODESTRINGID_DOCSTRING "Encodes up to 10 characters of a string into a 64 bit unsigned integer.\n"\
 "This function can be used to convert generic string IDs to numeric IDs.\n"\
 "Parameters\n"\
 "----------\n"\
@@ -1127,10 +1125,10 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    Encoded string ID."
 
-#define ENCODESTRINGNUMID_DOCSTRING "Encode a string composed by a character section followed by a separator\n"\
-"character and a numerical section into a 64 bit unsigned integer. For example: ABCDE:0001234.\n"\
-"Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.\n"\
-"If the string is 10 character or less, then the encode_string_id() is used.\n"\
+#define ENCODESTRINGNUMID_DOCSTRING "Encodes a string made of a character section, a separator and a numerical section\n"\
+"into a 64 bit unsigned integer. For example: ABCDE:0001234.\n"\
+"It encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.\n"\
+"Strings of 10 characters or less are encoded as by encode_string_id().\n"\
 "Parameters\n"\
 "----------\n"\
 "strid : str or bytes\n"\
@@ -1143,7 +1141,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "int :\n"\
 "    Encoded string ID."
 
-#define DECODESTRINGID_DOCSTRING "Decode the encoded string ID.\n"\
+#define DECODESTRINGID_DOCSTRING "Decodes an encoded string ID.\n"\
 "This function is the reverse of encode_string_id.\n"\
 "The string is always returned in uppercase mode.\n"\
 "Parameters\n"\
@@ -1157,7 +1155,7 @@ PyMODINIT_FUNC initvariantkey(void);
 "    - STRING\n"\
 "    - STRING length"
 
-#define HASHSTRINGID_DOCSTRING "Hash the input string into a 64 bit unsigned integer.\n"\
+#define HASHSTRINGID_DOCSTRING "Hashes a string into a non-reversible 64 bit string ID.\n"\
 "This function can be used to convert long string IDs to numeric IDs.\n"\
 "Parameters\n"\
 "----------\n"\

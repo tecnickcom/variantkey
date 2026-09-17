@@ -2,15 +2,15 @@
 % Please edit documentation in R/variantkey.R
 \name{ReverseVariantKey}
 \alias{ReverseVariantKey}
-\title{Reverse a VariantKey code and returns the normalized components.}
+\title{Reverses a VariantKey into its CHROM, POS, REF and ALT components.}
 \usage{
 ReverseVariantKey(vk, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{vk}{VariantKey code.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
 }
 \description{
-Reverse a VariantKey code and returns the normalized components.
+Reverses a VariantKey into its CHROM, POS, REF and ALT components.
 }

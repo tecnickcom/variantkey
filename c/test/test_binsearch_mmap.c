@@ -129,7 +129,7 @@ static int check_test_file(const char *name, const uint8_t *data, size_t size,
                         __func__, name, nrows, mf.nrows);
         errors++;
     }
-    if (munmap_binfile(mf) != 0)
+    if (munmap_binfile(&mf) != 0)
     {
         (void)fprintf_s(stderr, "%s (%s) error while unmapping the file\n", __func__, name);
         errors++;
@@ -151,7 +151,7 @@ static int check_map_failure(const char *name, const uint8_t *data, size_t size)
     if (mf.src != MAP_FAILED)
     {
         (void)fprintf_s(stderr, "%s (%s) an mmap error was expected\n", __func__, name);
-        (void)munmap_binfile(mf);
+        (void)munmap_binfile(&mf);
         errors++;
     }
     if (mf.fd >= 0)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{HashStringID}
 \alias{HashStringID}
-\title{Hash the input string into a 64 bit unsigned integer.
+\title{Hashes a string into a non-reversible 64 bit string ID.
 This function can be used to convert long string IDs to numeric IDs.}
 \usage{
 HashStringID(str)
@@ -11,6 +11,6 @@ HashStringID(str)
 \item{str}{The string to encode.}
 }
 \description{
-Hash the input string into a 64 bit unsigned integer.
+Hashes a string into a non-reversible 64 bit string ID.
 This function can be used to convert long string IDs to numeric IDs.
 }

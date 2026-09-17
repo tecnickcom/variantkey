@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{FindAllRvVariantKeyByRsid}
 \alias{FindAllRvVariantKeyByRsid}
-\title{Search for the specified rsID and returns all the associated VariantKeys in the RV file.
+\title{Returns all the VariantKeys associated with an rsID.
 NOTE: the output is limited to maximum 10 results.}
 \usage{
 FindAllRvVariantKeyByRsid(
@@ -22,9 +22,9 @@ FindAllRvVariantKeyByRsid(
 
 \item{last}{Element (up to but not including) where to end the search (max value = nitems).}
 
-\item{mc}{Memory-mapped columns object as retured by MmapRSVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapRSVKfile.}
 }
 \description{
-Search for the specified rsID and returns all the associated VariantKeys in the RV file.
+Returns all the VariantKeys associated with an rsID.
 NOTE: the output is limited to maximum 10 results.
 }

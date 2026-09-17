@@ -2,8 +2,8 @@
 % Please edit documentation in R/variantkey.R
 \name{InitVariantKey}
 \alias{InitVariantKey}
-\title{Load the VariantKey support files.
-This should be the first function called in order to load the support files.}
+\title{Loads the VariantKey support files.
+This must be the first function called.}
 \usage{
 InitVariantKey(
   genoref_file = "",
@@ -22,6 +22,6 @@ InitVariantKey(
 \item{vkrs_file}{Name and path of the binary file containing the VariantKey to rsID mapping (vkrs.bin). This file can be generated using the resources/tools/vkrs.sh script.}
 }
 \description{
-Load the VariantKey support files.
-This should be the first function called in order to load the support files.
+Loads the VariantKey support files.
+This must be the first function called.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{ExtractVariantKeyChrom}
 \alias{ExtractVariantKeyChrom}
-\title{Extract the CHROM code from VariantKey.}
+\title{Extracts the CHROM code from a VariantKey.}
 \usage{
 ExtractVariantKeyChrom(vk)
 }
@@ -10,5 +10,5 @@ ExtractVariantKeyChrom(vk)
 \item{vk}{VariantKey code.}
 }
 \description{
-Extract the CHROM code from VariantKey.
+Extracts the CHROM code from a VariantKey.
 }

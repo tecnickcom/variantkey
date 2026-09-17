@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{DecodeStringID}
 \alias{DecodeStringID}
-\title{Decode the encoded string ID.
+\title{Decodes an encoded string ID.
 This function is the reverse of encode_string_id.
 The string is always returned in uppercase mode.}
 \usage{
@@ -12,7 +12,7 @@ DecodeStringID(esid)
 \item{esid}{Encoded string ID code.}
 }
 \description{
-Decode the encoded string ID.
+Decodes an encoded string ID.
 This function is the reverse of encode_string_id.
 The string is always returned in uppercase mode.
 }

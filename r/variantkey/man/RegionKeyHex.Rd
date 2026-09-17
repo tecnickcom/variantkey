@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{RegionKeyHex}
 \alias{RegionKeyHex}
-\title{Returns RegionKey hexadecimal string (16 characters).}
+\title{Returns a RegionKey as a 16 character hexadecimal string.}
 \usage{
 RegionKeyHex(vk)
 }
@@ -10,5 +10,5 @@ RegionKeyHex(vk)
 \item{vk}{RegiontKey code.}
 }
 \description{
-Returns RegionKey hexadecimal string (16 characters).
+Returns a RegionKey as a 16 character hexadecimal string.
 }

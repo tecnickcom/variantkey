@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeRegionKey}
 \alias{EncodeRegionKey}
-\title{Returns a 64 bit regionkey}
+\title{Assembles a RegionKey from its pre-encoded components.}
 \usage{
 EncodeRegionKey(chrom, startpos, endpos, strand)
 }
@@ -16,5 +16,5 @@ EncodeRegionKey(chrom, startpos, endpos, strand)
 \item{strand}{Encoded Strand direction (-1 > 2, 0 > 0, +1 > 1)}
 }
 \description{
-Returns a 64 bit regionkey
+Assembles a RegionKey from its pre-encoded components.
 }

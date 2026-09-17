@@ -2,15 +2,15 @@
 % Please edit documentation in R/variantkey.R
 \name{VariantToRegionkey}
 \alias{VariantToRegionkey}
-\title{Get RegionKey from VariantKey.}
+\title{Converts a VariantKey into a RegionKey.}
 \usage{
 VariantToRegionkey(vk, mc = vk.env$nrvk_$MC)
 }
 \arguments{
 \item{vk}{VariantKey code.}
 
-\item{mc}{Memory-mapped columns object as retured by MmapNRVKfile.}
+\item{mc}{Memory-mapped columns object as returned by MmapNRVKfile.}
 }
 \description{
-Get RegionKey from VariantKey.
+Converts a VariantKey into a RegionKey.
 }

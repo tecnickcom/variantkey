@@ -2,7 +2,7 @@
 % Please edit documentation in R/variantkey.R
 \name{DecodeRegionStrand}
 \alias{DecodeRegionStrand}
-\title{Decode the strand direction code (0 > 0, 1 > +1, 2 > -1).}
+\title{Decodes a strand code: 0 to 0, 1 to +1, 2 to -1.}
 \usage{
 DecodeRegionStrand(strand)
 }
@@ -10,5 +10,5 @@ DecodeRegionStrand(strand)
 \item{code}{Strand code.}
 }
 \description{
-Decode the strand direction code (0 > 0, 1 > +1, 2 > -1).
+Decodes a strand code: 0 to 0, 1 to +1, 2 to -1.
 }

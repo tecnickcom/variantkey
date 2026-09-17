@@ -2,10 +2,10 @@
 % Please edit documentation in R/variantkey.R
 \name{EncodeStringNumID}
 \alias{EncodeStringNumID}
-\title{Encode a string composed by a character section followed by a separator character and a numerical section
+\title{Encodes a string made of a character section, a separator and a numerical section
 into a 64 bit unsigned integer. For example: "ABCDE:0001234"
 Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
-If the string is 10 character or less, then the EncodeStringID() is used.}
+Strings of 10 characters or less are encoded as by EncodeStringID().}
 \usage{
 EncodeStringNumID(str, sep = ":")
 }
@@ -15,8 +15,8 @@ EncodeStringNumID(str, sep = ":")
 \item{sep}{Separator character between string and number.}
 }
 \description{
-Encode a string composed by a character section followed by a separator character and a numerical section
+Encodes a string made of a character section, a separator and a numerical section
 into a 64 bit unsigned integer. For example: "ABCDE:0001234"
 Encodes up to 5 characters in uppercase, a number up to 2^27, and up to 7 zero padding digits.
-If the string is 10 character or less, then the EncodeStringID() is used.
+Strings of 10 characters or less are encoded as by EncodeStringID().
 }

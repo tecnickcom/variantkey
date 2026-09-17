@@ -547,7 +547,7 @@ int main()
     benchmark_get_genoref_seq(&genoref);
     benchmark_flip_allele();
 
-    err = munmap_binfile(genoref);
+    err = munmap_binfile(&genoref);
     if (err != 0)
     {
         (void) fprintf(stderr, "Got %d error while unmapping the genoref file\n", err);

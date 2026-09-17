@@ -2,15 +2,16 @@
 % Please edit documentation in R/variantkey.R
 \name{MmapNRVKFile}
 \alias{MmapNRVKFile}
-\title{Memory map the specified NRVK binary file (nrvk.bin).
-Returns the memory mapped file object, the columns object and the number of rows.}
+\title{Memory maps the NRVK binary file (nrvk.bin).}
 \usage{
 MmapNRVKFile(file)
 }
 \arguments{
 \item{file}{Path to the file to map.}
 }
+\value{
+The memory mapped file object, the columns object and the number of rows.
+}
 \description{
-Memory map the specified NRVK binary file (nrvk.bin).
-Returns the memory mapped file object, the columns object and the number of rows.
+Memory maps the NRVK binary file (nrvk.bin).
 }
