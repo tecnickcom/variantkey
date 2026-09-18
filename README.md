@@ -630,7 +630,8 @@ memory mapped, searched with `binsearch` and joined with other data on a single
 <a name="whyconvert"></a>
 ### Why convert an annotation file
 
-A tabix TSV is a good archive format and a poor working format.
+A tabix TSV is a compact archive and reads well in genomic order, but it is not
+very efficient for repeated point lookups and joins on the variant.
 
 A single `uint64` replaces the four source columns as the join key. Joining two
 annotation sets, or an annotation set and a cohort, no longer requires matching
@@ -638,25 +639,38 @@ a string chromosome that may or may not carry a `chr` prefix, then a position,
 then two allele strings. A columnar engine such as DuckDB, Spark or BigQuery can join
 on that key directly, and none of them reads a tabix index.
 
-Point lookups need neither decompression nor parsing. A tabix query decompresses
-a bgzip block and parses text lines to answer a single variant. A BINSRC1 file is
-fixed-width records in memory mapped pages, so a lookup is a binary search over
-integers: `O(log n)` comparisons, no allocation, no text.
+Point lookups need neither decompression nor parsing. A tabix query seeks to the
+start of the index bin holding the target, then inflates and parses forward to
+reach it. A BINSRC1 file is fixed-width records in memory mapped pages, so a
+lookup is a binary search over integers: `O(log n)` comparisons, no allocation,
+no text.
 
-Storage is smaller at every compression level. Measured over ten
-million rows of the AlphaGenome AVI score file and extrapolated to its full
-9.06e9 rows:
+Over 10 million rows of the AVI score file, with both files resident in the page
+cache, a point lookup takes 99 ns against the 2.10 ms of a tabix query using
+the index `tabix` builds by default. A CSI index with 64 bp bins brings tabix to
+77 us, which is its floor: reaching one record means inflating the 64 KiB block
+that holds it. Tabix bins are measured in genomic coordinates, so on saturation
+data at 2.8 records per base pair a default 16 kb bin spans about 46,000 records.
+Once the table is larger than RAM, cost is set by page cache residency rather
+than by either search and the two move closer together. See
+[BENCHMARKS.md](BENCHMARKS.md) for the method and the full measurements.
+
+Storage is smaller uncompressed and at every compression level short of `xz`.
+Measured over ten million rows of the AlphaGenome AVI score file and
+extrapolated to its full 9.06e9 rows:
 
 | Representation       | Uncompressed | gzip -6  | zstd -3  | zstd -12 | xz -6   |
 |----------------------|--------------|----------|----------|----------|---------|
-| BINSRC1, 16 bytes    | 145.0 GB     | 68.8 GB  | 58.0 GB  | 53.2 GB  | 40.3 GB |
-| source TSV           | 298.1 GB     | 87.6 GB  | 78.8 GB  | 62.4 GB  | 40.3 GB |
+| BINSRC1, 16 bytes    | 145.0 GB     | 68.8 GB  | 58.0 GB  | 53.2 GB  | 40.4 GB |
+| source TSV           | 298.1 GB     | 87.6 GB  | 78.8 GB  | 62.4 GB  | 40.2 GB |
 
 That is 2.06x smaller uncompressed and 15% to 26% smaller at the usual
 compression levels. The two forms converge at `xz`, which finds the same
 structure in both. Most of the gain comes from the key column: over a dense
-variant set the sorted VariantKeys are close to an arithmetic sequence, and that
-column compresses to about 5% of its size.
+variant set the sorted VariantKeys are close to an arithmetic sequence, so it
+compresses far better than the values it indexes. Under `gzip -6` it reaches 28%
+of its size against the 62% and 73% of the two value columns, and under `xz -6`
+it reaches 6%.
 
 Values are stored exactly. Each value column is a decimal scaled to an integer,
 so a score printed with five decimals is read back with five decimals, with no
@@ -677,7 +691,7 @@ Usage: vkbin -o FILE [-s N] COLSPEC...
 
   -o FILE  Output file. Required.
   -s N     Number of leading header lines to skip. Default 1.
-  -h       Help.
+  -h       This help.
 ```
 
 The first four input columns must be `CHROM`, `POS`, `REF` and `ALT`, where
@@ -734,7 +748,8 @@ and on a value that does not fit its declared width, rather than truncating it.
 Google DeepMind's AlphaGenome Atlas publishes an
 [AVI score](https://deepmind.google.com/science/alphagenome/downloads) for every
 possible single nucleotide variant in the human genome: 9.06e9 rows, 88.5 GB as
-distributed. The first rows are:
+distributed. The download is `avi_scores_snvs_tabix.zip`, holding the bgzip TSV
+`alphagenome_variant_impact_score_snvs.tsv.gz`. Its first rows are:
 
 ```
 #CHROM  POS    REF  ALT  raw_score  PHRED
@@ -778,11 +793,42 @@ const uint64_t *keys   = get_src_offset_uint64_t(mf.src, mf.index[0]);
 const uint32_t *raws   = get_src_offset_uint32_t(mf.src, mf.index[1]);
 const uint32_t *phreds = get_src_offset_uint32_t(mf.src, mf.index[2]);
 
+// The VariantKey POS is 0-based, so it is one less than the POS in the file.
+uint64_t vk[2] =
+{
+    variantkey("chr1", 4, 10000, "T", 1, "A", 1),
+    variantkey("chr1", 4, 10000, "T", 1, "C", 1),
+};
+uint64_t pos[2] = {0};
+
+col_find_many_le_uint64_t(keys, 0, mf.nrows, vk, pos, 2, mf.prefetch);
+
+uint64_t k = 0;
+for (k = 0; k < 2; k++)
+{
+    if (pos[k] < mf.nrows) // mf.nrows is reported when the key is absent
+    {
+        uint32_t raw_q = raws[pos[k]];     // 196132 for the first key
+        uint32_t phred_q = phreds[pos[k]]; // 106466 for the first key
+    }
+}
+```
+
+Search a batch with `col_find_many_le_uint64_t` rather than calling
+`col_find_first_le_uint64_t` once per variant. Both report the item number, or
+`nrows` when the key is absent, but `find_many` advances the searches in lockstep
+so that their cache misses overlap, which is worth 2 to 3 times per value over
+the AVI tables. On a file too large to cache, `BINSEARCH_PREFETCH_AUTO` also asks
+for the pages of a batch before reading them. `mmap_binfile` sets `mf.prefetch`
+to that value.
+
+Use `col_find_first_le_uint64_t` when there is a single key:
+
+```c
 uint64_t first = 0;
 uint64_t last = mf.nrows;
-// The VariantKey POS is 0-based, so it is one less than the POS in the file.
-uint64_t vk = variantkey("chr1", 4, 10000, "T", 1, "A", 1);
-uint64_t i = col_find_first_le_uint64_t(keys, &first, &last, vk);
+uint64_t key = variantkey("chr1", 4, 10000, "T", 1, "A", 1);
+uint64_t i = col_find_first_le_uint64_t(keys, &first, &last, key);
 
 if (i < mf.nrows)
 {
@@ -808,10 +854,10 @@ A value needs `ceil(log2(range * 10^decimals))` bits, and BINSRC1 stores columns
 of 1, 2, 4 or 8 bytes, so the requirement rounds up to the next of those sizes.
 For the AVI scores at five decimals:
 
-| Column      | Observed range   | Distinct values | Bits | Width |
-|-------------|------------------|-----------------|------|-------|
-| `raw_score` | -1.269 to +4.557 | 5.83e5          | 20   | 4 B   |
-| `PHRED`     | 0.0 to +82.9945  | 8.30e6          | 23   | 4 B   |
+| Column      | Observed range   | Scaled range | Bits | Width |
+|-------------|------------------|--------------|------|-------|
+| `raw_score` | -1.269 to +4.557 | 5.83e5       | 20   | 4 B   |
+| `PHRED`     | 0.0 to +82.9945  | 8.30e6       | 23   | 4 B   |
 
 Prefer the wider column when the choice is close: the observed range of a source
 file is a lower bound on its true range, a value that does not fit stops the
