@@ -812,6 +812,8 @@ for (k = 0; k < 2; k++)
         uint32_t phred_q = phreds[pos[k]]; // 106466 for the first key
     }
 }
+
+munmap_binfile(&mf);
 ```
 
 Search a batch with `col_find_many_le_uint64_t` rather than calling
@@ -821,6 +823,14 @@ so that their cache misses overlap, which is worth 2 to 3 times per value over
 the AVI tables. On a file too large to cache, `BINSEARCH_PREFETCH_AUTO` also asks
 for the pages of a batch before reading them. `mmap_binfile` sets `mf.prefetch`
 to that value.
+
+`BINSEARCH_PREFETCH_AUTO` pays off when the searches are slow enough to be
+waiting on a device. Between that and a resident file there is a band where it
+asks for pages the page cache is about to supply anyway, and the requests cost
+more than they save: on the 800 MB table of [BENCHMARKS.md](BENCHMARKS.md) with
+the cache dropped, 29,235 ns per value against the 7,003 ns of
+`BINSEARCH_PREFETCH_NEVER`. Pass `BINSEARCH_PREFETCH_NEVER` for a table that
+fits in memory once it is warm.
 
 Use `col_find_first_le_uint64_t` when there is a single key:
 
@@ -835,8 +845,6 @@ if (i < mf.nrows)
     uint32_t raw_q = raws[i];     // 196132
     uint32_t phred_q = phreds[i]; // 106466
 }
-
-munmap_binfile(&mf);
 ```
 
 Print a stored value by formatting the integer with its decimals. Converting it
