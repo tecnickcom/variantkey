@@ -64,7 +64,7 @@ GOFMT=$(shell which gofmt)
 GOTEST=$(GO) test
 GODOC=GOPATH="$(GOPATH)" $(shell which godoc)
 GOLANGCILINT=$(BINUTIL)/golangci-lint
-GOLANGCILINTVERSION=v2.13.2
+GOLANGCILINTVERSION=v2.14.0
 GOJUNITREPORT=$(BINUTIL)/go-junit-report
 
 # Directory containing the source code
