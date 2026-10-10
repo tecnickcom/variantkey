@@ -5,7 +5,7 @@ module github.com/tecnickcom/variantkey/go/resources/tools
 
 go 1.24
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 tool github.com/jstemmer/go-junit-report/v2
 

@@ -84,7 +84,7 @@ VENDORTESTS=$(wildcard test/test_binsearch*.c)
 OWNTESTS=$(filter-out $(VENDORTESTS),$(wildcard test/*.c))
 
 # Git tag, branch or commit of the imported binsearch code.
-BINSEARCHVERSION=v10.0.0
+BINSEARCHVERSION=v10.0.2
 
 # Base URL of the raw binsearch files at the selected version.
 BINSEARCHURL=https://raw.githubusercontent.com/tecnickcom/binsearch/$(BINSEARCHVERSION)
