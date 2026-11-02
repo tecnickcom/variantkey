@@ -201,7 +201,8 @@ static int load_text_file(const char *filename, char **data, size_t *size)
     }
 
     *size = (size_t)fsize;
-    *data = (char *)malloc(*size + 1U);
+    // calloc zero-fills, so the extra byte is the terminating null.
+    *data = (char *)calloc(*size + 1U, 1U);
     if (*data == NULL)
     {
         (void)fclose(f);
@@ -215,7 +216,6 @@ static int load_text_file(const char *filename, char **data, size_t *size)
         (void)fclose(f);
         return 1;
     }
-    (*data)[*size] = '\0';
 
     (void)fclose(f);
     return 0;
@@ -317,6 +317,10 @@ static uint32_t lookup_columnar_payload(
 {
     uint64_t first = 0;
     uint64_t last = nrows;
+    if (q->chrom_len >= sizeof(q->chrom))
+    {
+        return 0;
+    }
     uint64_t key = variantkey(q->chrom, q->chrom_len, q->pos, &q->ref, 1U, &q->alt, 1U);
 
     uint64_t found = col_find_first_le_uint64_t(vk_col, &first, &last, key);
