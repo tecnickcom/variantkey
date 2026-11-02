@@ -69,13 +69,13 @@ $(if $(CMAKE_INSTALL_PATH),-DCMAKE_INSTALL_PREFIX="$(CMAKE_INSTALL_PATH)")
 LCOVOPTS=--rc branch_coverage=1
 
 # clang-tidy check list, shared by the tidy and linter targets.
-TIDYCHECKS=*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-android-cloexec-fopen,-hicpp-no-assembler,-hicpp-signed-bitwise,-hicpp-use-nullptr,-modernize-use-nullptr,-misc-include-cleaner,-clang-analyzer-alpha.*
+TIDYCHECKS=*,-clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,-readability-function-cognitive-complexity,-altera-struct-pack-align,-altera-id-dependent-backward-branch,-bugprone-easily-swappable-parameters,-altera-unroll-loops,-readability-isolate-declaration,-llvmlibc-restrict-system-libc-headers,-readability-identifier-length,-readability-use-concise-preprocessor-directives,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-llvm-header-guard,-llvm-include-order,-android-cloexec-open,-android-cloexec-fopen,-hicpp-no-assembler,-hicpp-signed-bitwise,-hicpp-use-nullptr,-modernize-use-nullptr,-misc-include-cleaner,-clang-analyzer-alpha.*
 
 # Extra clang-tidy exclusions for the test files imported from the binsearch
 # repository: upstream only runs clang-tidy on the header, so its tests are not
 # written against this check list and they must not be edited here, otherwise
 # the next "make binsearch" would revert the changes.
-VENDORTIDYCHECKS=-bugprone-reserved-identifier,-cert-dcl37-c,-cert-dcl51-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-bugprone-not-null-terminated-result,-android-cloexec-fopen,-bugprone-implicit-widening-of-multiplication-result,-google-readability-function-size,-hicpp-function-size,-readability-function-size
+VENDORTIDYCHECKS=-bugprone-reserved-identifier,-cert-dcl37-c,-cert-dcl51-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-bugprone-not-null-terminated-result,-android-cloexec-fopen,-bugprone-implicit-widening-of-multiplication-result,-google-readability-function-size,-hicpp-function-size,-readability-function-size,-readability-use-concise-preprocessor-directives
 
 # Test files imported from the binsearch repository.
 VENDORTESTS=$(wildcard test/test_binsearch*.c)
@@ -193,7 +193,7 @@ tidy:
 ## Check the code via cppcheck and clang-tidy
 .PHONY: linter
 linter: tidy
-	cppcheck --enable=warning,style,performance,portability --check-level=exhaustive --error-exitcode=1 --inline-suppr --std=c17 -I src/variantkey src/variantkey/*.h vk/vk.c vkbin/vkbin.c
+	cppcheck --force --enable=warning,style,performance,portability --check-level=exhaustive --error-exitcode=1 --inline-suppr --std=c17 -I src/variantkey src/variantkey/*.h vk/vk.c vkbin/vkbin.c
 
 ## Build the library
 .PHONY: build
